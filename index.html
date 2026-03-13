@@ -325,7 +325,14 @@
         <div class="form-group"><label class="form-label">E-mail cím</label><input class="form-control" id="r-email" type="email" placeholder="email@example.com"/></div>
         <div class="form-group"><label class="form-label">Jelszó</label><input class="form-control" id="r-pass" type="password" placeholder="••••••••"/></div>
         <div class="form-group"><label class="form-label">Jelszó megerősítése</label><input class="form-control" id="r-pass2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/></div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">A regisztrációval elfogadod az <span onclick="showPage('privacy')" style="color:var(--gold);cursor:pointer">Adatkezelési Tájékoztatót</span>.</div>
+        <div class="form-group" style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:1rem">
+          <input type="checkbox" id="r-consent" style="margin-top:3px;accent-color:var(--gold);cursor:pointer;flex-shrink:0"/>
+          <label for="r-consent" style="font-size:.74rem;color:var(--muted);line-height:1.6;cursor:pointer">
+            Elolvastam és elfogadom az <span onclick="showPage('privacy')" style="color:var(--gold)">Adatkezelési Tájékoztatót</span>.
+            <strong style="color:var(--gold3)">Fontos:</strong> A hitelesített szövegek SHA-256 hash-e a Bitcoin blokkláncba kerül – ez visszavonhatatlan és törölhetetlen.
+            A szolgáltatás 16 éven aluliak számára nem elérhető.
+          </label>
+        </div>
         <button class="btn btn-gold" style="width:100%;padding:.8rem" onclick="doRegister()">✦ Regisztráció</button>
       </div>
     </div>
@@ -1061,11 +1068,14 @@
       <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" id="p-bio" style="min-height:100px" placeholder="Néhány szó magadról..."></textarea></div>
       <button class="btn btn-gold" style="width:100%;padding:.8rem" onclick="saveProfile()">✦ Profil mentése</button>
     </div>
-    <div class="card">
-      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">📊 Statisztikák</div>
-      <div class="grid-2">
-        <div style="text-align:center;padding:1.25rem;background:var(--surface2);border-radius:var(--r-sm)"><div class="gt" id="p-stat-docs" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">Hitelesített szöveg</div></div>
-        <div style="text-align:center;padding:1.25rem;background:var(--surface2);border-radius:var(--r-sm)"><div class="gt" id="p-stat-plan" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">Csomag</div></div>
+    <div class="card" style="margin-top:1.25rem;border-color:rgba(201,168,76,.18)">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">⚙️ Fiók kezelése</div>
+      <div style="font-size:.85rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
+        Az előfizetés lemondása azonnal érvényes – a hitelesítési előzmények és a HUMANO ID megmaradnak. A fiók törlése visszafordíthatatlan, az adatok véglegesen törlődnek (a blokkláncon rögzített hash-ek kivételével).
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="cancelSubscription()">⚠️ Előfizetés lemondása</button>
+        <button class="btn btn-outline btn-sm" style="border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteAccount()">🗑 Fiók törlése</button>
       </div>
     </div>
   </div>
@@ -1102,11 +1112,131 @@
 <!-- ═══ PRIVACY ═══ -->
 <div id="page-privacy" class="page">
   <div style="max-width:800px;margin:0 auto;padding:4rem 2rem">
-    <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:2.5rem">Adatkezelési <span class="gt">Tájékoztató</span></h1>
-    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Adatkezelő</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">HUMANO Platform. Az adatok EU-s Supabase szervereken tárolódnak, GDPR-kompatibilis módon.</div></div>
-    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Tárolt adatok</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">E-mail cím, felhasználónév, szövegek tartalma és SHA-256 hash-e, billentyűleütés-dinamikai metaadatok (időintervallumok, szünetek, szórás) – a tartalom elemzése nélkül.</div></div>
-    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Mit NEM tárol a HUMANO</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">A rendszer nem elemzi a szöveg tartalmát, témáját vagy stílusát. A billentyűleütés-dinamika rögzítése kizárólag az írás folyamatának hitelesítésére szolgál.</div></div>
-    <div class="card"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Sütik</div><div style="font-size:.87rem;color:var(--muted)">Kizárólag munkamenet-kezelési célból.</div></div>
+    <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:.5rem">Adatkezelési <span class="gt">Tájékoztató</span></h1>
+    <p style="font-size:.78rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:2.5rem">Hatályos: 2026. március 13-tól · Utolsó módosítás: 2026. március 13.</p>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">1. Az adatkezelő adatai</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">Név:</strong> HUMANO Platform<br>
+        <strong style="color:var(--text)">Weboldal:</strong> https://humano-hu.vercel.app<br>
+        <strong style="color:var(--text)">E-mail:</strong> info@humano.hu<br><br>
+        A HUMANO Platform egyéni vállalkozó / magánszemély által üzemeltetett szolgáltatás. Adatvédelmi tisztviselő kinevezése nem kötelező (kis adatkezelő, nem különleges adat).
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">2. Milyen adatokat gyűjtünk és miért?</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--gold3)">2.1 Regisztrációkor</strong><br>
+        E-mail cím, felhasználónév, jelszó (titkosítva), regisztráció időpontja – bejelentkezés, azonosítás, biztonsági napló céljából. Jogalap: szerződés teljesítése (GDPR 6. cikk b) pont), jogos érdek (f) pont).<br><br>
+        <strong style="color:var(--gold3)">2.2 Szöveg hitelesítésekor</strong><br>
+        Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya. Jogalap: szerződés teljesítése.<br><br>
+        <strong style="color:var(--gold3)">Fontos:</strong> A billentyűleütés-dinamika kizárólag statisztikai formában kerül tárolásra. A leütött billentyűk karakterei nem kerülnek naplózásra – kivéve a szöveg tartalmát, amelyet a felhasználó maga ment el.<br><br>
+        <strong style="color:var(--gold3)">2.3 Profiladatok (opcionális)</strong><br>
+        Teljes név, weboldal, foglalkozás, bio, település – hozzájárulás alapján, fiók törléséig.<br><br>
+        <strong style="color:var(--gold3)">2.4 Technikai adatok</strong><br>
+        Utolsó belépés időpontja (1 év), API kulcsok (visszavonásig).
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">3. Amit NEM gyűjtünk</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        Leütött billentyűk karakterei (keylogger jellegű adat) · IP-cím · Böngésző ujjlenyomat · Tartózkodási hely (GPS) · A szöveg témája, stílusa, tartalmi elemzése
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">4. Adatfeldolgozók</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">Supabase Inc.</strong> – adatbázis, autentikáció (EU szerver)<br>
+        <strong style="color:var(--text)">Vercel Inc.</strong> – webtárhely, CDN<br>
+        <strong style="color:var(--text)">Stripe Inc.</strong> – fizetési feldolgozás<br>
+        <strong style="color:var(--text)">Formspree</strong> – email küldés<br>
+        <strong style="color:var(--text)">OpenTimestamps</strong> – Bitcoin blokklánc időbélyeg<br><br>
+        Minden US-székhelyű szolgáltatónál az adattovábbítás az EU–USA adatvédelmi keretrendszer (Data Privacy Framework) vagy standard szerződéses záradékok (SCC) alapján történik.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.03)">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">5. A Bitcoin blokklánc különleges esete</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        A dokumentumok SHA-256 hash-e az OpenTimestamps protokollon keresztül a Bitcoin blokkláncba kerül. Ez azt jelenti:<br><br>
+        · A hash <strong style="color:var(--gold)">visszavonhatatlanul és örökre</strong> rögzítve marad<br>
+        · A hash önmagában nem tartalmaz személyes adatot<br>
+        · A hash alapján a szöveg tartalma nem fejthető vissza<br>
+        · Törlési kérelem esetén a HUMANO adatbázisból töröljük az adatokat, de a <strong style="color:var(--gold)">blokkláncon lévő hash eltávolítása technikailag lehetetlen</strong>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">6. A felhasználók jogai</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">Hozzáférési jog (15. cikk)</strong> – tájékoztatás a tárolt adatokról<br>
+        <strong style="color:var(--text)">Helyesbítési jog (16. cikk)</strong> – pontatlan adatok javítása<br>
+        <strong style="color:var(--text)">Törlési jog (17. cikk)</strong> – fiók és adatok törlése (blokklánc kivételével)<br>
+        <strong style="color:var(--text)">Adathordozhatóság (20. cikk)</strong> – adatok JSON formátumban<br>
+        <strong style="color:var(--text)">Tiltakozási jog (21. cikk)</strong> – jogos érdek alapján kezelt adatok ellen<br>
+        <strong style="color:var(--text)">Korlátozási jog (18. cikk)</strong> – adatkezelés átmeneti felfüggesztése<br><br>
+        Joggyakorlás: <span style="color:var(--gold)">info@humano.hu</span> · Válaszidő: 30 nap
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">7. Sütik (Cookie-k)</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        Kizárólag munkamenet-kezelési célból: <strong style="color:var(--text)">sb-*</strong> (Supabase) – funkcionális, bejelentkezési munkamenet, böngésző bezárásáig / 1 hét.<br>
+        Harmadik fél marketing- vagy nyomkövető sütit nem használunk.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">8. Adatbiztonság</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        · EU-s Supabase szerverek (Frankfurt régió)<br>
+        · HTTPS/TLS titkosítás<br>
+        · Jelszavak bcrypt titkosítással (Supabase Auth)<br>
+        · Row Level Security (RLS)<br>
+        · API kulcsok kriptográfiailag generáltak, hashelt formában tárolva
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">9. Gyermekek adatai</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        A HUMANO szolgáltatás <strong style="color:var(--gold)">16 év alatti személyek számára nem elérhető.</strong> Ha tudomásunkra jut, hogy 16 év alatti személy regisztrált, az adatokat haladéktalanul töröljük.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">10. Adatvédelmi incidens</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        Adatvédelmi incidens esetén a GDPR 33. cikke alapján 72 órán belül értesítjük a NAIH-t, és indokolatlan késedelem nélkül az érintett felhasználókat, ha az incidens magas kockázatot jelent.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">11. Panasztétel</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)</strong><br>
+        Cím: 1055 Budapest, Falk Miksa utca 9-11.<br>
+        E-mail: ugyfelszolgalat@naih.hu<br>
+        Weboldal: https://www.naih.hu<br>
+        Telefon: +36 (1) 391-1400
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:2rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">12. Tájékoztató módosítása</div>
+      <div style="font-size:.87rem;color:var(--muted);line-height:1.9">
+        Fenntartjuk a jogot a tájékoztató módosítására. Lényeges változás esetén a felhasználókat e-mailben értesítjük, és az oldalon a módosítás dátumát frissítjük. A folyamatos használat a módosítások elfogadását jelenti.
+      </div>
+    </div>
+
+    <div style="font-size:.72rem;color:var(--muted2);font-family:var(--font-mono);text-align:center">
+      © 2026 HUMANO Platform · GDPR-kompatibilis adatkezelés · EU Supabase szerverek
+    </div>
   </div>
 </div>
 
