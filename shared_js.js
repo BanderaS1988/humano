@@ -340,7 +340,7 @@ async function deleteAccount() {
         const session = await db.auth.getSession();
         const token = session?.data?.session?.access_token;
         if (token) {
-            await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+            await fetch('https://vidlijysdhbfvvytuzcg.supabase.co/functions/v1/delete-user', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
