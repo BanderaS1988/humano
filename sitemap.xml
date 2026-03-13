@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Főoldal -->
+  <url>
+    <loc>https://humano-hu.vercel.app/</loc>
+    <lastmod>2025-03-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://humano-hu.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://humano-hu.vercel.app/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://humano-hu.vercel.app/?lang=de"/>
+  </url>
+
+  <!-- Szöveg Ellenőrzés -->
+  <url>
+    <loc>https://humano-hu.vercel.app/#verify</loc>
+    <lastmod>2025-03-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Roadmap -->
+  <url>
+    <loc>https://humano-hu.vercel.app/#roadmap</loc>
+    <lastmod>2025-03-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Előfizetés / Árak -->
+  <url>
+    <loc>https://humano-hu.vercel.app/#pricing</loc>
+    <lastmod>2025-03-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Rólunk -->
+  <url>
+    <loc>https://humano-hu.vercel.app/#about</loc>
+    <lastmod>2025-03-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>

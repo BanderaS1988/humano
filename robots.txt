@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap helye
+Sitemap: https://humano-hu.vercel.app/sitemap.xml
+
+# Admin és belső oldalak tiltása
+Disallow: /admin
+Disallow: /#admin
