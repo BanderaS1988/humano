@@ -256,20 +256,20 @@ function updateIdPreview() {
 }
 
 async function doRegister() {
+    if (!document.getElementById('r-consent').checked) {
+        return authAlert('❌ Az adatkezelési tájékoztató elfogadása kötelező.');
+    }
     const username = document.getElementById('r-user')?.value.trim();
     const email = document.getElementById('r-email')?.value.trim();
     const pass = document.getElementById('r-pass')?.value;
     const pass2 = document.getElementById('r-pass2')?.value;
-
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) return authAlert('Felhasználónév: 3–30 karakter (betű, szám, _)');
     if (!email || !/\S+@\S+\.\S+/.test(email)) return authAlert('Érvényes email cím szükséges.');
     if (pass.length < 8) return authAlert('Jelszó minimum 8 karakter.');
     if (pass !== pass2) return authAlert('A két jelszó nem egyezik.');
-
     authAlert('⏳ Regisztráció...', 'info');
     const { data, error } = await db.auth.signUp({ email, password: pass, options: { data: { username } } });
     if (error) return authAlert(error.message);
-
     if (data.user) {
         const ts = Date.now().toString(36).toUpperCase();
         const humanoId = `HMN-${username.substring(0, 4).toUpperCase()}-${ts}`;
@@ -283,11 +283,9 @@ async function doRegister() {
             created_at: new Date().toISOString()
         });
     }
-
     authAlert('✅ Sikeres regisztráció! Átirányítás...', 'success');
     setTimeout(() => showPage('dashboard'), 1500);
 }
-
 async function doLogin() {
     const email = document.getElementById('l-email')?.value.trim();
     const pass = document.getElementById('l-pass')?.value;
@@ -310,6 +308,53 @@ async function doLogout() {
     currentUser = null;
     updateNavAuth(null);
     showPage('landing');
+}
+
+
+async function cancelSubscription() {
+    if (!currentUser) return showToast('❌ Be kell jelentkezni!');
+    if (!confirm('Biztosan le szeretnéd mondani az előfizetésedet? A hitelesítési előzmények és HUMANO ID megmaradnak.')) return;
+    try {
+        const { error } = await db.from('profiles').update({
+            plan: 'free',
+            monthly_credits: 1
+        }).eq('id', currentUser.id);
+        if (error) throw error;
+        showToast('✅ Előfizetés lemondva – ingyenes csomagra visszaállítva.');
+        loadProfile();
+    } catch (err) {
+        showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
+    }
+}
+
+async function deleteAccount() {
+    if (!currentUser) return showToast('❌ Be kell jelentkezni!');
+    const confirm1 = confirm('Biztosan törölni szeretnéd a fiókodat? Ez visszafordíthatatlan – minden adat törlődik (a blokkláncon rögzített hash-ek kivételével).');
+    if (!confirm1) return;
+    const confirm2 = confirm('Utolsó megerősítés: a fiók és az összes adat véglegesen törlődik. Folytatod?');
+    if (!confirm2) return;
+    try {
+        await db.from('documents').delete().eq('author_id', currentUser.id);
+        await db.from('profiles').delete().eq('id', currentUser.id);
+
+        const session = await db.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        if (token) {
+            await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        await db.auth.signOut();
+        showToast('✅ Fiók törölve.');
+        showPage('landing');
+    } catch (err) {
+        showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
+    }
 }
 
 
