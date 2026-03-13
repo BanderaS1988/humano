@@ -146,12 +146,12 @@ function _onSectionActivated(hash) {
     if (hash === 'profile') loadProfile();
     if (hash === 'verify-unified') loadLatestRegistryUnified();
     if (hash === 'supporters') trackEvent('Subscription_Click', {});
+    if (hash === 'roadmap') loadFeatureVotes();   // ← EZT ADD HOZZÁ
     if (hash === 'editor') {
         setTimeout(() => {
             document.getElementById('doc-title-input')?.focus();
             initPulseCanvas();
             checkDraftsOnEditorOpen();
-            // ÚJ: Editor inicializálás meghívása
             if (typeof editorInit === 'function') editorInit();
         }, 200);
     }
@@ -3575,6 +3575,105 @@ async function toggleDocPublic(docId, currentlyPublic) {
 
     showToast(newState ? '🌐 Dokumentum nyilvánosra állítva.' : '🔒 Dokumentum privátba visszavonva.');
 }
+
+/* ─── FUNKCIÓ SZAVAZÓ ───────────────────────────────────────── */
+const FEATURE_LIST = [
+    { id: 'mobile_app', label: '📱 Mobilalkalmazás (iOS / Android)', desc: 'Natív app a hitelesítéshez és ellenőrzéshez.' },
+    { id: 'word_plugin', label: '📝 Microsoft Word / Google Docs plugin', desc: 'Közvetlenül a szövegszerkesztőből hitelesíts.' },
+    { id: 'team_workspace', label: '👥 Csapat munkaterület', desc: 'Közös felület szerkesztőknek, tanároknak, céges csapatoknak.' },
+    { id: 'ai_compare', label: '🤖 AI-összehasonlító mód', desc: 'Mutassa meg, mennyire különbözik a te ritmusod az AI-étól.' },
+    { id: 'multilang', label: '🌍 Teljes angol / német felület', desc: 'Nemzetközi használathoz – nem csak magyar.' },
+    { id: 'version_diff', label: '🔀 Verzió-összehasonlító (diff nézet)', desc: 'Két verzió közötti különbségek vizualizálva.' },
+    { id: 'plagiarism_check', label: '🔍 Plágiumellenőrző integráció', desc: 'Automatikus ellenőrzés hitelesítés előtt.' },
+    { id: 'school_panel', label: '🏫 Iskolai / intézményi panel', desc: 'Tanároknak: diákok beadott munkáinak áttekintése.' },
+    { id: 'api_webhook', label: '🔗 Webhook / API értesítések', desc: 'Értesítés hitelesítéskor saját rendszeredbe.' },
+    { id: 'dark_light', label: '☀️ Világos téma opció', desc: 'Váltható sötét / világos megjelenés.' },
+];
+
+let fvCounts = {};
+let fvVoted = JSON.parse(localStorage.getItem('humano_fv_voted') || '{}');
+
+async function loadFeatureVotes() {
+    const { data } = await db.from('feature_votes').select('feature_id');
+    fvCounts = {};
+    (data || []).forEach(r => {
+        fvCounts[r.feature_id] = (fvCounts[r.feature_id] || 0) + 1;
+    });
+    renderFeatureVotes();
+}
+
+function renderFeatureVotes() {
+    const el = document.getElementById('fv-list');
+    if (!el) return;
+
+    const sorted = [...FEATURE_LIST].sort((a, b) =>
+        (fvCounts[b.id] || 0) - (fvCounts[a.id] || 0)
+    );
+    const maxVotes = Math.max(1, ...Object.values(fvCounts), 1);
+
+    el.innerHTML = sorted.map(f => {
+        const votes = fvCounts[f.id] || 0;
+        const voted = !!fvVoted[f.id];
+        const pct = Math.round((votes / maxVotes) * 100);
+
+        return `
+        <div style="background:var(--surface2);border:1px solid ${voted ? 'var(--gold4)' : 'var(--border)'};
+                    border-radius:var(--r);padding:.9rem 1.1rem;transition:border-color .2s">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:var(--text);font-size:.9rem;margin-bottom:.2rem">${f.label}</div>
+              <div style="font-size:.75rem;color:var(--muted);line-height:1.5">${f.desc}</div>
+            </div>
+            <button
+              onclick="castVote('${f.id}')"
+              style="flex-shrink:0;background:${voted ? 'rgba(201,168,76,.15)' : 'var(--surface3)'};
+                     border:1.5px solid ${voted ? 'var(--gold)' : 'var(--border)'};
+                     border-radius:var(--r-sm);padding:.4rem .9rem;cursor:${voted ? 'default' : 'pointer'};
+                     color:${voted ? 'var(--gold)' : 'var(--muted)'};font-size:.8rem;font-weight:700;
+                     display:flex;align-items:center;gap:.4rem;white-space:nowrap;min-width:72px;
+                     justify-content:center;transition:all .2s"
+              ${voted ? 'disabled' : ''}>
+              ${voted ? '✓' : '＋'} <span>${votes}</span>
+            </button>
+          </div>
+          <div style="margin-top:.65rem;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${voted ? 'var(--gold)' : 'rgba(201,168,76,.35)'};
+                        border-radius:2px;transition:width .4s"></div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+async function castVote(featureId) {
+    if (fvVoted[featureId]) return;
+
+    fvCounts[featureId] = (fvCounts[featureId] || 0) + 1;
+    fvVoted[featureId] = true;
+    localStorage.setItem('humano_fv_voted', JSON.stringify(fvVoted));
+    renderFeatureVotes();
+
+    const { error } = await db.from('feature_votes').insert({
+        feature_id: featureId,
+        user_id: currentUser?.id || null,
+        voter_ip: null,
+    });
+
+    if (error) {
+        if (error.code === '23505') {
+            showToast('⚠️ Erre a funkcióra már szavaztál.');
+        } else {
+            fvCounts[featureId] = Math.max(0, (fvCounts[featureId] || 1) - 1);
+            delete fvVoted[featureId];
+            localStorage.setItem('humano_fv_voted', JSON.stringify(fvVoted));
+            renderFeatureVotes();
+            showToast('❌ Hiba: ' + error.message);
+        }
+        return;
+    }
+
+    showToast('✦ Szavazat rögzítve – köszönjük!');
+}
+
 
 /* ─── 27. INICIALIZÁLÁS ─────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
