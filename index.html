@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>HUMANO – Az emberi alkotás digitális hitelesítője</title>
+  <meta name="description" content="Kriptográfiai szöveg-hitelesítés. Bitcoin blokklánc időbélyeg. Az emberi munka tanúja az AI-korszakban."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="shared_css.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opentimestamps@1.0.1/dist/opentimestamps.min.js"></script>
+
+  <style>
+    /* ── PASTE ALLOWED BANNER ── */
+    .paste-allowed-banner {
+      background: rgba(201,168,76,.06);
+      border: 1px solid var(--gold4);
+      border-radius: var(--r-sm);
+      padding: .65rem 1rem;
+      font-size: .78rem;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .5rem;
+    }
+    /* ── PASTE HIGHLIGHT ── */
+    .pasted-segment {
+  background: rgba(201,168,76,.13);
+  border-bottom: 1.5px dashed var(--gold3);
+  border-radius: 2px;
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+}
+    /* ── ENTROPIA ── */
+    .entropy-bar-wrap {
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: .35rem 0;
+    }
+    .entropy-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s, background .4s;
+    }
+    /* ── ROADMAP fix ── */
+    .phase-item.done { color: var(--success); }
+    .phase-item.todo { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav id="nav">
+  <div class="nav-logo gt" onclick="showPage('landing')">
+    <div class="nav-logo-emblem">✦</div>
+    HUMANO
+  </div>
+  <button class="hamburger" id="hamburger-btn" onclick="toggleNav()" aria-label="Menü">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="nav-links">
+    <span class="nav-link" onclick="showPage('landing')">Főoldal</span>
+    <div class="nav-divider"></div>
+    <span class="nav-link" onclick="showPage('verify-unified')">Ellenőrzés & Registry</span>
+    <span class="nav-link" onclick="showPage('roadmap')">Roadmap</span>
+    <span class="nav-link" onclick="showPage('supporters')">Előfizetés</span>
+    <span class="nav-link" onclick="showPage('about')">Rólunk</span>
+    <div class="nav-divider"></div>
+    <span class="nav-link" onclick="requireAuth('editor')">Írás</span>
+    <span class="nav-link" onclick="requireAuth('dashboard')">Dashboard</span>
+    <span class="nav-link" onclick="requireAuth('my-docs')">Szövegeim</span>
+    <span class="nav-link" id="admin-nav-link" style="display:none" onclick="showPage('admin')">Admin</span>
+    <span class="nav-link" onclick="showPage('profile')">Profil</span>
+    <div class="nav-divider"></div>
+    <select id="lang-select" onchange="setLang(this.value)">
+      <option value="hu">🇭🇺 HU</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="de">🇩🇪 DE</option>
+    </select>
+  </div>
+  <div class="nav-actions">
+    <span id="nav-user" style="font-size:.76rem;color:var(--muted);display:none;font-family:var(--font-mono)"></span>
+    <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('auth')">Belépés</button>
+    <button class="btn btn-gold btn-sm" id="nav-logout-btn" onclick="doLogout()" style="display:none">Kilépés</button>
+  </div>
+</nav>
+
+<!-- ═══ LANDING ═══ -->
+<div id="page-landing" class="page active">
+  <section class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Amikor mindenki AI-t használ, az emberi kéz nyoma válik a legritkább kincsé.
+      </div>
+      <h1 class="gt" id="hero-h1">HUMANO</h1>
+      <div class="hero-subtitle">Az emberi alkotás digitális hitelesítője.</div>
+      <div class="gold-line" style="margin:1.5rem auto"></div>
+      <p class="hero-desc">
+        Nem a végeredményt, hanem a <strong style="color:var(--gold2)">keletkezést</strong> hitelesítjük.
+        Billentyűleütés-dinamika, kriptográfiai ujjlenyomat és Bitcoin blokklánc időbélyeg –
+        matematikailag megcáfolhatatlan alkotói napló.
+      </p>
+      <div class="hero-actions" id="hero-actions">
+        <button class="btn btn-gold btn-xl" onclick="showPage('auth')">✦ Regisztráció – ingyenes</button>
+        <button class="btn btn-outline btn-xl" onclick="showPage('verify-unified')">Szöveg ellenőrzése</button>
+      </div>
+      <div class="hero-actions" id="hero-actions-loggedin" style="display:none">
+        <button class="btn btn-gold btn-xl" onclick="requireAuth('editor')">✦ Új szöveg rögzítése</button>
+        <button class="btn btn-outline btn-xl" onclick="requireAuth('dashboard')">→ Dashboard</button>
+      </div>
+      <div class="hero-trust">
+        <div class="hero-trust-item"><span>🔒</span><span>SHA-256 kriptográfia</span><span onclick="showDetailedInfo('sha256')" style="cursor:pointer;margin-left:5px">ⓘ</span></div>
+        <div class="hero-trust-item"><span>⛓️</span><span>Bitcoin blokklánc</span><span onclick="showDetailedInfo('bitcoin')" style="cursor:pointer;margin-left:5px">ⓘ</span></div>
+        <div class="hero-trust-item"><span>⚡</span><span>Valós idejű rögzítés</span><span onclick="showDetailedInfo('realtime')" style="cursor:pointer;margin-left:5px">ⓘ</span></div>
+        <div class="hero-trust-item"><span>🌐</span><span>Nyilvánosan ellenőrizhető</span><span onclick="showDetailedInfo('public')" style="cursor:pointer;margin-left:5px">ⓘ</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats-strip">
+    <div class="stats-strip-inner">
+      <div class="stat-item"><div class="stat-val gt" id="stat-docs">–</div><div class="stat-label">Hitelesített szöveg</div></div>
+      <div class="stat-item"><div class="stat-val gt" id="stat-users">–</div><div class="stat-label">Alkotó</div></div>
+      <div class="stat-item"><div class="stat-val gt">100%</div><div class="stat-label">Blokklánc-rögzített</div></div>
+      <div class="stat-item"><div class="stat-val gt">∞</div><div class="stat-label">Érvényes örökre</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ ANALYTICS + ÉLŐFEED + Legjobb Alkotók ═══ -->
+<section class="section" style="border-top:1px solid var(--border);padding:2.5rem 0">
+  <div class="container">
+
+    <!-- Analytics sor -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2.5rem">
+      <div class="card" style="text-align:center;padding:1.25rem">
+        <div class="gt" id="stat-active-users" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Aktív alkotó (30 nap)</div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.25rem">
+        <div class="gt" id="stat-new-this-week" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Új regisztráció (7 nap)</div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.25rem">
+        <div class="gt" id="stat-docs-today" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Mai hitelesítések</div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.25rem">
+        <div class="gt" id="stat-avg-human" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Átlag Humán Index</div>
+      </div>
+      <!-- Milestone -->
+      <div class="card" style="text-align:center;padding:1.25rem;border-color:var(--gold4);background:rgba(201,168,76,.03)">
+        <div style="font-size:.65rem;color:var(--gold3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:.4rem">🎯 Következő mérföldkő</div>
+        <div class="gt" id="stat-milestone-left" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px" id="stat-milestone-label">az 1000. hitelesítésig</div>
+        <div style="height:4px;background:var(--surface3);border-radius:2px;margin-top:.75rem;overflow:hidden">
+          <div id="stat-milestone-bar" style="height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold));border-radius:2px;transition:width .6s;width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Élő feed + Top Alkotók -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+      <!-- Élő feed -->
+      <div class="card">
+        <div style="font-size:.75rem;font-weight:700;color:var(--gold2);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:1rem">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:.4rem;animation:pulse-dot 1.5s infinite"></span>
+          Élő hitelesítési feed
+        </div>
+        <div id="live-feed-list" style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem">⏳ Betöltés...</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:.75rem" onclick="loadLiveFeed()">⟳ Frissítés</button>
+      </div>
+
+      <!-- Top Alkotók -->
+      <div class="card">
+        <div style="font-size:.75rem;font-weight:700;color:var(--gold2);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:1rem">
+          🏆 Top Alkotók – legjobb Humán Index
+        </div>
+        <div id="hall-of-fame-list" style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem">⏳ Betöltés...</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:.75rem" onclick="loadHallOfFame()">⟳ Frissítés</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:.4; transform:scale(1.3); }
+}
+</style>
+
+  <section class="section" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="container">
+      <div class="section-header">
+        <h2><span class="gt">Hogyan működik?</span></h2>
+        <p>Öt pilléren álló, átlátható hitelesítési folyamat.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem">
+        <div class="how-step"><div class="step-num">1</div><div class="step-content"><h3>✍️ Írj a felületen</h3><p>A rendszer valós időben rögzíti a billentyűleütések időintervallumait és ritmusát. Beillesztés esetén a tanúsítványon megjelenik a kézzel gépelt és beillesztett részek aránya.</p></div></div>
+        <div class="how-step"><div class="step-num">2</div><div class="step-content"><h3>🧠 Biometrikus rögzítés</h3><p>Milliszekundumos pontossággal méri az írási ritmust, szüneteket, javításokat és ablakváltásokat – tartalom megismerése nélkül.</p></div></div>
+        <div class="how-step"><div class="step-num">3</div><div class="step-content"><h3>📊 Valós idejű pulzusgrafikon</h3><p>Írás közben látod a saját gépelési ritmusodat és a Humán Index pontszámodat.</p></div></div>
+        <div class="how-step"><div class="step-num">4</div><div class="step-content"><h3>🔒 SHA-256 + Időbélyeg</h3><p>A szöveg SHA-256 hash-e az OpenTimestamps protokollon keresztül a Bitcoin blokkláncba kerül – megváltoztathatatlanul.</p></div></div>
+        <div class="how-step"><div class="step-num">5</div><div class="step-content"><h3>🌐 Örökre ellenőrizhető</h3><p>A HUMANO ID-val bárki visszaellenőrizheti a hitelesítési adatokat, QR kóddal is.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-sm" style="text-align:center;border-top:1px solid var(--border)">
+    <div class="container">
+      <h2 style="font-family:var(--font-display);font-size:2.5rem;font-weight:600;margin-bottom:1rem">Kezdd el <span class="gt">ingyen</span> ma.</h2>
+      <p style="color:var(--muted);margin-bottom:2.5rem;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.8">Havi 1 hitelesítés, örökérvényű HUMANO ID – regisztráció egy percen belül.</p>
+      <button class="btn btn-gold btn-xl" onclick="showPage('auth')">✦ Ingyenes regisztráció</button>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ AUTH ═══ -->
+<div id="page-auth" class="page">
+  <div class="auth-wrap">
+    <div class="auth-box card card-glow">
+      <div class="auth-header">
+        <div class="gt" style="font-family:var(--font-display);font-size:2rem;font-weight:700;letter-spacing:3px;margin-bottom:.4rem">✦ HUMANO ✦</div>
+        <p style="color:var(--muted);font-size:.85rem">Az emberi alkotás digitális hitelesítője</p>
+      </div>
+      <div class="tab-sw">
+        <button class="tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')">Belépés</button>
+        <button class="tab-btn" id="tab-reg-btn" onclick="switchAuthTab('register')">Regisztráció</button>
+      </div>
+      <div id="auth-alert"></div>
+      <div id="auth-login">
+        <div class="form-group"><label class="form-label">E-mail cím</label><input class="form-control" id="l-email" type="email" placeholder="email@example.com"/></div>
+        <div class="form-group"><label class="form-label">Jelszó</label><input class="form-control" id="l-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn btn-gold" style="width:100%;padding:.8rem;margin-top:.5rem" onclick="doLogin()">✦ Belépés</button>
+      </div>
+      <div id="auth-reg" style="display:none">
+        <div style="background:var(--surface2);border:1px dashed var(--gold4);border-radius:var(--r-sm);padding:1rem;text-align:center;margin-bottom:1.25rem">
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px;font-family:var(--font-mono)">A te HUMANO ID-d lesz:</div>
+          <div class="gt" id="id-preview" style="font-size:1rem;font-weight:800;letter-spacing:2px;font-family:var(--font-mono)">–</div>
+        </div>
+        <div class="form-group"><label class="form-label">Felhasználónév</label><input class="form-control" id="r-user" type="text" placeholder="pl. kovacs_peter" oninput="updateIdPreview()"/></div>
+        <div class="form-group"><label class="form-label">E-mail cím</label><input class="form-control" id="r-email" type="email" placeholder="email@example.com"/></div>
+        <div class="form-group"><label class="form-label">Jelszó</label><input class="form-control" id="r-pass" type="password" placeholder="••••••••"/></div>
+        <div class="form-group"><label class="form-label">Jelszó megerősítése</label><input class="form-control" id="r-pass2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">A regisztrációval elfogadod az <span onclick="showPage('privacy')" style="color:var(--gold);cursor:pointer">Adatkezelési Tájékoztatót</span>.</div>
+        <button class="btn btn-gold" style="width:100%;padding:.8rem" onclick="doRegister()">✦ Regisztráció</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDITOR ═══ -->
+<div id="page-editor" class="page">
+  <div id="editor-wrap">
+    <div class="page-wrap">
+      <div class="editor-layout">
+
+        <!-- BAL: FŐ SZERKESZTŐ -->
+        <div class="editor-main">
+
+          <!-- Topbar -->
+          <div class="editor-topbar">
+            <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--gold2)">✦ Új szöveg hitelesítése</div>
+            <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
+              <div class="status-indicator">
+                <span class="status-dot dot-idle" id="e-dot"></span>
+                <span style="font-size:.74rem;color:var(--muted);font-family:var(--font-mono)" id="e-status">Várakozás...</span>
+              </div>
+              <span class="badge badge-muted" id="e-version-badge">v1</span>
+              <button class="btn btn-outline btn-sm" onclick="editorClear()">🗑 Törlés</button>
+              <button class="btn btn-gold btn-sm" id="btn-save" onclick="editorSave()" disabled>🔒 Hitelesítés & Mentés</button>
+            </div>
+          </div>
+
+          <!-- HUMANO ALAPELV sáv -->
+          <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:var(--r-sm);padding:.75rem 1.1rem;font-size:.78rem;color:var(--muted);line-height:1.7;margin-bottom:.25rem">
+            <strong style="color:var(--gold2)">📖 Hogyan hitelesít a HUMANO?</strong>
+            A rendszer a <em>tartalom</em> helyett a <strong style="color:var(--gold)">keletkezés folyamatát</strong> rögzíti: billentyűleütések időintervallumait, írási ritmust, szüneteket és javításokat. A tanúsítvány tényeket közöl – nem ítéletet. Beillesztés esetén az arány átláthatóan megjelenik a tanúsítványon.
+          </div>
+
+          <!-- Figyelmeztetések -->
+          <div id="e-paste-warn" style="display:none" class="alert alert-warn">
+            ⚠️ Beillesztés érzékelve – a szöveg tanúsítványán a kézzel gépelt / beillesztett arány feltüntetésre kerül. <button class="btn btn-ghost btn-sm" onclick="allowPaste()" style="margin-left:.5rem;font-size:.74rem">Elfogadom & Engedélyezem</button>
+          </div>
+          <div id="e-paste-allowed-banner" class="paste-allowed-banner" style="display:none">
+            📋 Beillesztés engedélyezve – az arány megjelenik a tanúsítványon.
+          </div>
+          <div id="e-rhythm-warn" style="display:none" class="alert alert-warn">⚠️ Szokatlan gépelési ritmus – a rendszer gyanús mintázatot észlelt (pl. irreális sebesség).</div>
+
+          <!-- Cím -->
+          <input type="text" id="doc-title-input" placeholder="A szöveg címe..." autocomplete="off">
+
+          <!-- Szófigyelmeztetés -->
+          <div id="e-word-warn" style="display:none" class="word-warn">
+            📝 Minimum 100 szó szükséges – még <strong id="e-words-left">100</strong> szó hiányzik.
+          </div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <button onmousedown="event.preventDefault()" onclick="fmt('bold')" title="Félkövér"><strong>B</strong></button>
+            <button onmousedown="event.preventDefault()" onclick="fmt('italic')" title="Dőlt"><em>I</em></button>
+            <button onmousedown="event.preventDefault()" onclick="fmt('underline')" title="Aláhúzott" style="text-decoration:underline">U</button>
+            <span class="t-sep"></span>
+            <button onmousedown="event.preventDefault()" onclick="insertLink()">🔗 Link</button>
+            <button onmousedown="event.preventDefault()" onclick="insertImg()">🖼️ Kép</button>
+            <span class="t-sep"></span>
+            <button onmousedown="event.preventDefault()" onclick="fmt('insertUnorderedList')">• Lista</button>
+            <button onmousedown="event.preventDefault()" onclick="fmt('insertOrderedList')">1. Lista</button>
+            <div style="flex:1"></div>
+            <button onmousedown="event.preventDefault()" onclick="togglePreview()">👁️ Előnézet</button>
+          </div>
+
+          <!-- Szövegmező -->
+          <div id="doc-content-area" contenteditable="true" spellcheck="false" data-placeholder="Kezdj el írni… A rendszer a billentyűleütések dinamikája alapján rögzíti az alkotás folyamatát."></div>
+
+          <!-- Előnézet -->
+          <div id="preview-panel" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+              <h4 style="font-family:var(--font-display);color:var(--gold2);margin:0">📄 Formázott előnézet</h4>
+              <button class="btn btn-outline btn-sm" onclick="togglePreview()">✕ Bezárás</button>
+            </div>
+            <div id="preview-content" style="min-height:150px;color:var(--text);line-height:1.8"></div>
+          </div>
+
+          <!-- Statisztika sáv -->
+          <div class="status-bar">
+            <span>Kar: <strong id="s-chars">0</strong></span>
+            <span>Szó: <strong id="s-words">0</strong></span>
+            <span>Leütés: <strong id="s-keys">0</strong></span>
+            <span>Törlés: <strong id="s-dels">0</strong></span>
+            <span>Szünet: <strong id="s-pauses">0</strong></span>
+            <span>Ablakváltás: <strong id="s-focus">0</strong></span>
+            <span>Tempó: <strong id="s-speed">–</strong>/perc</span>
+            <span>Humán Index: <strong id="s-human">–</strong></span>
+          </div>
+
+          <!-- Beillesztés arány -->
+          <div id="paste-ratio-bar" style="display:none;margin-top:.25rem">
+            <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.25rem">
+              Kézzel gépelt: <strong id="typed-pct" style="color:var(--gold)">–%</strong> &nbsp;|&nbsp; Beillesztett: <strong id="pasted-pct" style="color:var(--gold3)">–%</strong>
+            </div>
+            <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+              <div id="typed-bar" style="height:100%;background:linear-gradient(90deg,var(--success),var(--gold));border-radius:2px;transition:width .4s"></div>
+            </div>
+          </div>
+
+        <!-- Entrópia sáv -->
+<div style="margin-top:.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;font-size:.68rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.2rem">
+    <span>⚡ Ritmus-entrópia</span>
+    <span id="entropy-label">–</span>
+  </div>
+  <div class="entropy-bar-wrap">
+    <div class="entropy-bar-fill" id="entropy-fill" style="width:0%;background:var(--muted2)"></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.25rem">
+    <div style="font-size:.64rem;color:var(--muted2);font-family:var(--font-mono)">
+      Minél magasabb, annál változatosabb és emberibb a gépelési ritmus.
+    </div>
+    <button
+      onclick="openEntropyInfo()"
+      style="background:none;border:1px solid var(--gold4);border-radius:50%;width:16px;height:16px;font-size:.6rem;color:var(--gold3);cursor:pointer;flex-shrink:0;padding:0;line-height:1"
+      title="Mi ez?">ⓘ</button>
+  </div>
+</div>
+
+          <!-- Opciók -->
+          <div class="options-row" style="margin-top:.75rem">
+            <input type="email" class="form-control" id="target-email-input" placeholder="📧 Fogadó e-mail (opcionális)" style="flex:1;min-width:220px">
+            <div class="public-toggle" onclick="togglePublic()">
+              <input type="checkbox" id="doc-is-public">
+              <div>
+                <div style="font-size:.8rem;font-weight:600">Nyilvános Registry-ben</div>
+                <div style="font-size:.68rem;color:var(--muted)">Csak metaadatok – tartalom nem látható</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CERT PANEL -->
+          <div id="cert-panel" style="display:none" class="card cert-panel">
+              <input type="hidden" id="timelapse-doc-input" value="">
+
+            <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.35rem">✦ Szöveg hitelesítve</div>
+            <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
+
+            <div class="cert-id-box">
+              <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono)">Dokumentum azonosító</div>
+              <div class="cert-id-val" id="cert-id-val">–</div>
+              <div style="font-size:.65rem;color:var(--muted);margin-top:.65rem;font-family:var(--font-mono)">SHA-256 lenyomat</div>
+              <div class="cert-hash-val" id="cert-hash-val">–</div>
+            </div>
+
+
+
+            <!-- Beillesztés arány a tanúsítványon -->
+            <div id="cert-paste-ratio" style="display:none;margin-top:.75rem;background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem">
+              <div style="font-size:.68rem;font-weight:700;color:var(--gold3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.4rem">📋 Szöveg összetétele</div>
+              <div style="font-size:.8rem;color:var(--muted)">
+                Kézzel gépelt: <strong id="cert-typed-pct" style="color:var(--gold)">–%</strong> &nbsp;|&nbsp;
+                Beillesztett: <strong id="cert-pasted-pct" style="color:var(--gold3)">–%</strong>
+              </div>
+              <div style="font-size:.7rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)">A hitelesítés súlya a kézzel gépelt tartalmon van.</div>
+            </div>
+
+            <!-- OTS badge -->
+            <div style="margin-top:1rem">
+              <span class="badge badge-muted" id="cert-ots-badge">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
+              <button class="btn btn-outline btn-sm" id="btn-ots-refresh" onclick="refreshOtsStatus()" style="display:none;margin-left:.5rem">🔄 Frissítés</button>
+              <button class="btn btn-outline btn-sm" id="btn-ots-download" onclick="downloadOtsFile(E.certDocId)" style="display:none;margin-left:.5rem">⬇️ .ots letöltés</button>
+            </div>
+
+            <div id="cert-ots-verify-box" style="display:none;margin-top:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
+              <a id="cert-ots-link" href="#" target="_blank" class="btn btn-outline btn-sm">🔗 Ellenőrzés opentimestamps.org-on</a>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-wrap" style="margin-top:1.1rem">
+              <div class="tl-item">
+                <div class="tl-dot done">✓</div>
+                <div class="tl-body"><div class="tl-label">SHA-256 hash kiszámítva</div><div class="tl-time" id="tl-hash-time">–</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot done">✓</div>
+                <div class="tl-body"><div class="tl-label">HUMANO adatbázisba mentve</div><div class="tl-time" id="tl-db-time">–</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot pending" id="tl-ots-dot">⏳</div>
+                <div class="tl-body"><div class="tl-label">OpenTimestamps – Bitcoin blokklánc</div><div class="tl-time" id="tl-ots-time">Feldolgozás folyamatban (~1 óra)...</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot done" id="tl-public-dot">✓</div>
+                <div class="tl-body"><div class="tl-label">Registry-be kerülve</div><div class="tl-time">–</div></div>
+              </div>
+            </div>
+
+            <!-- QR -->
+            <div style="margin-top:1.1rem">
+              <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód – mobil ellenőrzéshez</div>
+              <div class="qr-wrap" id="cert-qr-container"></div>
+            </div>
+
+            <!-- Badge -->
+            <div style="margin-top:1.1rem">
+              <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható HUMANO Pecsét</div>
+              <div style="margin-bottom:.6rem">
+                <a id="badge-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;background:rgba(6,6,8,.95);border:1.5px solid var(--gold);font-family:var(--font-display);font-size:12px;color:var(--gold);text-decoration:none;">
+                  ✦ <span><strong id="badge-doc-id-label" style="display:block;font-size:11px;letter-spacing:.5px">HUMANO HITELESÍTETT</strong></span>
+                </a>
+              </div>
+              <div style="font-size:.68rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--font-mono)">HTML kód (kattints a másoláshoz):</div>
+              <div class="badge-embed-box" id="badge-html-code" onclick="copyBadgeCode()" title="Kattints a másoláshoz">–</div>
+            </div>
+
+            <!-- Megosztás -->
+            <div style="margin-top:1.1rem;background:var(--surface2);border:1px solid var(--gold4);border-radius:var(--r);padding:1.25rem">
+              <div style="font-size:.75rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás & Küldés</div>
+              <div class="share-grid">
+                <button class="share-btn" onclick="shareCopyClipboard()"><span class="sb-icon">📋</span><span class="sb-label">Vágólapra</span><span class="sb-desc">Szöveg + DOC ID + link</span></button>
+                <button class="share-btn" onclick="openSendEmailModal()"><span class="sb-icon">📧</span><span class="sb-label">Email küldés</span><span class="sb-desc">Hitelesítési adatok</span></button>
+                <button class="share-btn" onclick="downloadPdfCert()"><span class="sb-icon">📄</span><span class="sb-label">PDF Tanúsítvány</span><span class="sb-desc">QR kóddal, biometrikus adatokkal</span></button>
+                <button class="share-btn" onclick="copyVerifyLink()"><span class="sb-icon">🔗</span><span class="sb-label">Megosztási link</span><span class="sb-desc">humano.hu/verify/...</span></button>
+              </div>
+            </div>
+
+
+     <!-- Timelapse -->
+            <div id="tl-widget" style="display:none;margin-top:1rem">
+              <button class="btn btn-outline" style="width:100%;padding:.65rem"
+                      onclick="openTlModal()">▶ Alkotói idővonal megtekintése</button>
+            </div>
+
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
+              <button class="btn btn-outline btn-sm" onclick="copyId()">📋 ID másolása</button>
+              <button class="btn btn-outline btn-sm" onclick="copyBadgeCode()">🏷️ Badge kód</button>
+            </div>
+
+          </div><!-- /cert-panel -->
+
+        </div><!-- /editor-main -->
+
+        <!-- JOBB: SIDEBAR -->
+        <div class="editor-sidebar">
+
+          <!-- Pulzusgrafikon -->
+          <div class="pulse-wrap">
+            <div class="pulse-title">
+              <span class="status-dot dot-idle" id="sidebar-dot"></span>
+              Élő Pulzusgrafikon
+            </div>
+            <canvas id="pulse-canvas" width="340" height="80"></canvas>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.5rem;gap:.5rem">
+              <div style="font-size:.68rem;color:var(--muted)">Gépelési ritmus valós idejű vizualizációja</div>
+              <div style="display:flex;gap:.4rem">
+                <button class="btn btn-outline btn-sm" onclick="openPulseInfo()" style="font-size:.68rem;padding:.22rem .55rem;white-space:nowrap">ℹ️ Mi ez?</button>
+                <button class="btn btn-outline btn-sm" onclick="savePulseImage()" style="font-size:.68rem;padding:.22rem .55rem;white-space:nowrap">📸 Mentés</button>
+              </div>
+            </div>
+            <div class="pause-insight" id="pause-insight" style="display:none"></div>
+          </div>
+
+          <!-- Humán Index -->
+          <div class="rhythm-card">
+            <div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.35rem">Humán Index</div>
+            <div class="rhythm-val" id="human-index">–%</div>
+            <div style="font-size:.72rem;color:var(--muted)">Billentyűleütés-dinamika alapján</div>
+            <div class="human-bar" style="margin-top:.5rem"><div class="human-bar-fill" id="human-pct-fill" style="width:0%"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:.5rem">
+              <div style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)">Ritmus σ (szórás)</div>
+              <div style="font-family:var(--font-display);font-size:1.1rem;color:var(--gold)" id="rhythm-var">–</div>
+            </div>
+          </div>
+
+          <!-- Munkamenet statisztika -->
+          <div class="card">
+            <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.8rem;text-transform:uppercase;font-family:var(--font-mono)">📊 Munkamenet</div>
+            <div class="stats-grid">
+              <div class="stat-box"><div class="stat-val" id="sidebar-keys">0</div><div class="stat-lbl">Leütés</div></div>
+              <div class="stat-box"><div class="stat-val" id="sidebar-dels">0</div><div class="stat-lbl">Javítás</div></div>
+              <div class="stat-box"><div class="stat-val" id="sidebar-pauses">0</div><div class="stat-lbl">Szünet</div></div>
+              <div class="stat-box"><div class="stat-val" id="sidebar-focus">0</div><div class="stat-lbl">Ablakváltás</div></div>
+              <div class="stat-box stat-full"><div class="stat-val" id="sidebar-time">00:00</div><div class="stat-lbl">Írási idő</div></div>
+            </div>
+          </div>
+
+          <!-- HUMANO elv panel -->
+          <div class="card" style="border-color:rgba(201,168,76,.18);background:rgba(201,168,76,.02)">
+            <div style="font-size:.74rem;font-weight:700;color:var(--gold2);margin-bottom:.6rem">✦ A HUMANO alapelve</div>
+            <div style="font-size:.75rem;color:var(--muted);line-height:1.75">
+              A rendszer <strong style="color:var(--text)">nem tartalom-elemző</strong>, hanem <strong style="color:var(--text)">alkotási napló</strong>. A billentyűleütések időintervallumait, ritmusát és szünetekeit rögzíti – a szöveg tartalmának megismerése nélkül.<br><br>
+              A tanúsítvány tényeket közöl, nem ítéletet – az ellenőrző fél dönti el, mi az elfogadható.
+            </div>
+          </div>
+
+          <!-- Profi tipp -->
+          <div class="card" style="border-color:rgba(201,168,76,.1)">
+            <div style="font-size:.76rem;color:var(--gold);font-weight:700;margin-bottom:.4rem">💡 Profi tipp</div>
+<div style="font-size:.76rem;color:var(--muted);line-height:1.7" id="editor-tip">Írj természetesen, tarts szüneteket gondolkodás közben – ez növeli a ritmus-változatosságot.</div>          </div>
+
+        </div><!-- /sidebar -->
+      </div><!-- /editor-layout -->
+    </div><!-- /page-wrap -->
+  </div><!-- /editor-wrap -->
+</div><!-- /page-editor -->
+
+<!-- ═══ VERIFY UNIFIED ═══ -->
+<div id="page-verify-unified" class="page">
+  <div style="max-width:1000px;margin:0 auto;padding:2rem">
+
+    <!-- FEJLÉC -->
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:600;margin-bottom:.5rem">
+        Ellenőrzés & <span class="gt">Nyilvános Jegyzék</span>
+      </h1>
+      <p style="color:var(--muted);max-width:640px;margin:0 auto;font-size:.95rem;line-height:1.8">
+        A HUMANO nem a szöveg tartalmát mutatja meg – hanem azt bizonyítja, hogy <strong style="color:var(--gold)">ki, mikor és hogyan írta</strong>. 
+        A DOC ID vagy SHA-256 hash alapján bárki ellenőrizheti a hitelesítés tényét.
+      </p>
+    </div>
+
+    <!-- KERESÉS + REGISTRY -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;margin-bottom:2rem">
+
+      <!-- Ellenőrzés -->
+      <div class="card" style="border-left:3px solid var(--gold)">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+          <span style="font-size:1.6rem">🔍</span>
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin:0">Dokumentum ellenőrzése</h2>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px">DOC ID vagy SHA-256 hash alapján</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+          <input type="text" id="v-input-unified" class="form-control" placeholder="DOC-... vagy sha256 hash">
+          <button class="btn btn-gold" style="white-space:nowrap" onclick="doVerifyUnified()">Ellenőrzés</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;color:var(--muted2);font-size:.7rem"><hr style="flex:1;border-color:var(--border)">VAGY<hr style="flex:1;border-color:var(--border)"></div>
+        <textarea id="v-text-unified" class="form-control" style="min-height:80px;margin-top:.75rem" placeholder="Illeszd be a szöveget – a rendszer kiszámolja a hash-t és megkeresi..."></textarea>
+        <button class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="verifyByTextUnified()">🔍 Szöveg ellenőrzése</button>
+
+        <!-- Magyarázat -->
+        <div style="margin-top:1.25rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:var(--r-sm);padding:.9rem 1rem;font-size:.78rem;color:var(--muted);line-height:1.8">
+          <div style="color:var(--gold2);font-weight:700;margin-bottom:.4rem">ℹ️ Mit jelent az ellenőrzés?</div>
+          <div>A rendszer megmutatja hogy a szöveg <strong style="color:var(--text)">mikor keletkezett</strong>, ki írta, mennyi idő alatt, hány leütéssel – és hogy a Bitcoin blokkláncon rögzítve van-e. A szöveg tartalmát nem tárolja nyilvánosan.</div>
+        </div>
+      </div>
+
+      <!-- Nyilvános Jegyzék -->
+      <div class="card" style="border-left:3px solid var(--gold4)">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+          <span style="font-size:1.6rem">📚</span>
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin:0">Nyilvános Jegyzék</h2>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Csak azok a dokumentumok, ahol a szerző engedélyezte</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+          <input type="text" id="reg-search-unified" class="form-control" placeholder="Keresés DOC ID vagy hash alapján..." onkeyup="if(event.key==='Enter')searchRegistryUnified()">
+          <button class="btn btn-outline btn-sm" onclick="searchRegistryUnified()">🔍</button>
+          <button class="btn btn-outline btn-sm" onclick="loadLatestRegistryUnified()">⟳</button>
+        </div>
+        <div id="reg-stats-unified" style="font-size:.7rem;color:var(--muted);margin-bottom:.75rem;display:none"></div>
+        <div id="reg-results-unified" style="max-height:320px;overflow-y:auto">
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">⏳ Kattints a frissítésre...</div>
+        </div>
+
+        <!-- Magyarázat -->
+        <div style="margin-top:1.25rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:var(--r-sm);padding:.9rem 1rem;font-size:.78rem;color:var(--muted);line-height:1.8">
+          <div style="color:var(--gold2);font-weight:700;margin-bottom:.4rem">ℹ️ Mi látható itt?</div>
+          <div>A szerző döntése alapján nyilvánosságra hozott dokumentumok <strong style="color:var(--text)">DOC ID-ja, dátuma és OTS státusza</strong>. A szöveg tartalma és a részletes biometrikus adatok nem láthatók – csak az ellenőrzés ténye.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EREDMÉNY -->
+    <div id="v-result-unified" style="display:none" class="card">
+
+      <!-- Verdict -->
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <span style="font-size:2.5rem" id="v-icon-unified">✅</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold2)" id="v-title-unified">–</div>
+          <div style="font-size:.88rem;margin-top:4px" id="v-verdict-unified">–</div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Meta grid -->
+      <div class="meta-grid" id="v-meta-unified"></div>
+
+      <!-- Hash -->
+      <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono)">SHA-256 lenyomat</div>
+      <div class="hash-display" id="v-hash-unified">–</div>
+
+      <!-- OTS -->
+      <div style="margin-top:1rem" id="v-ots-section-unified"></div>
+
+      <!-- QR -->
+      <div class="qr-wrap" id="v-qr-container-unified" style="margin-top:1rem"></div>
+
+      <!-- Magyarázat az eredményhez -->
+      <div style="margin-top:1.5rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:var(--r);padding:1.1rem 1.25rem">
+        <div style="font-size:.78rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">📖 Mit jelent ez az eredmény?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;font-size:.78rem;color:var(--muted);line-height:1.75">
+          <div><strong style="color:var(--text)">DOC ID</strong><br>Az egyedi azonosító amivel bárki visszakeresheti ezt a hitelesítést – akár évek múlva is.</div>
+          <div><strong style="color:var(--text)">SHA-256 lenyomat</strong><br>A szöveg matematikai ujjlenyomata. Ha egyetlen betű megváltozik, teljesen más hash keletkezik.</div>
+          <div><strong style="color:var(--text)">Human Index %</strong><br>A billentyűleütések dinamikájából számított pontszám – minél magasabb, annál természetesebb az emberi ritmus.</div>
+          <div><strong style="color:var(--text)">Bitcoin blokklánc</strong><br>Az OpenTimestamps protokoll a hash-t a Bitcoin hálózatba égeti – ez visszavonhatatlan időbélyeg.</div>
+          <div><strong style="color:var(--text)">PDF tanúsítvány</strong><br>Nyomtatható, csatolható bizonyíték – tanárnak, szerkesztőnek, kiadónak küldhető.</div>
+          <div><strong style="color:var(--text)">QR kód</strong><br>Okostelefonnal beolvasva azonnal megnyílik az ellenőrző oldal – bárhol, bármikor.</div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.25rem">
+        <button class="btn btn-gold btn-sm" onclick="downloadUnifiedPdf()">📄 PDF Tanúsítvány</button>
+        <button class="btn btn-outline btn-sm" id="v-ots-dl-btn-unified" style="display:none" onclick="downloadOtsFile(document.getElementById('v-input-unified').value)">⬇️ .ots letöltés</button>
+        <button class="btn btn-outline btn-sm" onclick="copyUnifiedLink()">🔗 Megosztási link</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="page-dashboard" class="page">
+  <div class="dash-wrap">
+    <div class="dash-header">
+      <div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:700">Üdvözöllek, <span class="gt" id="d-username">–</span> ✦</h1>
+        <p style="color:var(--muted);font-size:.82rem;margin-top:4px;font-family:var(--font-mono)" id="d-humano-id">HUMANO ID: –</p>
+      </div>
+      <button class="btn btn-gold" onclick="showPage('editor')">✦ Új szöveg hitelesítése</button>
+    </div>
+    <div class="stat-cards" id="d-stats"></div>
+    <div class="card" style="padding:1.1rem 1.25rem;margin-bottom:2rem">
+      <div style="font-size:.78rem;font-weight:600;margin-bottom:.4rem;color:var(--gold2)">Havi hitelesítési keret</div>
+      <div class="credit-bar-bg"><div class="credit-bar-fill" id="d-credit-bar" style="width:0%"></div></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;font-family:var(--font-mono)" id="d-credit-label">–</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+      <div style="font-size:1rem;font-weight:700;color:var(--gold2)">📄 Hitelesített szövegeim</div>
+      <input type="text" id="d-search" class="form-control" style="width:220px;padding:.4rem .9rem;font-size:.8rem" placeholder="Keresés..." oninput="filterDocs()"/>
+    </div>
+    <div id="d-doc-list"></div>
+
+    <!-- API Kulcsok -->
+    <div class="card" style="margin-top:2rem">
+      <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">🔑 API Kulcsok</div>
+      <div id="d-api-keys-list" style="margin-bottom:1rem"></div>
+      <button class="btn btn-outline btn-sm" onclick="generateApiKey()">✦ Új API kulcs generálása</button>
+    </div>
+
+    <!-- SDK dokumentáció -->
+    <div class="card" style="margin-top:1.25rem;border-color:rgba(201,168,76,.18);background:rgba(201,168,76,.02)">
+      <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">📦 HUMANO SDK – npm csomag</div>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:1rem">
+        Integráld a HUMANO hitelesítést a saját alkalmazásodba az official SDK-val. Használd az API kulcsaidat a lenti kóddal.
+      </p>
+      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem">Telepítés</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.75rem 1rem;font-family:var(--font-mono);font-size:.82rem;color:var(--gold2);margin-bottom:1rem">
+        npm install humano-sdk
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem">Példa</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.85rem 1rem;font-family:var(--font-mono);font-size:.76rem;color:var(--muted);margin-bottom:1rem;line-height:2">
+        <span style="color:var(--gold3)">const</span> { HumanoClient } = <span style="color:var(--gold3)">require</span>(<span style="color:var(--success)">'humano-sdk'</span>);<br>
+        <span style="color:var(--gold3)">const</span> client = <span style="color:var(--gold3)">new</span> HumanoClient(<span style="color:var(--success)">'HMN_KEY_...'</span>);<br><br>
+        <span style="color:var(--muted2)">// Hitelesítés</span><br>
+        <span style="color:var(--gold3)">const</span> result = <span style="color:var(--gold3)">await</span> client.<span style="color:var(--gold)">certify</span>({<br>
+        &nbsp;&nbsp;title: <span style="color:var(--success)">'Dokumentum címe'</span>,<br>
+        &nbsp;&nbsp;content: <span style="color:var(--success)">'A szöveg tartalma...'</span>,<br>
+        &nbsp;&nbsp;authorId: <span style="color:var(--success)">'user-uuid'</span><br>
+        });<br><br>
+        <span style="color:var(--muted2)">// Ellenőrzés</span><br>
+        <span style="color:var(--gold3)">const</span> doc = <span style="color:var(--gold3)">await</span> client.<span style="color:var(--gold)">verify</span>(<span style="color:var(--success)">'DOC-...'</span>);
+</div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <a href="https://www.npmjs.com/package/humano-sdk" target="_blank" class="btn btn-outline btn-sm">📦 npmjs.com/package/humano-sdk</a>
+        <a href="https://github.com/humano-platform/humano-sdk" target="_blank" class="btn btn-outline btn-sm">🐙 GitHub</a>
+      </div>
+      </div>
+
+    <!-- Profil -->
+    <div class="card" style="margin-top:1.25rem">
+      <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">👤 Profil</div>
+      <div id="d-profile-snippet"></div>
+      <button class="btn btn-outline btn-sm" onclick="requireAuth('profile')" style="margin-top:1rem">Profil szerkesztése</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ROADMAP ═══ -->
+<div id="page-roadmap" class="page">
+  <div class="roadmap-wrap">
+    <div style="text-align:center;margin-bottom:3.5rem">
+      <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:.6rem">HUMANO <span class="gt">Roadmap</span></h1>
+      <p style="color:var(--muted)">Ami már megépült – őszintén és nyilvánosan.</p>
+    </div>
+
+    <!-- FÁZIS 1 -->
+    <div class="phase-row">
+      <div class="phase-num done">1</div>
+      <div class="phase-content">
+        <div class="phase-title">Alap platform <span class="badge badge-success" style="font-size:.65rem">Kész</span></div>
+        <div class="phase-sub">2025 Q4</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ SHA-256 kriptográfiai hash – szöveg ujjlenyomata</div>
+          <div class="phase-item done">✓ Supabase (EU) adatbázis – GDPR-kompatibilis tárolás</div>
+          <div class="phase-item done">✓ OpenTimestamps (OTS) integráció – Bitcoin blokklánc időbélyeg</div>
+          <div class="phase-item done">✓ Felhasználói regisztráció és bejelentkezés</div>
+          <div class="phase-item done">✓ Egyedi HUMANO ID minden alkotónak</div>
+          <div class="phase-item done">✓ Nyilvánosan ellenőrizhető dokumentum-registry</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FÁZIS 2 -->
+    <div class="phase-row">
+      <div class="phase-num done">2</div>
+      <div class="phase-content">
+        <div class="phase-title">Billentyűleütés-dinamika & Humán Index <span class="badge badge-success" style="font-size:.65rem">Kész</span></div>
+        <div class="phase-sub">2025 Q4 – 2026 Q1</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ Valós idejű billentyűleütés-rögzítés (keystrokeCount, deletionCount)</div>
+          <div class="phase-item done">✓ Szünet- és ablakváltás-figyelés (pauseCount, focusSwitches)</div>
+          <div class="phase-item done">✓ Gépelési ritmus átlag és szórás (rhythmMeanMs, rhythmStddevMs)</div>
+          <div class="phase-item done">✓ Humán Index számítás és valós idejű megjelenítés</div>
+          <div class="phase-item done">✓ Élő pulzusgrafikon – gépelési ritmus vizualizációja</div>
+          <div class="phase-item done">✓ Ritmus-figyelmeztetések (repeatKeys, rhythmWarnings)</div>
+          <div class="phase-item done">✓ Munkamenet statisztika a sidebar panelben</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FÁZIS 3 -->
+    <div class="phase-row">
+      <div class="phase-num done">3</div>
+      <div class="phase-content">
+        <div class="phase-title">Tanúsítvány & Megosztás <span class="badge badge-success" style="font-size:.65rem">Kész</span></div>
+        <div class="phase-sub">2026 Q1</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ PDF tanúsítvány – pulzusgrafikon, biometrikus adatok, QR kód</div>
+          <div class="phase-item done">✓ .ots fájl letöltése (OpenTimestamps receipt)</div>
+          <div class="phase-item done">✓ QR kód – mobilos azonnali ellenőrzés</div>
+          <div class="phase-item done">✓ Beágyazható HTML badge</div>
+          <div class="phase-item done">✓ Közösségi megosztás (LinkedIn, X, WhatsApp, Telegram stb.)</div>
+          <div class="phase-item done">✓ Email küldés a hitelesítési adatokkal (Formspree)</div>
+          <div class="phase-item done">✓ Szöveg ellenőrzése SHA-256 hash alapján</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FÁZIS 4 -->
+    <div class="phase-row">
+      <div class="phase-num done">4</div>
+      <div class="phase-content">
+        <div class="phase-title">Dashboard & Saját Szövegek <span class="badge badge-success" style="font-size:.65rem">Kész</span></div>
+        <div class="phase-sub">2026 Q1</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ Dashboard – statisztikák, kredit-áttekintés, saját dokumentumok</div>
+          <div class="phase-item done">✓ Szövegeim oldal – szűrés, rendezés, kártyás nézet</div>
+          <div class="phase-item done">✓ Dokumentum törlés (hash megőrzésével)</div>
+          <div class="phase-item done">✓ Új verzió létrehozása meglévő dokumentumból</div>
+          <div class="phase-item done">✓ Profil szerkesztése (bio, foglalkozás, weboldal)</div>
+          <div class="phase-item done">✓ API kulcs generálás és kezelés</div>
+          <div class="phase-item done">✓ Összes emberi munka összesítő statisztika (karakter, idő, Humán Index átlag)</div>
+          <div class="phase-item done">✓ Admin panel – felhasználók és dokumentumok áttekintése</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FÁZIS 5 -->
+    <div class="phase-row">
+      <div class="phase-num done">5</div>
+      <div class="phase-content">
+        <div class="phase-title">Vizuális Alkotói Idővonal (Timelapse) <span class="badge badge-success" style="font-size:.65rem">Kész</span></div>
+        <div class="phase-sub">2026 Q1</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ Karakterenkénti idővonal rögzítése (timelapse_events tábla)</div>
+          <div class="phase-item done">✓ Timelapse lejátszó – sebesség választóval, csúszkával</div>
+          <div class="phase-item done">✓ Valós idejű ritmusgrafikon a lejátszásban</div>
+          <div class="phase-item done">✓ WPM, javítás, szünet statisztika a lejátszásban</div>
+          <div class="phase-item done">✓ DOC ID alapján nyilvánosan visszajátszható</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FÁZIS 6 -->
+    <div class="phase-row">
+      <div class="phase-num partial">6</div>
+      <div class="phase-content">
+        <div class="phase-title">Átlátható beillesztés & Entrópia <span class="badge badge-gold" style="font-size:.65rem">Részben kész</span></div>
+        <div class="phase-sub">2026 Q1–Q2</div>
+        <div class="phase-items">
+          <div class="phase-item done">✓ Beillesztés opcionális engedélyezése – tanúsítványon feltüntetve</div>
+          <div class="phase-item done">✓ Beillesztett szegmensek vizuális jelölése az editorban (arany háttér)</div>
+          <div class="phase-item done">✓ Kézzel gépelt / beillesztett arány statisztika a tanúsítványon</div>
+          <div class="phase-item done">✓ isTrusted esemény-ellenőrzés (szimulált billentyűleütések szűrése)</div>
+          <div class="phase-item done">✓ Lenyomva tartott billentyű detektálása és jelzése</div>
+          <div class="phase-item done">✓ Irreális gépelési sebesség detektálása</div>
+          <div class="phase-item todo">○ Matematikai entrópia-figyelés – büntető hatás a Humán Indexre</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SUPPORTERS / PRICING ═══ -->
+<div id="page-supporters" class="page">
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2><span class="gt">Csomagok</span></h2>
+        <p>Minden csomag tartalmazza az örökérvényű HUMANO hitelesítést és Bitcoin blokklánc időbélyeget.</p>
+      </div>
+      <div class="grid-4" style="align-items:start">
+
+        <div class="card pricing-card">
+          <div style="font-size:1.8rem;margin-bottom:.6rem">🆓</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Ingyenes</div>
+          <div class="price-val gt">0 Ft</div>
+          <ul class="feature-list">
+            <li class="active">Havi 3 hitelesítés</li>
+            <li class="active">HUMANO ID + Badge</li>
+            <li class="active">SHA-256 + OTS időbélyeg</li>
+            <li class="active">Nyilvános Registry</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="showPage('auth')">Regisztrálok</button>
+        </div>
+
+        <div class="card pricing-card">
+          <div style="font-size:1.8rem;margin-bottom:.6rem">⚡</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Egyszeri</div>
+          <div class="price-val gt">490 Ft<span class="price-period">/alkalom</span></div>
+          <ul class="feature-list">
+            <li class="active">1 hitelesítés</li>
+            <li class="active">PDF tanúsítvány</li>
+            <li class="active">QR kód + Badge</li>
+            <li class="active">Nincs előfizetés</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_aFa28s8U85wW9Gb7JjdEs02','_blank')">✦ Megveszem</button>
+        </div>
+
+        <div class="card pricing-card">
+          <div style="font-size:1.8rem;margin-bottom:.6rem">🎓</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Tanuló</div>
+          <div class="price-val gt">1 490 Ft<span class="price-period">/hó</span></div>
+          <ul class="feature-list">
+            <li class="active">Havi 20 hitelesítés</li>
+            <li class="active">PDF tanúsítvány</li>
+            <li class="active">QR kód + Badge</li>
+            <li class="active">Timelapse visszajátszás</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_dRm4gAdao7F44lRd3DdEs00','_blank')">Előfizetés</button>
+        </div>
+
+        <div class="card pricing-card featured" style="position:relative">
+          <div class="pricing-featured-badge">LEGJOBB VÁLASZTÁS</div>
+          <div style="font-size:1.8rem;margin-bottom:.6rem">⭐</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Alkotó / Pro</div>
+          <div class="price-val gt">3 900 Ft<span class="price-period">/hó</span></div>
+          <ul class="feature-list">
+            <li class="active">Korlátlan hitelesítés</li>
+            <li class="active">Teljes API-hozzáférés</li>
+            <li class="active">Egyedi badge design</li>
+            <li class="active">Prioritás support</li>
+          </ul>
+          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_fZuaEYdao4sS9Gb4x7dEs01','_blank')">✦ Előfizetés</button>
+        </div>
+
+        <div class="card pricing-card" style="grid-column:span 2">
+          <div style="font-size:1.8rem;margin-bottom:.6rem">🏢</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi</div>
+          <div class="price-val gt">19 900 Ft<span class="price-period">/hó</span></div>
+          <ul class="feature-list">
+            <li class="active">Korlátlan felhasználó</li>
+            <li class="active">Admin felület</li>
+            <li class="active">API integráció</li>
+            <li class="active">SLA garancia</li>
+            <li class="active">Dedikált support</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('institution')">Ajánlatkérés</button>
+        </div>
+
+      </div>
+      <div id="pricing-contact-box" style="display:none;margin-top:3rem" class="card">
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem" id="pricing-contact-title">Előfizetési érdeklődés</div>
+        <div id="pricing-contact-alert"></div>
+        <form id="pricing-contact-form" onsubmit="submitPricingForm(event)">
+          <input type="hidden" id="pricing-plan-hidden" name="csomag" value=""/>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Neved</label><input class="form-control" name="nev" placeholder="Teljes neved" required/></div>
+            <div class="form-group"><label class="form-label">E-mail cím</label><input class="form-control" name="email" type="email" placeholder="email@example.com" required/></div>
+          </div>
+          <div class="form-group"><label class="form-label">Üzenet</label><textarea class="form-control" name="uzenet" style="min-height:80px"></textarea></div>
+          <div style="display:flex;gap:.75rem"><button type="submit" class="btn btn-gold">✦ Küldés</button><button type="button" class="btn btn-outline" onclick="document.getElementById('pricing-contact-box').style.display='none'">Mégse</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ ABOUT ═══ -->
+<div id="page-about" class="page">
+  <div class="about-wrap">
+    <div style="text-align:center;margin-bottom:4rem">
+      <h1 style="font-family:var(--font-display);font-size:2.8rem;font-weight:600;margin-bottom:1.25rem">Az emberi alkotás <span class="gt">tanúja.</span></h1>
+      <p style="font-size:1.05rem;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.9">Nem a végeredményt, hanem a keletkezést dokumentáljuk. Nem AI-detektor vagyunk – alkotási napló.</p>
+    </div>
+    <div class="grid-3" style="gap:1.5rem;margin-bottom:5rem">
+      <div class="letter-card"><span class="letter-char gt">H</span><div class="letter-word">Hiteles</div><div class="letter-desc">Hiteles – nem az eredményt, hanem a folyamatot garantálja. A tanú nem ítél.</div></div>
+      <div class="letter-card"><span class="letter-char gt">U</span><div class="letter-word">Unikális</div><div class="letter-desc">Minden alkotás és alkotó egyedi azonosítót kap.</div></div>
+      <div class="letter-card"><span class="letter-char gt">M</span><div class="letter-word">Megmásíthatatlan</div><div class="letter-desc">A blokkláncon rögzített időbélyeg visszavonhatatlan – senki nem módosíthatja.</div></div>
+      <div class="letter-card"><span class="letter-char gt">A</span><div class="letter-word">Átlátható</div><div class="letter-desc">A rendszer tényeket közöl, nem ítéletet. Beillesztés esetén az arány is megjelenik.</div></div>
+      <div class="letter-card"><span class="letter-char gt">N</span><div class="letter-word">Napló</div><div class="letter-desc">Alkotási napló – a keletkezés folyamatát örökíti meg, nem csupán a végeredményt.</div></div>
+      <div class="letter-card"><span class="letter-char gt">O</span><div class="letter-word">Objektív</div><div class="letter-desc">A matematika nem hazudik. A billentyűleütések dinamikája az igazság.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROFILE ═══ -->
+<div id="page-profile" class="page">
+  <div style="max-width:700px;margin:3rem auto;padding:0 2rem">
+    <div class="card" style="margin-bottom:1.25rem">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1.25rem">👤 Profil adatok</div>
+      <div id="profile-alert"></div>
+      <div class="form-group"><label class="form-label">Felhasználónév</label><input class="form-control" id="p-username" type="text" disabled style="opacity:.5"/></div>
+      <div class="form-group"><label class="form-label">HUMANO ID</label><input class="form-control" id="p-humano-id" type="text" disabled style="opacity:.5;font-family:var(--font-mono)"/></div>
+      <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" id="p-email" type="text" disabled style="opacity:.5"/></div>
+      <hr class="divider" style="margin:1.5rem 0"/>
+      <div class="form-group"><label class="form-label">Teljes név</label><input class="form-control" id="p-fullname" type="text" placeholder="pl. Kovács Péter"/></div>
+      <div class="form-group"><label class="form-label">Weboldal</label><input class="form-control" id="p-website" type="url" placeholder="https://..."/></div>
+      <div class="form-group"><label class="form-label">Település</label><input class="form-control" id="p-location" type="text" placeholder="pl. Budapest"/></div>
+      <div class="form-group"><label class="form-label">Foglalkozás</label><input class="form-control" id="p-occupation" type="text" placeholder="pl. Újságíró"/></div>
+      <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" id="p-bio" style="min-height:100px" placeholder="Néhány szó magadról..."></textarea></div>
+      <button class="btn btn-gold" style="width:100%;padding:.8rem" onclick="saveProfile()">✦ Profil mentése</button>
+    </div>
+    <div class="card">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">📊 Statisztikák</div>
+      <div class="grid-2">
+        <div style="text-align:center;padding:1.25rem;background:var(--surface2);border-radius:var(--r-sm)"><div class="gt" id="p-stat-docs" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">Hitelesített szöveg</div></div>
+        <div style="text-align:center;padding:1.25rem;background:var(--surface2);border-radius:var(--r-sm)"><div class="gt" id="p-stat-plan" style="font-family:var(--font-display);font-size:2rem;font-weight:700">–</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">Csomag</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<div id="page-admin" class="page">
+  <div class="admin-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem">
+      <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:700">✦ Admin Panel</h1>
+      <button class="btn btn-outline btn-sm" onclick="loadAdmin()">🔄 Frissítés</button>
+    </div>
+    <div class="stat-cards" id="admin-stats"></div>
+    <hr class="divider"/>
+    <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">👥 Felhasználók</div>
+    <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:2rem">
+      <table class="admin-table"><thead><tr><th>HUMANO ID</th><th>Felhasználónév</th><th>Csomag</th><th>Regisztráció</th><th>Kredit</th></tr></thead><tbody id="admin-users-body"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:2rem">Betöltés...</td></tr></tbody></table>
+    </div>
+    <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">📄 Dokumentumok</div>
+    <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
+      <table class="admin-table"><thead><tr><th>DOC ID</th><th>Cím</th><th>Szerző</th><th>Létrehozva</th><th>Hash</th><th>OTS</th></tr></thead><tbody id="admin-docs-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Betöltés...</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FAQ ═══ -->
+<div id="page-faq" class="page">
+  <div style="max-width:800px;margin:0 auto;padding:4rem 2rem">
+    <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:2.5rem">Gyakori <span class="gt">kérdések</span></h1>
+    <div id="faq-list"></div>
+  </div>
+</div>
+
+<!-- ═══ PRIVACY ═══ -->
+<div id="page-privacy" class="page">
+  <div style="max-width:800px;margin:0 auto;padding:4rem 2rem">
+    <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:2.5rem">Adatkezelési <span class="gt">Tájékoztató</span></h1>
+    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Adatkezelő</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">HUMANO Platform. Az adatok EU-s Supabase szervereken tárolódnak, GDPR-kompatibilis módon.</div></div>
+    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Tárolt adatok</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">E-mail cím, felhasználónév, szövegek tartalma és SHA-256 hash-e, billentyűleütés-dinamikai metaadatok (időintervallumok, szünetek, szórás) – a tartalom elemzése nélkül.</div></div>
+    <div class="card" style="margin-bottom:1rem"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Mit NEM tárol a HUMANO</div><div style="font-size:.87rem;color:var(--muted);line-height:1.8">A rendszer nem elemzi a szöveg tartalmát, témáját vagy stílusát. A billentyűleütés-dinamika rögzítése kizárólag az írás folyamatának hitelesítésére szolgál.</div></div>
+    <div class="card"><div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem;font-family:var(--font-display)">Sütik</div><div style="font-size:.87rem;color:var(--muted)">Kizárólag munkamenet-kezelési célból.</div></div>
+  </div>
+</div>
+
+<!-- ═══ MY DOCS ═══ -->
+<div id="page-my-docs" class="page">
+  <div class="my-docs-wrap">
+    <h1 style="font-family:var(--font-display);font-size:2.6rem;font-weight:700;margin-bottom:.4rem">Szövegeim <span class="gt">✦</span></h1>
+    <p style="color:var(--muted);margin-bottom:2rem;font-size:.88rem">Az összes hitelesített dokumentumod egy helyen.</p>
+    <div class="flex-stat-card">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem">✦ A Te emberi munkád</div>
+        <div style="display:flex;align-items:baseline;gap:.75rem;flex-wrap:wrap"><div class="flex-big-num gt" id="flex-total-chars">0</div><div style="color:var(--muted);font-size:.88rem">karakter</div></div>
+        <div style="font-family:var(--font-display);font-size:1.15rem;color:var(--gold2);margin-top:.3rem" id="flex-human-hours">= 0 óra tiszta emberi munka</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.5rem" id="flex-doc-count">0 hitelesített dokumentum</div>
+        <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+          <button class="flex-share-btn" onclick="openFlexSocialModal()">🌍 Megosztás</button>
+          <button class="flex-share-btn" onclick="flexCopyText()">📋 Szöveg másolása</button>
+        </div>
+      </div>
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.5rem">Átlag Humán Index</div>
+        <div style="font-family:var(--font-display);font-size:3rem;font-weight:700;line-height:1" id="flex-avg-human-index">–%</div>
+        <div class="human-pct-bar" style="margin-top:.5rem;width:120px;margin-left:auto;margin-right:auto"><div class="human-pct-fill" id="flex-avg-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center">
+      <input class="form-control" id="my-docs-search" placeholder="🔍 Keresés..." style="max-width:280px;font-size:.85rem" oninput="filterMyDocs()"/>
+      <select class="form-control" id="my-docs-sort" style="max-width:180px;font-size:.85rem" onchange="filterMyDocs()">
+        <option value="newest">Legújabb először</option>
+        <option value="oldest">Legrégibb először</option>
+        <option value="human_index">Humán Index</option>
+        <option value="chars">Karakterszám</option>
+      </select>
+      <div style="margin-left:auto;font-size:.78rem;color:var(--muted)" id="my-docs-count-label"></div>
+    </div>
+    <div id="my-docs-list"><div style="text-align:center;padding:3rem;color:var(--muted)">⏳ Betöltés...</div></div>
+  </div>
+</div>
+
+<!-- ═══ PUBLIC VERIFY ═══ -->
+<div id="page-pub-verify" class="page">
+  <div class="pub-verify-wrap">
+    <div class="pub-verify-hero">
+      <div class="gt" style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:4px;margin-bottom:.75rem">✦ HUMANO</div>
+      <h1 style="font-family:var(--font-display);font-size:2.8rem;font-weight:700;margin-bottom:.5rem" id="pub-v-title">Dokumentum ellenőrzés</h1>
+      <div style="font-size:.85rem;color:var(--muted)" id="pub-v-subtitle">Kriptográfiai hitelesítési tanúsítvány</div>
+    </div>
+    <div class="pub-verdict-box pub-verdict-ok" id="pub-verdict-box">
+      <div style="font-size:3rem;margin-bottom:.5rem" id="pub-verdict-icon">✅</div>
+      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--success);margin-bottom:.4rem" id="pub-verdict-text">Hitelesített alkotás</div>
+      <div style="font-size:.85rem;color:var(--muted)" id="pub-verdict-sub">A keletkezési folyamat rögzítve</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div class="card"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.4rem">Dokumentum ID</div><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--gold2);word-break:break-all" id="pub-v-docid">–</div></div>
+      <div class="card"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.4rem">Létrehozva</div><div style="font-family:var(--font-mono);font-size:.85rem;color:var(--gold2)" id="pub-v-date">–</div></div>
+      <div class="card"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.4rem">Szerző</div><div style="font-size:.9rem;color:var(--gold2);font-weight:600" id="pub-v-author">–</div></div>
+      <div class="card"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.4rem">Humán Index</div><div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold)" id="pub-v-human-index">–%</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1.5rem"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.5rem">SHA-256 Hash</div><div style="font-family:var(--font-mono);font-size:.72rem;word-break:break-all;color:var(--gold2);background:var(--surface2);padding:.75rem;border-radius:6px;line-height:1.6" id="pub-v-hash">–</div></div>
+    <div class="pub-spectrum-wrap"><div class="pub-spectrum-title">📊 Gépelési Spektrum</div><canvas id="pub-spectrum-canvas" height="100"></canvas></div>
+    <div class="card" style="margin-bottom:1.5rem">
+  <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⚡ Gépelési sebesség elemzés</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;font-size:.85rem">
+    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
+      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Karakterszám</div>
+      <div style="font-weight:700;color:var(--gold2)" id="pub-tp-chars">–</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
+      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Írási idő</div>
+      <div style="font-weight:700;color:var(--gold2)" id="pub-tp-mins">–</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem;grid-column:span 2">
+      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Értékelés</div>
+      <div style="font-weight:700" id="pub-tp-verdict">–</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem" id="pub-tp-desc">–</div>
+    </div>
+  </div>
+</div>
+    <div class="card" style="margin-bottom:1.5rem"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">🧬 Biometrikus adatok</div><div id="pub-v-biometric-table" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.82rem"></div></div>
+    <div class="card" style="margin-bottom:1.5rem;text-align:center"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⛓️ Bitcoin Blokklánc Időbélyeg</div><div id="pub-v-ots-badge"></div></div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer style="border-top:1px solid var(--border);padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem">
+  <div class="gt" style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;letter-spacing:3px;margin-bottom:.6rem">✦ HUMANO ✦</div>
+  <p style="margin-bottom:1rem">Az emberi alkotás digitális hitelesítője.</p>
+  <p style="margin-bottom:.75rem">
+    <span onclick="showPage('landing')" style="cursor:pointer;margin:0 .5rem">Főoldal</span> ·
+    <span onclick="showPage('roadmap')" style="cursor:pointer;margin:0 .5rem">Roadmap</span> ·
+    <span onclick="showPage('verify-unified')" style="cursor:pointer;margin:0 .5rem">Ellenőrzés</span> ·
+    <span onclick="showPage('supporters')" style="cursor:pointer;margin:0 .5rem">Előfizetés</span> ·
+    <span onclick="showPage('about')" style="cursor:pointer;margin:0 .5rem">Rólunk</span> ·
+    <span onclick="showPage('faq')" style="cursor:pointer;margin:0 .5rem">FAQ</span> ·
+    <span onclick="showPage('privacy')" style="cursor:pointer;margin:0 .5rem">Adatvédelem</span>
+  </p>
+  <p style="font-size:.7rem;color:var(--muted2);font-family:var(--font-mono)">© 2026 HUMANO · Supabase EU · OpenTimestamps · Bitcoin blokklánc</p>
+</footer>
+
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay" id="send-modal">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">📧 Küldés emailben</div><button class="btn btn-ghost" onclick="closeSendModal()" style="font-size:1.3rem;padding:.2rem .5rem">✕</button></div>
+    <div id="send-modal-alert"></div>
+    <form id="send-modal-form" onsubmit="submitSendEmail(event)">
+      <input type="hidden" id="send-doc-id-hidden" name="doc_id" value=""/>
+      <input type="hidden" id="send-verify-link-hidden" name="verify_link" value=""/>
+      <input type="hidden" id="send-hash-hidden" name="hash" value=""/>
+      <div class="form-group"><label class="form-label">Fogadó e-mail</label><input class="form-control" id="send-to-email" name="to_email" type="email" placeholder="tanár@iskola.hu"/></div>
+      <div class="form-group"><label class="form-label">Tárgy</label><input class="form-control" id="send-subject" name="subject" type="text"/></div>
+      <div class="form-group"><label class="form-label">Üzenet</label><textarea class="form-control" name="uzenet" id="send-message" style="min-height:80px"></textarea></div>
+      <div id="send-doc-summary"></div>
+      <div style="display:flex;gap:.75rem"><button type="submit" class="btn btn-gold">📧 Küldés</button><button type="button" class="btn btn-outline" onclick="closeSendModal()">Mégse</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="info-modal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header"><div class="modal-title" id="info-modal-title">ⓘ Info</div><button class="btn btn-ghost" onclick="closeInfoModal()">✕</button></div>
+    <div id="info-modal-body" style="padding:1.5rem;line-height:1.8;color:var(--text)"></div>
+    <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem"><button class="btn btn-gold" onclick="closeInfoModal()">Értem</button></div>
+  </div>
+</div>
+
+<div id="social-modal">
+  <div class="social-modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold2)">🌍 Megosztás</div>
+      <button class="btn btn-ghost" onclick="closeSocialModal()" style="font-size:1.2rem;padding:.2rem .5rem">✕</button>
+    </div>
+    <div class="social-grid" id="social-btn-grid"></div>
+  </div>
+</div>
+
+<div id="antibot-modal">
+  <div class="antibot-box">
+    <div style="font-size:2rem;margin-bottom:.5rem">🧠</div>
+    <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">Alkotói Kontroll</div>
+    <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1rem">Kérlek, írd le az alábbi szót:</p>
+    <div class="antibot-word" id="antibot-word">HUMANO</div>
+    <input class="form-control" id="antibot-input" placeholder="Írd ide a szót..." style="text-align:center;font-size:1rem;letter-spacing:2px;text-transform:uppercase" oninput="checkAntiBotInput()"/>
+    <div id="antibot-result" style="margin-top:.75rem;min-height:24px"></div>
+  </div>
+</div>
+
+<div id="draft-modal">
+  <div class="draft-modal-box">
+    <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--gold2);margin-bottom:.4rem">📄 Mentett piszkozatok</div>
+    <p style="font-size:.83rem;color:var(--muted);margin-bottom:1.5rem">Találtunk mentett piszkozatot. Melyiket szeretnéd folytatni?</p>
+    <div id="draft-list"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="closeDraftModal(true)">🗑 Elvetés</button>
+      <button class="btn btn-ghost" onclick="closeDraftModal(false)">✕ Mégse</button>
+    </div>
+  </div>
+</div>
+
+<!-- MÉDIA MODAL -->
+<div class="modal-overlay" id="media-modal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title">🖼️ Média beszúrása</div>
+    <div class="media-tabs">
+      <button class="media-tab active" onclick="switchMediaTab('upload')">📁 Feltöltés</button>
+      <button class="media-tab" onclick="switchMediaTab('url')">🔗 URL</button>
+      <button class="media-tab" onclick="switchMediaTab('gallery')">🗂️ Galéria</button>
+    </div>
+    <div class="media-tab-content active" id="mtab-upload">
+      <div class="dropzone" id="media-dropzone" onclick="document.getElementById('media-file-input').click()" ondragover="mediaDragOver(event)" ondragleave="mediaDragLeave(event)" ondrop="mediaDrop(event)">
+        <input type="file" id="media-file-input" accept="image/*" multiple onchange="mediaFileSelected(event)">
+        <div style="font-size:2rem;margin-bottom:.5rem">🖼️</div>
+        <div style="font-weight:600;color:var(--text);margin-bottom:.25rem">Húzd ide a képeket vagy kattints</div>
+        <div style="font-size:.75rem">PNG, JPG, GIF, WebP – max 5MB/fájl</div>
+      </div>
+      <div class="media-grid" id="media-upload-grid"></div>
+    </div>
+    <div class="media-tab-content" id="mtab-url">
+      <div class="form-group"><label class="form-label">Kép URL-je</label><input type="url" class="form-control" id="media-url-input" placeholder="https://..."></div>
+      <div id="media-url-preview-wrap" style="display:none;margin-top:.75rem"><img id="media-url-preview" src="" alt="előnézet" style="max-height:160px;border-radius:8px;border:1px solid var(--border)"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:.75rem" onclick="mediaUrlPreview()">👁️ Előnézet</button>
+    </div>
+    <div class="media-tab-content" id="mtab-gallery">
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Ebben a munkamenetben feltöltött képek:</div>
+      <div class="media-grid" id="media-gallery-grid"><div style="color:var(--muted2);font-size:.78rem;grid-column:span 3">Még nincs feltöltött kép.</div></div>
+    </div>
+    <div id="media-selected-wrap" style="display:none;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <div style="font-size:.75rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase;font-family:var(--font-mono)">Kiválasztott kép beállításai</div>
+      <div class="media-preview-wrap">
+        <img id="media-selected-preview" src="" alt="" class="media-preview-img">
+        <div>
+          <div class="media-slider-row"><span style="min-width:52px">Szélesség</span><input type="range" id="media-width-slider" min="10" max="100" value="100" oninput="mediaUpdatePreview()"><span id="media-width-val">100%</span></div>
+          <div class="media-slider-row"><span style="min-width:52px">Igazítás</span><div class="media-align-btns"><button class="media-align-btn active" data-align="left" onclick="mediaSetAlign('left')">◀ Bal</button><button class="media-align-btn" data-align="center" onclick="mediaSetAlign('center')">■ Közép</button><button class="media-align-btn" data-align="right" onclick="mediaSetAlign('right')">▶ Jobb</button></div></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Alt szöveg</label><input type="text" class="form-control" id="media-alt-input" placeholder="Kép leírása..."></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.65rem;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="mediaInsert()" id="media-insert-btn" disabled>✦ Beszúrás a szövegbe</button>
+      <button class="btn btn-ghost" onclick="closeMediaModal()">✕ Mégse</button>
+    </div>
+  </div>
+</div>
+
+<!-- PULZUS INFO MODAL -->
+<div class="modal-overlay" id="pulse-info-modal">
+  <div class="modal-box" style="max-width:540px">
+    <div class="modal-title">📊 Mit mutat ez a grafikon?</div>
+    <p style="font-size:.85rem;color:var(--text);line-height:1.8;margin-bottom:1rem">Ez a grafikon a <strong style="color:var(--gold)">gépelési ritmusodat</strong> ábrázolja valós időben – egyfajta digitális ujjlenyomat. A billentyűleütések közötti időintervallumok hullámvonalát mutatja. Az egyenetlen, változatos görbe az emberi gondolkodás és alkotás természetes jele.</p>
+    <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.25rem">
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;font-size:.82rem"><strong style="color:var(--gold)">Leütések / Javítások</strong><div style="color:var(--muted);margin-top:.2rem">Mennyit gépeltél és mennyit javítottál. A javítás természetes emberi jellemző.</div></div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;font-size:.82rem"><strong style="color:var(--gold)">Szünetek</strong><div style="color:var(--muted);margin-top:.2rem">Gondolkodási idő – az AI soha nem tart szünetet.</div></div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;font-size:.82rem"><strong style="color:var(--gold)">Ritmus σ (szórás)</strong><div style="color:var(--muted);margin-top:.2rem">Minél nagyobb a szórás, annál változatosabb és emberibb a ritmus.</div></div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;font-size:.82rem"><strong style="color:var(--gold)">Humán Index</strong><div style="color:var(--muted);margin-top:.2rem">Összesített pontszám a billentyűleütés-dinamika alapján – nem tartalom-elemzés.</div></div>
+    </div>
+    <button class="btn btn-gold" style="width:100%" onclick="document.getElementById('pulse-info-modal').classList.remove('open')">Értem ✓</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tl-modal" style="z-index:9600">
+  <div class="modal-box" style="max-width:780px;width:95vw;padding:0;overflow:hidden">
+
+    <!-- Fejléc -->
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:.8rem 1.1rem;border-bottom:1px solid var(--border);
+                background:rgba(201,168,76,.04)">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span id="humTlLiveDot"
+              style="width:7px;height:7px;border-radius:50%;background:var(--muted2);
+                     display:inline-block;transition:background .3s"></span>
+        <span style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);
+                     text-transform:uppercase;letter-spacing:.7px">Alkotói idővonal</span>
+        <span style="font-family:var(--font-display);font-size:.92rem;color:var(--gold2);
+                     font-weight:600;margin-left:.4rem" id="humTlDocTitle"></span>
+      </div>
+      <button class="btn btn-ghost" onclick="closeTlModal()"
+              style="font-size:1.2rem;padding:.2rem .5rem;line-height:1">✕</button>
+    </div>
+
+    <!-- Szöveg replay -->
+    <div id="humTlDisplay"
+         style="min-height:220px;max-height:380px;overflow-y:auto;
+                padding:1rem 1.25rem;font-size:.88rem;line-height:1.9;
+                color:var(--text);word-break:break-word;
+                border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted2);font-style:italic;font-size:.8rem"
+            id="humTlMsg">Betöltés...</span>
+    </div>
+
+    <!-- Stat sor -->
+    <div id="humTlStats" style="display:none;border-bottom:1px solid var(--border)">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+        <div style="text-align:center;padding:.55rem .2rem;border-right:1px solid var(--border)">
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;
+                      color:var(--gold);line-height:1" id="humTlStatChars">–</div>
+          <div style="font-size:.58rem;color:var(--muted);font-family:var(--font-mono);
+                      text-transform:uppercase;margin-top:3px">Karakter</div>
+        </div>
+        <div style="text-align:center;padding:.55rem .2rem;border-right:1px solid var(--border)">
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;
+                      color:var(--gold);line-height:1" id="humTlStatDel">–</div>
+          <div style="font-size:.58rem;color:var(--muted);font-family:var(--font-mono);
+                      text-transform:uppercase;margin-top:3px">Javítás</div>
+        </div>
+        <div style="text-align:center;padding:.55rem .2rem;border-right:1px solid var(--border)">
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;
+                      color:var(--gold);line-height:1" id="humTlStatDur">–</div>
+          <div style="font-size:.58rem;color:var(--muted);font-family:var(--font-mono);
+                      text-transform:uppercase;margin-top:3px">Idő</div>
+        </div>
+        <div style="text-align:center;padding:.55rem .2rem">
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;
+                      color:var(--gold);line-height:1" id="humTlStatPause">–</div>
+          <div style="font-size:.58rem;color:var(--muted);font-family:var(--font-mono);
+                      text-transform:uppercase;margin-top:3px">Szünet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kontrollok -->
+    <div id="humTlTimeline" style="display:none">
+      <div style="display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" id="humTlBtnRewind"
+                title="Elejére" style="padding:.3rem .65rem">⏮</button>
+        <button id="humTlBtnPlay"
+                style="background:rgba(201,168,76,.1);border:1px solid var(--gold3);
+                       border-radius:var(--r-sm);color:var(--gold2);font-size:.8rem;
+                       font-weight:700;padding:.3rem .9rem;cursor:pointer;min-width:90px;
+                       text-align:center">▶ Lejátszás</button>
+        <span style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)">Sebesség:</span>
+        <select id="humTlSpeed"
+                style="background:var(--surface3);border:1px solid var(--border);
+                       border-radius:var(--r-sm);color:var(--muted);font-size:.7rem;
+                       padding:.25rem .45rem;font-family:var(--font-mono);cursor:pointer">
+          <option value="4">0.25×</option>
+          <option value="2">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="0.5">2×</option>
+          <option value="0.2">5×</option>
+          <option value="0.05">20×</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:.65rem;padding:0 1rem .7rem">
+        <input type="range" id="humTlSlider" min="0" value="0"
+               style="flex:1;-webkit-appearance:none;height:3px;border-radius:2px;
+                      background:var(--surface3);outline:none;cursor:pointer">
+        <span style="font-family:var(--font-mono);font-size:.65rem;color:var(--muted);
+                     white-space:nowrap" id="humTlTimeLbl">0:00 / 0:00</span>
+      </div>
+    </div>
+
+ </div>
+</div>
+
+<script>
+function openTlModal() {
+  document.getElementById('tl-modal').classList.add('open');
+  const input = document.getElementById('timelapse-doc-input');
+  if (input && input.value) loadTimelapseFromInput();
+}
+
+function closeTlModal() {
+  document.getElementById('tl-modal').classList.remove('open');
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('tl-modal')?.classList.contains('open')) {
+    closeTlModal();
+  }
+});
+
+document.getElementById('tl-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTlModal();
+});
+</script>
+
+<div id="humano-toast"></div>
+<div id="autosave-snack"><span>💾</span><span id="autosave-text">Piszkozat mentve</span></div>
+
+<script src="shared_js.js"></script>
+<script>
+function openEntropyInfo() {
+    const modal = document.getElementById('info-modal');
+    const title = document.getElementById('info-modal-title');
+    const body  = document.getElementById('info-modal-body');
+    if (!modal || !title || !body) return;
+
+    title.textContent = '⚡ Ritmus-entrópia – mi ez és mire jó?';
+    body.innerHTML = `
+      <p style="margin-bottom:1rem;line-height:1.8">
+        Képzeld el, hogy valaki bekötött szemmel hallgatja, ahogy gépelsz – csak a 
+        <strong style="color:var(--gold)">billentyűleütések ritmusát</strong> hallja. 
+        Ebből is meg tudná mondani, hogy ember vagy gép írta-e.
+      </p>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.9rem 1rem;margin-bottom:.75rem">
+        <div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem">🤖 Hogyan gépel egy AI?</div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.75">Egyenletesen, robotszerűen. Nincs gondolkodási szünet, nincs bizonytalanság.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.9rem 1rem;margin-bottom:.75rem">
+        <div style="font-weight:700;color:var(--gold2);margin-bottom:.5rem">✍️ Hogyan gépel egy ember?</div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.75">Változatosan. Néha gyorsabb, néha lassabb, megáll, visszatöröl – ez a természetes emberi ritmus.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;text-align:center;font-size:.78rem">
+        <div style="background:rgba(224,85,85,.08);border:1px solid rgba(224,85,85,.25);border-radius:var(--r-sm);padding:.65rem">
+          <div style="color:#e05555;font-weight:700;margin-bottom:.3rem">🔴 Alacsony</div>
+          <div style="color:var(--muted)">Gépies ritmus</div>
+        </div>
+        <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.65rem">
+          <div style="color:var(--gold);font-weight:700;margin-bottom:.3rem">🟡 Közepes</div>
+          <div style="color:var(--muted)">Elemzés folyamatban</div>
+        </div>
+        <div style="background:rgba(74,184,112,.08);border:1px solid rgba(74,184,112,.2);border-radius:var(--r-sm);padding:.65rem">
+          <div style="color:var(--success);font-weight:700;margin-bottom:.3rem">🟢 Magas</div>
+          <div style="color:var(--muted)">Emberi ritmus ✓</div>
+        </div>
+      </div>`;
+
+    modal.classList.add('open');
+}
+</script>
+
+<!-- ═══ PASTE MODAL ═══ -->
+<div class="modal-overlay" id="paste-modal" style="z-index:9500">
+  <div class="modal-box" style="max-width:480px;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>
+    <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold2);margin-bottom:.6rem">Beillesztés érzékelve</div>
+    <p style="font-size:.86rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
+      A HUMANO a <strong style="color:var(--text)">keletkezés folyamatát</strong> hitelesíti – nem tiltja a beillesztést, de <strong style="color:var(--gold)">átláthatóvá teszi</strong> azt.<br><br>
+      Ha elfogadod, a beillesztett szövegrész <span style="background:rgba(201,168,76,.18);border-bottom:1.5px dashed var(--gold3);border-radius:2px;padding:0 3px">arany háttérrel jelölve</span> jelenik meg a szerkesztőben, és a tanúsítványon megjelenik a kézzel gépelt / beillesztett karakterek aránya.
+    </p>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:1rem;margin-bottom:1.25rem;font-size:.8rem;color:var(--muted);text-align:left;line-height:1.7">
+      <div style="color:var(--gold2);font-weight:700;margin-bottom:.4rem;font-family:var(--font-mono)">Mit tartalmaz majd a tanúsítványod?</div>
+      <div>✅ Kézzel gépelt karakterek aránya</div>
+      <div>📋 Beillesztett karakterek aránya</div>
+      <div>⚡ Gépelési ritmus és Humán Index (csak a gépelt részre)</div>
+      <div style="margin-top:.5rem;font-size:.74rem;color:var(--muted2)">A rendszer nem elemzi a beillesztett szöveg tartalmát.</div>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="confirmPaste()">✦ Elfogadom & Beillesztés</button>
+      <button class="btn btn-outline" onclick="denyPaste()">✕ Mégsem</button>
+    </div>
+    <div style="margin-top:1rem;font-size:.72rem;color:var(--muted2)">Az elfogadás csak erre a munkamenetre vonatkozik.</div>
+  </div>
+</div>
+
+<script>
+
+// ── BEILLESZTETT SZÖVEG BEÍRÁSA AZ EDITORBA ──
+function insertPastedContent(text) {
+    if (!text) return;
+    const span = document.createElement('span');
+    span.className = 'pasted-segment';
+    span.setAttribute('data-pasted', 'true');
+    span.setAttribute('title', 'Beillesztett szöveg – megjelenik a tanúsítványon');
+    span.textContent = text;
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(span);
+        range.setStartAfter(span);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+        // Üres textNode a span után, hogy a gépelt szöveg ne örökölje a stílust
+        const textNode = document.createTextNode('\u200B');
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else {
+        document.getElementById('doc-content-area').appendChild(span);
+    }
+
+    // ÚJ: pastedChars növelés + arány frissítés
+    pastedChars += text.length;
+    pasteEvents.push({ chars: text.length, ts: Date.now() });
+    updatePasteRatio();
+
+    const banner = document.getElementById('e-paste-allowed-banner');
+    if (banner) banner.style.display = 'flex';
+
+    if (typeof editorUpdateStats === 'function') editorUpdateStats();
+    if (typeof editorCheckSave === 'function') editorCheckSave();
+}
+
+
+// ── MODAL: ELFOGAD ──
+function confirmPaste() {
+  pasteAllowed = true;
+  document.getElementById('paste-modal').classList.remove('open');
+  insertPastedContent(pendingPasteText);
+  pendingPasteText = '';
+  pendingPasteHtml = '';
+  showToast('📋 Beillesztve – az arány megjelenik a tanúsítványon.');
+}
+
+// ── MODAL: ELUTASÍT ──
+function denyPaste() {
+  pendingPasteText = '';
+  pendingPasteHtml = '';
+  document.getElementById('paste-modal').classList.remove('open');
+  showToast('✕ Beillesztés elutasítva – csak a kézzel gépelt szöveg kerül hitelesítésre.');
+}
+
+// ══ INICIALIZÁLÁS ══
+document.addEventListener('DOMContentLoaded', function () {
+    const editor = document.getElementById('doc-content-area');
+    if (!editor) return;
+
+    // Reset
+    typedChars  = 0;
+    pastedChars = 0;
+    pasteEvents = [];
+    pasteAllowed = false;
+
+    // PASTE
+    editor.addEventListener('paste', function (e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+        if (!text.trim()) return;
+
+        if (pasteAllowed) {
+            insertPastedContent(text);
+        } else {
+            pendingPasteText = text;
+            document.getElementById('paste-modal').classList.add('open');
+        }
+    });
+
+    // CUT
+    editor.addEventListener('cut', function () {
+        showToast('✂️ Kivágás – a törölt karakterek a javítás-számlálóba kerülnek.');
+    });
+
+    // DROP tiltás
+    editor.addEventListener('drop', function (e) {
+        e.preventDefault();
+        showToast('🚫 Fogd-és-ejtés nem engedélyezett.');
+    });
+
+    // ESC bezárja a paste modalt
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('paste-modal')?.classList.contains('open')) {
+            denyPaste();
+        }
+    });
+});
+
+
+
+async function editorSave() {
+    if (!currentUser) { showToast('❌ Be kell jelentkezni!'); return; }
+
+    const title     = document.getElementById('doc-title-input')?.value?.trim();
+    const content   = document.getElementById('doc-content-area')?.innerHTML || '';
+    const plainText = document.getElementById('doc-content-area')?.innerText || '';
+
+    if (!title) { showToast('❌ Add meg a szöveg címét!'); return; }
+    if (plainText.trim().split(/\s+/).filter(Boolean).length < 100) {
+        showToast('❌ Minimum 100 szó szükséges!'); return;
+    }
+
+    const btn = document.getElementById('btn-save');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
+
+    try {
+        const hash = await sha256(plainText);
+        const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+        if (!profile) throw new Error('Profil nem található');
+
+        const plan  = profile.plan || 'free';
+        const used  = profile.used_credits || 0;
+        const limit = profile.monthly_credits || 1;
+        if (plan === 'free' && used >= limit) {
+            showToast('❌ Havi keret elérve!');
+            openPricingContact('free_limit');
+            if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
+            return;
+        }
+
+        const ts    = Date.now().toString(36).toUpperCase();
+        const docId = `DOC-${profile.humano_id?.split('-')[1] || 'HMN'}-${ts}`;
+
+        const intervals = E.events
+            .filter(e => e.type === 'key')
+            .map(e => e.interval)
+            .filter(v => v && v > 0 && v < 10000);
+        const meanMs = intervals.length
+            ? Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length)
+            : 0;
+        const stddevMs = intervals.length
+            ? Math.round(Math.sqrt(
+                intervals.reduce((s, v) => s + Math.pow(v - meanMs, 2), 0) / intervals.length
+              ))
+            : 0;
+
+  const processData = {
+    keystrokeCount:    E.keys,
+    deletionCount:     E.dels,
+    pauseCount:        E.pauses,
+    focusSwitches:     E.focusSwitches,
+    rhythmWarnings:    E.warns,
+    repeatKeyCount:    E.repeatKeys,
+    humanIndex:        E.humanPct      || 0,        // szám a DB-be
+    humanCategory:     E.humanCategory || '–',      // ÚJ – kategória szöveg
+    humanCV:           E.humanCV       || 0,         // ÚJ – nyers cv érték
+    sessionDurationMs: E.sessionStart ? Date.now() - E.sessionStart : 0,
+    rhythmMeanMs:      meanMs,
+    rhythmStddevMs:    stddevMs,
+    pulseDataPoints:   E.pulseHistory.slice(),
+    events:            E.events.slice(-100),
+    typedChars,
+    pastedChars,
+    typedPct:    Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
+    pastedPct:   Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
+    pasteEvents: pasteEvents.length,
+    entropyCV:   E.entropyCV  || 0,
+    entropyPct:  E.entropyPct || 0,
+};
+
+        const isPublic = document.getElementById('doc-is-public')?.checked || false;
+
+        const { error } = await db.from('documents').insert({
+            doc_id:       docId,
+            title,
+            content,
+            hash,
+            author_id:    currentUser.id,
+            author_name:  profile.username || currentUser.email,
+            is_public:    isPublic,
+            process_data: processData,
+            saved_at:     new Date().toISOString(),
+            created_at:   new Date().toISOString(),
+            ots_pending:  true,
+            version:      1,
+        });
+        if (error) throw error;
+
+        await db.from('profiles').update({ used_credits: used + 1 }).eq('id', currentUser.id);
+
+        // ── Timelapse flush ──
+        const prevTempId = E.tempDocId;
+        E.certDocId = docId;
+
+        if (E.tlBatch.length > 0) await flushTlBatch(docId);
+
+        if (prevTempId) {
+            const { error: tlError } = await db
+                .from('timelapse_events')
+                .update({ document_id: docId })
+                .eq('document_id', prevTempId);
+            if (tlError) console.warn('Timelapse update hiba:', tlError);
+        }
+
+        E.tempDocId = null;
+        localStorage.removeItem('humano_temp_doc_id');
+        clearCurrentDraft();
+        // ─────────────────────
+
+        // Cert panel
+        document.getElementById('cert-id-val').textContent   = docId;
+        document.getElementById('cert-hash-val').textContent = hash;
+        document.getElementById('cert-panel').style.display  = 'block';
+        updateCertPanel(docId, hash, new Date().toISOString(), null, true);
+        editorSetStatus('saved');
+
+        // Paste ratio a cert panelen
+        if (pastedChars > 0) {
+            const total = typedChars + pastedChars;
+            const tPct  = Math.round((typedChars / total) * 100);
+            const pPct  = 100 - tPct;
+            const certRatio  = document.getElementById('cert-paste-ratio');
+            const certTyped  = document.getElementById('cert-typed-pct');
+            const certPasted = document.getElementById('cert-pasted-pct');
+            if (certRatio)  certRatio.style.display = 'block';
+            if (certTyped)  certTyped.textContent   = tPct + '%';
+            if (certPasted) certPasted.textContent  = pPct + '%';
+        }
+
+// OTS – háttérben fut, nem blokkolja a UI-t
+        document.getElementById('cert-ots-badge').textContent    = '⛓️ OpenTimestamps – feldolgozás folyamatban...';
+        document.getElementById('btn-ots-refresh').style.display = 'inline-flex';
+        tsaStamp(hash, docId);
+
+        // Timelapse widget auto-betöltés
+        const tlWidget = document.getElementById('tl-widget');
+        const tlInput  = document.getElementById('timelapse-doc-input');
+       if (tlWidget && tlInput) {
+    tlInput.value = docId;
+    tlWidget.style.display = 'block';
+    }
+
+        showToast('✅ Szöveg hitelesítve és mentve!');
+        await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+        if (btn) btn.textContent = '✅ Hitelesítve';
+
+    } catch (err) {
+        console.error('Mentési hiba:', err);
+        showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
+        if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
+    }
+}
+</script>
+</body>
+</html>
