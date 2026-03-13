@@ -337,8 +337,9 @@ async function deleteAccount() {
         await db.from('documents').delete().eq('author_id', currentUser.id);
         await db.from('profiles').delete().eq('id', currentUser.id);
 
-        const session = await db.auth.getSession();
-        const token = session?.data?.session?.access_token;
+        const { data: { session } } = await db.auth.getSession();
+        const token = session?.access_token;
+        if (!token) { showToast('❌ Munkamenet lejárt, jelentkezz be újra.'); return; }
         if (token) {
             await fetch('https://vidlijysdhbfvvytuzcg.supabase.co/functions/v1/delete-user', {
                 method: 'POST',
