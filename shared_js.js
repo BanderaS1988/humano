@@ -3645,19 +3645,17 @@ function renderFeatureVotes() {
 }
 
 async function castVote(featureId) {
+    if (!currentUser) { showToast('⚠️ Szavazáshoz be kell jelentkezni!'); return; }
     if (fvVoted[featureId]) return;
-
     fvCounts[featureId] = (fvCounts[featureId] || 0) + 1;
     fvVoted[featureId] = true;
     localStorage.setItem('humano_fv_voted', JSON.stringify(fvVoted));
     renderFeatureVotes();
-
     const { error } = await db.from('feature_votes').insert({
         feature_id: featureId,
         user_id: currentUser?.id || null,
         voter_ip: null,
     });
-
     if (error) {
         if (error.code === '23505') {
             showToast('⚠️ Erre a funkcióra már szavaztál.');
@@ -3670,7 +3668,6 @@ async function castVote(featureId) {
         }
         return;
     }
-
     showToast('✦ Szavazat rögzítve – köszönjük!');
 }
 
