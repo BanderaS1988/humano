@@ -333,22 +333,22 @@ async function deleteAccount() {
     if (!confirm1) return;
     const confirm2 = confirm('Utolsó megerősítés: a fiók és az összes adat véglegesen törlődik. Folytatod?');
     if (!confirm2) return;
-    try {
-        await db.from('documents').delete().eq('author_id', currentUser.id);
-        await db.from('profiles').delete().eq('id', currentUser.id);
 
+    try {
         const { data: { session } } = await db.auth.getSession();
         const token = session?.access_token;
         if (!token) { showToast('❌ Munkamenet lejárt, jelentkezz be újra.'); return; }
-        if (token) {
-            await fetch('https://vidlijysdhbfvvytuzcg.supabase.co/functions/v1/delete-user', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-        }
+
+        const res = await fetch('https://vidlijysdhbfvvytuzcg.supabase.co/functions/v1/delete-user', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Ismeretlen hiba');
 
         await db.auth.signOut();
         showToast('✅ Fiók törölve.');
