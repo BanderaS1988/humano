@@ -1173,6 +1173,7 @@ async function loadPublicStats() {
 
     loadLiveFeed();
     loadHallOfFame();
+    setTimeout(loadPublicStats, 60000);
 }
 
 async function loadLiveFeed() {
@@ -1196,6 +1197,7 @@ async function loadLiveFeed() {
           <span class="badge badge-gold" style="font-size:.65rem">${hi}%</span>
         </div>`;
     }).join('');
+    
 }
 
 async function loadHallOfFame() {
