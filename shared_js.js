@@ -3617,6 +3617,7 @@ async function toggleDocPublic(docId, currentlyPublic) {
     showToast(newState ? '🌐 Dokumentum nyilvánosra állítva.' : '🔒 Dokumentum privátba visszavonva.');
 }
 
+```javascript
 /* ─── FUNKCIÓ SZAVAZÓ ───────────────────────────────────────── */
 const FEATURE_LIST = [
     { id: 'mobile_app', label: '📱 Mobilalkalmazás (iOS / Android)', desc: 'Natív app a hitelesítéshez és ellenőrzéshez.' },
@@ -3712,8 +3713,164 @@ async function castVote(featureId) {
     showToast('✦ Szavazat rögzítve – köszönjük!');
 }
 
-
 /* ─── 27. INICIALIZÁLÁS ─────────────────────────────────────── */
+
+async function checkCalibration() {
+  if (!currentUser) return;
+  const { data } = await db
+    .from('typing_profiles')
+    .select('id')
+    .eq('user_id', currentUser.id)
+    .limit(1);
+  if (!data || !data.length) {
+    setTimeout(() => showPage('calibration'), 800);
+  }
+}
+
+async function checkCalibrationAge() {
+  if (!currentUser) return;
+  const { data } = await db
+    .from('typing_profiles')
+    .select('created_at')
+    .eq('user_id', currentUser.id)
+    .limit(1);
+  if (!data?.length) return;
+  const ageMs = Date.now() - new Date(data[0].created_at);
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  if (ageDays > 30) {
+    showToast('📅 30 napja kalibráltál – érdemes frissíteni a profilod');
+  }
+}
+
+/* ─── PECSÉT GENERÁTOR ──────────────────────────────────────── */
+
+function generateSealCanvas(docId, author, date, otsStatus, size = 400) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const cx = size / 2, cy = size / 2;
+    const R = size * 0.44;
+    const r2 = R * 0.78;
+
+    ctx.fillStyle = '#060608';
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = size * 0.012;
+    const teeth = 36;
+    ctx.beginPath();
+    for (let i = 0; i < teeth * 2; i++) {
+        const ang = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
+        const rr = i % 2 === 0 ? R : R * 0.92;
+        const x = cx + Math.cos(ang) * rr;
+        const y = cy + Math.sin(ang) * rr;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.lineWidth = size * 0.006;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = size * 0.003;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r2 * 0.72, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    const topText = '✦  H U M A N O  ✦';
+    ctx.font = `bold ${size * 0.052}px Georgia, serif`;
+    ctx.fillStyle = '#c9a84c';
+    ctx.textAlign = 'center';
+    const arcR = r2 * 0.87;
+    const arcStart = -Math.PI * 0.78;
+    const charW = size * 0.052;
+    const totalAng = (topText.length * charW) / arcR;
+    for (let i = 0; i < topText.length; i++) {
+        const ang = arcStart + (i / topText.length) * totalAng * 1.05;
+        ctx.save();
+        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
+        ctx.rotate(ang + Math.PI / 2);
+        ctx.fillText(topText[i], 0, 0);
+        ctx.restore();
+    }
+
+    const botText = 'A Z   E M B E R I   A L K O T Á S   H I T E L E S Í T Ő J E';
+    ctx.font = `${size * 0.028}px Georgia, serif`;
+    ctx.fillStyle = '#8a6a1a';
+    const botTotal = (botText.length * size * 0.028 * 0.72) / arcR;
+    const botStart = Math.PI * 0.12;
+    for (let i = 0; i < botText.length; i++) {
+        const ang = botStart + (i / botText.length) * botTotal * 1.1 - botTotal * 0.55;
+        ctx.save();
+        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
+        ctx.rotate(ang - Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText(botText[i], 0, 0);
+        ctx.restore();
+    }
+
+    ctx.font = `bold ${size * 0.13}px Georgia, serif`;
+    ctx.fillStyle = '#c9a84c';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✦', cx, cy - size * 0.12);
+
+    if (author) {
+        ctx.font = `${size * 0.03}px Georgia, serif`;
+        ctx.fillStyle = '#c9a84c';
+        const shortAuthor = author.length > 20 ? author.substring(0, 18) + '…' : author;
+        ctx.fillText(shortAuthor, cx, cy - size * 0.04);
+    }
+
+    ctx.font = `bold ${size * 0.042}px 'Courier New', monospace`;
+    ctx.fillStyle = '#c9a84c';
+    ctx.fillText((docId || 'DOC-XXXXXXXX-XXXX').substring(0, 22), cx, cy + size * 0.04);
+
+    ctx.font = `${size * 0.032}px Georgia, serif`;
+    ctx.fillStyle = '#8a6a1a';
+    ctx.fillText(date || new Date().toLocaleDateString('hu-HU'), cx, cy + size * 0.14);
+
+    ctx.font = `italic ${size * 0.028}px Georgia, serif`;
+    ctx.fillText(
+        otsStatus === 'confirmed' ? '⛓ Bitcoin blokklánc ✓' : 'SHA-256 hitelesített',
+        cx, cy + size * 0.22
+    );
+
+    ctx.textBaseline = 'alphabetic';
+    return canvas;
+}
+
+async function downloadSeal(docId) {
+    if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
+    showToast('⏳ Pecsét generálása...');
+    let author = currentUser?.email || '–';
+    let otsStatus = 'pending';
+    let date = new Date().toLocaleDateString('hu-HU');
+    const { data: doc } = await db.from('documents')
+        .select('author_name, created_at, ots_receipt')
+        .eq('doc_id', docId).single();
+    if (doc) {
+        author = doc.author_name || author;
+        otsStatus = doc.ots_receipt ? 'confirmed' : 'pending';
+        date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('hu-HU') : date;
+    }
+    const canvas = generateSealCanvas(docId, author, date, otsStatus, 400);
+    const a = document.createElement('a');
+    a.download = `HUMANO-pecsét-${docId}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✅ Pecsét letöltve!');
+}
+
+/* ─── INICIALIZÁLÁS ─────────────────────────────────────────── */
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     const { data: { session } } = await db.auth.getSession();
@@ -3734,11 +3891,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     _loadPageFromHash();
-
     loadPublicStats();
     initHeroCanvas();
-
-  
 
     if (typeof startAutosaveTimer === 'function') startAutosaveTimer();
 
@@ -3767,15 +3921,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('send-modal')?.addEventListener('click', e => {
         if (e.target === document.getElementById('send-modal')) closeSendModal?.();
     });
-
     document.getElementById('social-modal')?.addEventListener('click', e => {
         if (e.target === document.getElementById('social-modal')) closeSocialModal();
     });
-
     document.getElementById('image-modal')?.addEventListener('click', e => {
         if (e.target === document.getElementById('image-modal')) closeImageModal?.();
     });
-
     document.getElementById('info-modal')?.addEventListener('click', e => {
         if (e.target === document.getElementById('info-modal')) closeInfoModal();
     });
@@ -3798,471 +3949,160 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    
-
     window.addEventListener('resize', () => {
         if (typeof initPulseCanvas === 'function') initPulseCanvas();
     });
 
+    /* ─── KALIBRÁCIÓ ── */
 
+    const CAL = {
+        step1Events: [],
+        step2Events: [],
+        step1LastKey: null,
+        step2LastKey: null,
+        step1SessionStart: null,
+        step2SessionStart: null,
+    };
 
-
-
-/* ─── KALIBRÁCIÓ ────────────────────────────────────────────── */
-
-// Kalibrációs állapot
-const CAL = {
-  step1Events: [],   // másolás közben rögzített leütések
-  step2Events: [],   // szabad írás közben rögzített leütések
-  step1LastKey: null,
-  step2LastKey: null,
-  step1SessionStart: null,
-  step2SessionStart: null,
-};
-
-// ── KALIBRÁCIÓ MEGJELENÍTÉSE (első bejelentkezésnél) ──
-async function checkCalibration() {
-  if (!currentUser) return;
-  const { data } = await db
-    .from('typing_profiles')
-    .select('id')
-    .eq('user_id', currentUser.id)
-    .limit(1);
-  if (!data || !data.length) {
-    // Nincs még profil – megmutatjuk a kalibrációt
-    setTimeout(() => showPage('calibration'), 800);
-  }
-}
-
-   async function checkCalibrationAge() {
-    if (!currentUser) return;
-    const { data } = await db
-        .from('typing_profiles')
-        .select('created_at')
-        .eq('user_id', currentUser.id)
-        .limit(1);
-    
-    if (!data?.length) return;
-    
-    const ageMs = Date.now() - new Date(data[0].created_at);
-    const ageDays = ageMs / (1000 * 60 * 60 * 24);
-    
-    if (ageDays > 30) {
-        showToast('📅 30 napja kalibráltál – érdemes frissíteni a profilod');
-    }
-}
-
-// ── KALIBRÁCIÓS OLDAL INICIALIZÁLÁSA ──
-function calInit() {
-  const area1 = document.getElementById('cal-area-1');
-  const area2 = document.getElementById('cal-area-2');
-  if (!area1 || !area2) return;
-
-  // Paste tiltása a kalibrációs mezőkben
-  [area1, area2].forEach(el => {
-    el.addEventListener('paste', e => {
-      e.preventDefault();
-      showToast('📋 Kalibrációban beillesztés nem engedélyezett – kérlek gépeld be.');
-    });
-    el.addEventListener('drop', e => e.preventDefault());
-  });
-
-  // 1. mező – másolás rögzítése
-  area1.addEventListener('keydown', e => {
-    if (!e.isTrusted || e.repeat) return;
-    const now = Date.now();
-    if (!CAL.step1SessionStart) CAL.step1SessionStart = now;
-    if (e.key === 'Backspace') {
-      CAL.step1Events.push({ type: 'delete', ts: now });
-    } else if (e.key.length === 1) {
-      const interval = CAL.step1LastKey ? now - CAL.step1LastKey : 150;
-      CAL.step1Events.push({ type: 'key', ts: now, interval });
-      CAL.step1LastKey = now;
-    }
-    setTimeout(() => calUpdate1(), 10);
-  });
-
-  // 2. mező – szabad írás rögzítése
-  area2.addEventListener('keydown', e => {
-    if (!e.isTrusted || e.repeat) return;
-    const now = Date.now();
-    if (!CAL.step2SessionStart) CAL.step2SessionStart = now;
-    if (e.key === 'Backspace') {
-      CAL.step2Events.push({ type: 'delete', ts: now });
-    } else if (e.key.length === 1) {
-      const interval = CAL.step2LastKey ? now - CAL.step2LastKey : 150;
-      CAL.step2Events.push({ type: 'key', ts: now, interval });
-      CAL.step2LastKey = now;
-    }
-    setTimeout(() => calUpdate2(), 10);
-  });
-}
-
-// ── 1. MEZŐ FRISSÍTÉSE ──
-function calUpdate1() {
-  const area = document.getElementById('cal-area-1');
-  if (!area) return;
-  const len = area.innerText.replace(/\n/g, '').length;
-  const target = 347;
-  const pct = Math.min(100, Math.round((len / target) * 100));
-  const charsEl = document.getElementById('cal-1-chars');
-  const progressEl = document.getElementById('cal-1-progress');
-  const btnEl = document.getElementById('cal-1-btn');
-  if (charsEl) charsEl.textContent = len;
-  if (progressEl) progressEl.style.width = pct + '%';
-  if (btnEl) btnEl.disabled = len < target * 0.85; // 85% elég
-}
-
-// ── 2. MEZŐ FRISSÍTÉSE ──
-function calUpdate2() {
-  const area = document.getElementById('cal-area-2');
-  if (!area) return;
-  const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
-  const wordsEl = document.getElementById('cal-2-words');
-  const btnEl = document.getElementById('cal-2-btn');
-  if (wordsEl) wordsEl.textContent = words;
-  if (btnEl) btnEl.disabled = words < 30;
-}
-
-// ── 1. LÉPÉS KÉSZ ──
-function calStep1Complete() {
-  // Lépésjelzők frissítése
-  const ind1 = document.getElementById('cal-step-1-indicator');
-  const ind2 = document.getElementById('cal-step-2-indicator');
-  if (ind1) ind1.style.borderColor = 'var(--success)';
-  if (ind2) {
-    ind2.style.borderColor = 'var(--gold)';
-    ind2.style.background = 'rgba(201,168,76,.06)';
-    ind2.querySelector('div').style.background = 'linear-gradient(135deg,#a07830,#c9a84c)';
-    ind2.querySelector('div').style.color = '#0c0a04';
-    ind2.querySelector('div').style.border = 'none';
-    ind2.querySelectorAll('div')[1].querySelector('div').style.color = 'var(--gold2)';
-  }
-
-  // 1. lépés elrejtése, 2. megjelenítése
-  document.getElementById('cal-step-1').style.display = 'none';
-  document.getElementById('cal-step-2').style.display = 'block';
-  document.getElementById('cal-area-2').focus();
-  showToast('✅ Másolási minta rögzítve – most írj szabadon!');
-}
-
-// ── 2. LÉPÉS KÉSZ – MENTÉS ──
-async function calStep2Complete() {
-  const btn = document.getElementById('cal-2-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
-
-  try {
-    // Feature vektor kiszámítása mindkét mintából
-    const transcriptionFeatures = calExtractFeatures(CAL.step1Events);
-    const compositionFeatures = calExtractFeatures(CAL.step2Events);
-
-    // Mentés Supabase-be – két sor (transcription + composition)
-    const rows = [
-      {
-        user_id: currentUser.id,
-        profile_type: 'transcription',
-        burst_mean: transcriptionFeatures.burstMean,
-        pause_variance: transcriptionFeatures.pauseVariance,
-        revision_rate: transcriptionFeatures.revisionRate,
-        rhythm_entropy: transcriptionFeatures.rhythmEntropy,
-        sample_count: CAL.step1Events.filter(e => e.type === 'key').length,
-      },
-      {
-        user_id: currentUser.id,
-        profile_type: 'composition',
-        burst_mean: compositionFeatures.burstMean,
-        pause_variance: compositionFeatures.pauseVariance,
-        revision_rate: compositionFeatures.revisionRate,
-        rhythm_entropy: compositionFeatures.rhythmEntropy,
-        sample_count: CAL.step2Events.filter(e => e.type === 'key').length,
-      }
-    ];
-
-    const { error } = await db.from('typing_profiles').upsert(rows, {
-    onConflict: 'user_id,profile_type'
-});
-    if (error) throw error;
-
-    // Eredmény megjelenítése
-    document.getElementById('cal-step-2').style.display = 'none';
-    document.getElementById('cal-skip-wrap').style.display = 'none';
-    document.getElementById('cal-result').style.display = 'block';
-
-    // Eredmény számok
-    document.getElementById('cal-result-entropy').textContent =
-      compositionFeatures.rhythmEntropy.toFixed(2);
-    document.getElementById('cal-result-burst').textContent =
-      Math.round(compositionFeatures.burstMean) + ' ms';
-    document.getElementById('cal-result-revision').textContent =
-      (compositionFeatures.revisionRate * 100).toFixed(1) + '%';
-
-    showToast('✦ Kalibrációs profil elmentve!');
-
-  } catch (err) {
-    console.error('Kalibráció mentési hiba:', err);
-    if (btn) { btn.disabled = false; btn.textContent = '✦ Kalibráció befejezése'; }
-    showToast('❌ Hiba a mentés közben – próbáld újra.');
-  }
-}
-
-// ── KIHAGYÁS ──
-function calSkip() {
-  showToast('👌 Kihagyva – bármikor elvégezheted a Dashboardon.');
-  showPage('dashboard');
-}
-
-// ── FEATURE VEKTOR KISZÁMÍTÁSA ──
-function calExtractFeatures(events) {
-  const keyEvents = events.filter(e => e.type === 'key');
-  const deleteEvents = events.filter(e => e.type === 'delete');
-
-  if (keyEvents.length < 5) {
-    return { burstMean: 0, pauseVariance: 0, revisionRate: 0, rhythmEntropy: 0 };
-  }
-
-  const intervals = keyEvents
-    .map(e => e.interval)
-    .filter(v => v && v > 0 && v < 10000);
-
-  // Átlagos intervallum
-  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-
-  // Szórás
-  const variance = intervals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / intervals.length;
-  const stddev = Math.sqrt(variance);
-
-  // Burst mean – átlagos folyamatos gépelési szakasz hossza (ms)
-  let bursts = [];
-  let currentBurst = [];
-  intervals.forEach(iv => {
-    if (iv < 1500) {
-      currentBurst.push(iv);
-    } else {
-      if (currentBurst.length > 0) {
-        bursts.push(currentBurst.reduce((a, b) => a + b, 0));
-        currentBurst = [];
-      }
-    }
-  });
-  if (currentBurst.length > 0) bursts.push(currentBurst.reduce((a, b) => a + b, 0));
-  const burstMean = bursts.length ? bursts.reduce((a, b) => a + b, 0) / bursts.length : mean;
-
-  // Pause variance – 1500ms feletti szünetek szórása
-  const pauses = intervals.filter(v => v >= 1500);
-  const pauseMean = pauses.length ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
-  const pauseVariance = pauses.length
-    ? pauses.reduce((s, v) => s + Math.pow(v - pauseMean, 2), 0) / pauses.length
-    : 0;
-
-  // Revision rate – törlések / összes leütés
-  const revisionRate = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
-
-  // Rhythm entropy – Shannon entrópia az intervallum-eloszláson
-  const buckets = {};
-  intervals.forEach(v => {
-    const bucket = Math.floor(v / 100) * 100;
-    buckets[bucket] = (buckets[bucket] || 0) + 1;
-  });
-  const total = intervals.length;
-  const rhythmEntropy = -Object.values(buckets).reduce((s, count) => {
-    const p = count / total;
-    return s + (p > 0 ? p * Math.log2(p) : 0);
-  }, 0);
-
-  return { burstMean, pauseVariance, revisionRate, rhythmEntropy };
-}
-
-// ── CREATIVE AUTHORSHIP PROBABILITY (mentéskor hívja az editor) ──
-async function getCreativeAuthorshipScore(sessionEvents) {
-  if (!currentUser) return null;
-
-  // Lekérjük a felhasználó profilját
-  const { data: profiles } = await db
-    .from('typing_profiles')
-    .select('*')
-    .eq('user_id', currentUser.id);
-
-  if (!profiles || profiles.length < 2) return null;
-
-  const compProfile = profiles.find(p => p.profile_type === 'composition');
-  const transProfile = profiles.find(p => p.profile_type === 'transcription');
-  if (!compProfile || !transProfile) return null;
-
-  // Aktuális munkamenet feature vektora
-  const current = calExtractFeatures(sessionEvents);
-
-  // Távolság a composition profiltól
-  const distComp = calProfileDistance(current, compProfile);
-  // Távolság a transcription profiltól
-  const distTrans = calProfileDistance(current, transProfile);
-
-  // Valószínűség: minél közelebb a composition-hoz, annál magasabb
-  const total = distComp + distTrans;
-  if (total === 0) return 50;
-  const score = Math.round((distTrans / total) * 100);
-  return Math.min(99, Math.max(1, score));
-}
-
-// ── PROFIL TÁVOLSÁG KISZÁMÍTÁSA ──
-function calProfileDistance(current, profile) {
-  const w = { burstMean: 0.25, pauseVariance: 0.25, revisionRate: 0.25, rhythmEntropy: 0.25 };
-  const normalize = (val, ref) => ref === 0 ? 0 : Math.abs(val - ref) / Math.max(ref, 0.001);
-  return (
-    w.burstMean * normalize(current.burstMean, profile.burst_mean) +
-    w.pauseVariance * normalize(current.pauseVariance, profile.pause_variance) +
-    w.revisionRate * normalize(current.revisionRate, profile.revision_rate) +
-    w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy)
-  );
-}
-
-// ── BEKAPCSOLÁS: checkCalibration hívása login után ──
-// A shared_js.js updateNavAuth függvényébe kell hívni:
-// if (user) { ... checkCalibration(); }
-// ÉS a _onSectionActivated-ba:
-// if (hash === 'calibration') { calInit(); }
-
-/* ─── PECSÉT GENERÁTOR ──────────────────────────────────────── */
-
-function generateSealCanvas(docId, author, date, otsStatus, size = 400) {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const cx = size / 2, cy = size / 2;
-    const R = size * 0.44;
-    const r2 = R * 0.78;
-
-    // Háttér
-    ctx.fillStyle = '#060608';
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Fogazott külső kör
-    ctx.strokeStyle = '#c9a84c';
-    ctx.lineWidth = size * 0.012;
-    const teeth = 36;
-    ctx.beginPath();
-    for (let i = 0; i < teeth * 2; i++) {
-        const ang = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
-        const rr = i % 2 === 0 ? R : R * 0.92;
-        const x = cx + Math.cos(ang) * rr;
-        const y = cy + Math.sin(ang) * rr;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-
-    // Belső körök
-    ctx.lineWidth = size * 0.006;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r2, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.globalAlpha = 0.4;
-    ctx.lineWidth = size * 0.003;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r2 * 0.72, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // Köríves szöveg fent: HUMANO
-    const topText = '✦  H U M A N O  ✦';
-    ctx.font = `bold ${size * 0.052}px Georgia, serif`;
-    ctx.fillStyle = '#c9a84c';
-    ctx.textAlign = 'center';
-    const arcR = r2 * 0.87;
-    const arcStart = -Math.PI * 0.78;
-    const charW = size * 0.052;
-    const totalAng = (topText.length * charW) / arcR;
-    for (let i = 0; i < topText.length; i++) {
-        const ang = arcStart + (i / topText.length) * totalAng * 1.05;
-        ctx.save();
-        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
-        ctx.rotate(ang + Math.PI / 2);
-        ctx.fillText(topText[i], 0, 0);
-        ctx.restore();
+    function calInit() {
+        const area1 = document.getElementById('cal-area-1');
+        const area2 = document.getElementById('cal-area-2');
+        if (!area1 || !area2) return;
+        [area1, area2].forEach(el => {
+            el.addEventListener('paste', e => { e.preventDefault(); showToast('📋 Kalibrációban beillesztés nem engedélyezett – kérlek gépeld be.'); });
+            el.addEventListener('drop', e => e.preventDefault());
+        });
+        area1.addEventListener('keydown', e => {
+            if (!e.isTrusted || e.repeat) return;
+            const now = Date.now();
+            if (!CAL.step1SessionStart) CAL.step1SessionStart = now;
+            if (e.key === 'Backspace') { CAL.step1Events.push({ type: 'delete', ts: now }); }
+            else if (e.key.length === 1) {
+                const interval = CAL.step1LastKey ? now - CAL.step1LastKey : 150;
+                CAL.step1Events.push({ type: 'key', ts: now, interval });
+                CAL.step1LastKey = now;
+            }
+            setTimeout(() => calUpdate1(), 10);
+        });
+        area2.addEventListener('keydown', e => {
+            if (!e.isTrusted || e.repeat) return;
+            const now = Date.now();
+            if (!CAL.step2SessionStart) CAL.step2SessionStart = now;
+            if (e.key === 'Backspace') { CAL.step2Events.push({ type: 'delete', ts: now }); }
+            else if (e.key.length === 1) {
+                const interval = CAL.step2LastKey ? now - CAL.step2LastKey : 150;
+                CAL.step2Events.push({ type: 'key', ts: now, interval });
+                CAL.step2LastKey = now;
+            }
+            setTimeout(() => calUpdate2(), 10);
+        });
     }
 
-    // Köríves szöveg lent
-    const botText = 'A Z   E M B E R I   A L K O T Á S   H I T E L E S Í T Ő J E';
-    ctx.font = `${size * 0.028}px Georgia, serif`;
-    ctx.fillStyle = '#8a6a1a';
-    const botCharW = size * 0.028;
-    const botTotal = (botText.length * botCharW * 0.72) / arcR;
-    const botStart = Math.PI * 0.12;
-    for (let i = 0; i < botText.length; i++) {
-        const ang = botStart + (i / botText.length) * botTotal * 1.1 - botTotal * 0.55;
-        ctx.save();
-        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
-        ctx.rotate(ang - Math.PI / 2);
-        ctx.textAlign = 'center';
-        ctx.fillText(botText[i], 0, 0);
-        ctx.restore();
+    function calUpdate1() {
+        const area = document.getElementById('cal-area-1'); if (!area) return;
+        const len = area.innerText.replace(/\n/g, '').length;
+        const pct = Math.min(100, Math.round((len / 347) * 100));
+        const charsEl = document.getElementById('cal-1-chars');
+        const progressEl = document.getElementById('cal-1-progress');
+        const btnEl = document.getElementById('cal-1-btn');
+        if (charsEl) charsEl.textContent = len;
+        if (progressEl) progressEl.style.width = pct + '%';
+        if (btnEl) btnEl.disabled = len < 347 * 0.85;
     }
 
-    // Középső ✦
-    ctx.font = `bold ${size * 0.13}px Georgia, serif`;
-    ctx.fillStyle = '#c9a84c';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('✦', cx, cy - size * 0.12);
-
-    // Szerző
-    if (author) {
-        ctx.font = `${size * 0.03}px Georgia, serif`;
-        ctx.fillStyle = '#c9a84c';
-        const shortAuthor = author.length > 20 ? author.substring(0, 18) + '…' : author;
-        ctx.fillText(shortAuthor, cx, cy - size * 0.04);
+    function calUpdate2() {
+        const area = document.getElementById('cal-area-2'); if (!area) return;
+        const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
+        const wordsEl = document.getElementById('cal-2-words');
+        const btnEl = document.getElementById('cal-2-btn');
+        if (wordsEl) wordsEl.textContent = words;
+        if (btnEl) btnEl.disabled = words < 30;
     }
 
-    // DOC ID
-    ctx.font = `bold ${size * 0.042}px 'Courier New', monospace`;
-    ctx.fillStyle = '#c9a84c';
-    const idText = (docId || 'DOC-XXXXXXXX-XXXX').substring(0, 22);
-    ctx.fillText(idText, cx, cy + size * 0.04);
+    window.calInit = calInit;
+    window.calUpdate1 = calUpdate1;
+    window.calUpdate2 = calUpdate2;
 
-    // Dátum
-    ctx.font = `${size * 0.032}px Georgia, serif`;
-    ctx.fillStyle = '#8a6a1a';
-    ctx.fillText(date || new Date().toLocaleDateString('hu-HU'), cx, cy + size * 0.14);
+    window.calStep1Complete = function() {
+        const ind1 = document.getElementById('cal-step-1-indicator');
+        const ind2 = document.getElementById('cal-step-2-indicator');
+        if (ind1) ind1.style.borderColor = 'var(--success)';
+        if (ind2) {
+            ind2.style.borderColor = 'var(--gold)';
+            ind2.style.background = 'rgba(201,168,76,.06)';
+            ind2.querySelector('div').style.background = 'linear-gradient(135deg,#a07830,#c9a84c)';
+            ind2.querySelector('div').style.color = '#0c0a04';
+            ind2.querySelector('div').style.border = 'none';
+            ind2.querySelectorAll('div')[1].querySelector('div').style.color = 'var(--gold2)';
+        }
+        document.getElementById('cal-step-1').style.display = 'none';
+        document.getElementById('cal-step-2').style.display = 'block';
+        document.getElementById('cal-area-2').focus();
+        showToast('✅ Másolási minta rögzítve – most írj szabadon!');
+    };
 
-    // OTS státusz
-    ctx.font = `italic ${size * 0.028}px Georgia, serif`;
-    ctx.fillStyle = '#8a6a1a';
-    ctx.fillText(
-        otsStatus === 'confirmed' ? '⛓ Bitcoin blokklánc ✓' : 'SHA-256 hitelesített',
-        cx, cy + size * 0.22
-    );
+    window.calStep2Complete = async function() {
+        const btn = document.getElementById('cal-2-btn');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
+        try {
+            const transcriptionFeatures = calExtractFeatures(CAL.step1Events);
+            const compositionFeatures = calExtractFeatures(CAL.step2Events);
+            const rows = [
+                { user_id: currentUser.id, profile_type: 'transcription', burst_mean: transcriptionFeatures.burstMean, pause_variance: transcriptionFeatures.pauseVariance, revision_rate: transcriptionFeatures.revisionRate, rhythm_entropy: transcriptionFeatures.rhythmEntropy, sample_count: CAL.step1Events.filter(e => e.type === 'key').length },
+                { user_id: currentUser.id, profile_type: 'composition', burst_mean: compositionFeatures.burstMean, pause_variance: compositionFeatures.pauseVariance, revision_rate: compositionFeatures.revisionRate, rhythm_entropy: compositionFeatures.rhythmEntropy, sample_count: CAL.step2Events.filter(e => e.type === 'key').length }
+            ];
+            const { error } = await db.from('typing_profiles').upsert(rows, { onConflict: 'user_id,profile_type' });
+            if (error) throw error;
+            document.getElementById('cal-step-2').style.display = 'none';
+            document.getElementById('cal-skip-wrap').style.display = 'none';
+            document.getElementById('cal-result').style.display = 'block';
+            document.getElementById('cal-result-entropy').textContent = compositionFeatures.rhythmEntropy.toFixed(2);
+            document.getElementById('cal-result-burst').textContent = Math.round(compositionFeatures.burstMean) + ' ms';
+            document.getElementById('cal-result-revision').textContent = (compositionFeatures.revisionRate * 100).toFixed(1) + '%';
+            showToast('✦ Kalibrációs profil elmentve!');
+        } catch (err) {
+            console.error('Kalibráció mentési hiba:', err);
+            if (btn) { btn.disabled = false; btn.textContent = '✦ Kalibráció befejezése'; }
+            showToast('❌ Hiba a mentés közben – próbáld újra.');
+        }
+    };
 
-    ctx.textBaseline = 'alphabetic';
-    return canvas;
-}
+    window.calSkip = function() {
+        showToast('👌 Kihagyva – bármikor elvégezheted a Dashboardon.');
+        showPage('dashboard');
+    };
 
-async function downloadSeal(docId) {
-    if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
-    showToast('⏳ Pecsét generálása...');
+    window.calExtractFeatures = function(events) {
+        const keyEvents = events.filter(e => e.type === 'key');
+        const deleteEvents = events.filter(e => e.type === 'delete');
+        if (keyEvents.length < 5) return { burstMean: 0, pauseVariance: 0, revisionRate: 0, rhythmEntropy: 0 };
+        const intervals = keyEvents.map(e => e.interval).filter(v => v && v > 0 && v < 10000);
+        const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        let bursts = [], currentBurst = [];
+        intervals.forEach(iv => {
+            if (iv < 1500) { currentBurst.push(iv); }
+            else { if (currentBurst.length > 0) { bursts.push(currentBurst.reduce((a, b) => a + b, 0)); currentBurst = []; } }
+        });
+        if (currentBurst.length > 0) bursts.push(currentBurst.reduce((a, b) => a + b, 0));
+        const burstMean = bursts.length ? bursts.reduce((a, b) => a + b, 0) / bursts.length : mean;
+        const pauses = intervals.filter(v => v >= 1500);
+        const pauseMean = pauses.length ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
+        const pauseVariance = pauses.length ? pauses.reduce((s, v) => s + Math.pow(v - pauseMean, 2), 0) / pauses.length : 0;
+        const revisionRate = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
+        const buckets = {};
+        intervals.forEach(v => { const b = Math.floor(v / 100) * 100; buckets[b] = (buckets[b] || 0) + 1; });
+        const total = intervals.length;
+        const rhythmEntropy = -Object.values(buckets).reduce((s, count) => { const p = count / total; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+        return { burstMean, pauseVariance, revisionRate, rhythmEntropy };
+    };
 
-    let author = currentUser?.email || '–';
-    let otsStatus = 'pending';
-    let date = new Date().toLocaleDateString('hu-HU');
+    window.calProfileDistance = function(current, profile) {
+        const w = { burstMean: 0.25, pauseVariance: 0.25, revisionRate: 0.25, rhythmEntropy: 0.25 };
+        const normalize = (val, ref) => ref === 0 ? 0 : Math.abs(val - ref) / Math.max(ref, 0.001);
+        return w.burstMean * normalize(current.burstMean, profile.burst_mean) +
+               w.pauseVariance * normalize(current.pauseVariance, profile.pause_variance) +
+               w.revisionRate * normalize(current.revisionRate, profile.revision_rate) +
+               w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy);
+    };
 
-    const { data: doc } = await db.from('documents')
-        .select('author_name, created_at, ots_receipt')
-        .eq('doc_id', docId).single();
-
-    if (doc) {
-        author = doc.author_name || author;
-        otsStatus = doc.ots_receipt ? 'confirmed' : 'pending';
-        date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('hu-HU') : date;
-    }
-
-    const canvas = generateSealCanvas(docId, author, date, otsStatus, 400);
-    const a = document.createElement('a');
-    a.download = `HUMANO-pecsét-${docId}.png`;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-    showToast('✅ Pecsét letöltve!');
-}
-   
 });
