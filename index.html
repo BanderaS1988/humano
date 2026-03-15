@@ -454,16 +454,55 @@
   </div>
 </div>
 
-        <!-- Opciók -->
+       <!-- Opciók -->
 <div class="options-row" style="margin-top:.75rem">
     <select id="doc-category" class="form-control" style="max-width:220px;font-size:.85rem">
         <option value="">Kategória (opcionális)</option>
-        <option value="essay">Esszé / Dolgozat</option>
-        <option value="fiction">Szépirodalom</option>
-        <option value="journalism">Újságírás / Cikk</option>
-        <option value="academic">Tudományos</option>
-        <option value="business">Üzleti szöveg</option>
-        <option value="poetry">Vers / Líra</option>
+        <optgroup label="📚 Irodalom">
+            <option value="fiction">Szépirodalom / Próza</option>
+            <option value="poetry">Vers / Líra</option>
+            <option value="drama">Dráma / Forgatókönyv</option>
+            <option value="short_story">Novella / Kisregény</option>
+            <option value="memoir">Önéletrajz / Napló</option>
+        </optgroup>
+        <optgroup label="🎓 Oktatás">
+            <option value="essay">Esszé / Dolgozat</option>
+            <option value="academic">Tudományos cikk</option>
+            <option value="thesis">Szakdolgozat / Diplomamunka</option>
+            <option value="study_notes">Tanulmányi jegyzet</option>
+            <option value="exam">Vizsgadolgozat</option>
+        </optgroup>
+        <optgroup label="📰 Újságírás / Tartalom">
+            <option value="journalism">Újságcikk / Riport</option>
+            <option value="opinion">Vélemény / Kommentár</option>
+            <option value="interview">Interjú</option>
+            <option value="review">Recenzió / Kritika</option>
+            <option value="blog">Blog / Személyes írás</option>
+        </optgroup>
+        <optgroup label="💼 Üzleti / Szakmai">
+            <option value="business">Üzleti szöveg</option>
+            <option value="report">Jelentés / Elemzés</option>
+            <option value="proposal">Javaslat / Ajánlat</option>
+            <option value="legal">Jogi / Szerződéses szöveg</option>
+            <option value="technical">Műszaki / Technikai dokumentáció</option>
+            <option value="marketing">Marketing / Reklámszöveg</option>
+        </optgroup>
+        <optgroup label="🌐 Digitális tartalom">
+            <option value="social">Közösségi média poszt</option>
+            <option value="newsletter">Hírlevél</option>
+            <option value="script">Videó / Podcast szkript</option>
+            <option value="translation">Fordítás</option>
+        </optgroup>
+        <optgroup label="✉️ Kommunikáció">
+            <option value="letter">Levél / Kérvény</option>
+            <option value="email_formal">Hivatalos email</option>
+            <option value="cv">Önéletrajz / Motivációs levél</option>
+            <option value="complaint">Panasz / Beadvány</option>
+        </optgroup>
+        <optgroup label="🔬 Kutatás">
+            <option value="research">Kutatási összefoglaló</option>
+            <option value="case_study">Esettanulmány</option>
+        </optgroup>
         <option value="other">Egyéb</option>
     </select>
     <input type="email" class="form-control" id="target-email-input" placeholder="📧 Fogadó e-mail (opcionális)" style="flex:1;min-width:220px">
