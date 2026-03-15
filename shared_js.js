@@ -3617,7 +3617,7 @@ async function toggleDocPublic(docId, currentlyPublic) {
     showToast(newState ? '🌐 Dokumentum nyilvánosra állítva.' : '🔒 Dokumentum privátba visszavonva.');
 }
 
-```javascript
+
 /* ─── FUNKCIÓ SZAVAZÓ ───────────────────────────────────────── */
 const FEATURE_LIST = [
     { id: 'mobile_app', label: '📱 Mobilalkalmazás (iOS / Android)', desc: 'Natív app a hitelesítéshez és ellenőrzéshez.' },
