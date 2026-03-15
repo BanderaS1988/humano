@@ -1206,7 +1206,7 @@
 <div id="page-privacy" class="page">
   <div style="max-width:800px;margin:0 auto;padding:4rem 2rem">
     <h1 style="font-family:var(--font-display);font-size:2.4rem;font-weight:600;margin-bottom:.5rem">Adatkezelési <span class="gt">Tájékoztató</span></h1>
-    <p style="font-size:.78rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:2.5rem">Hatályos: 2026. március 13-tól · Utolsó módosítás: 2026. március 13.</p>
+    <p style="font-size:.78rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:2.5rem">Hatályos: 2026. március 13-tól · Utolsó módosítás: 2026. március 15.</p>
 
     <div class="card" style="margin-bottom:1rem">
       <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">1. Az adatkezelő adatai</div>
@@ -1224,11 +1224,13 @@
         <strong style="color:var(--gold3)">2.1 Regisztrációkor</strong><br>
         E-mail cím, felhasználónév, jelszó (titkosítva), regisztráció időpontja – bejelentkezés, azonosítás, biztonsági napló céljából. Jogalap: szerződés teljesítése (GDPR 6. cikk b) pont), jogos érdek (f) pont).<br><br>
         <strong style="color:var(--gold3)">2.2 Szöveg hitelesítésekor</strong><br>
-        Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya. Jogalap: szerződés teljesítése.<br><br>
+        Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya, szöveg kategóriája (opcionális, felhasználó által megadott – aggregált statisztikai elemzéshez használható). Jogalap: szerződés teljesítése.<br><br>
         <strong style="color:var(--gold3)">Fontos:</strong> A billentyűleütés-dinamika kizárólag statisztikai formában kerül tárolásra. A leütött billentyűk karakterei nem kerülnek naplózásra – kivéve a szöveg tartalmát, amelyet a felhasználó maga ment el.<br><br>
-        <strong style="color:var(--gold3)">2.3 Profiladatok (opcionális)</strong><br>
+        <strong style="color:var(--gold3)">2.3 Kalibrációs profil (opcionális)</strong><br>
+        Ha a felhasználó elvégzi az Írói Azonosság Kalibrációt, a rendszer eltárolja az egyedi gépelési mintázat statisztikai jellemzőit: átlagos gépelési burst hossza, gondolkodási szünetek szórása, javítási arány, ritmus-entrópia. Ezek kizárólag a felhasználó saját profiljához való összehasonlításra szolgálnak, harmadik félnek nem kerülnek átadásra, és a fiók törlésekor véglegesen törlődnek. Jogalap: hozzájárulás (GDPR 6. cikk a) pont).<br><br>
+        <strong style="color:var(--gold3)">2.4 Profiladatok (opcionális)</strong><br>
         Teljes név, weboldal, foglalkozás, bio, település – hozzájárulás alapján, fiók törléséig.<br><br>
-        <strong style="color:var(--gold3)">2.4 Technikai adatok</strong><br>
+        <strong style="color:var(--gold3)">2.5 Technikai adatok</strong><br>
         Utolsó belépés időpontja (1 év), API kulcsok (visszavonásig).
       </div>
     </div>
@@ -1271,7 +1273,8 @@
         <strong style="color:var(--text)">Törlési jog (17. cikk)</strong> – fiók és adatok törlése (blokklánc kivételével)<br>
         <strong style="color:var(--text)">Adathordozhatóság (20. cikk)</strong> – adatok JSON formátumban<br>
         <strong style="color:var(--text)">Tiltakozási jog (21. cikk)</strong> – jogos érdek alapján kezelt adatok ellen<br>
-        <strong style="color:var(--text)">Korlátozási jog (18. cikk)</strong> – adatkezelés átmeneti felfüggesztése<br><br>
+        <strong style="color:var(--text)">Korlátozási jog (18. cikk)</strong> – adatkezelés átmeneti felfüggesztése<br>
+        <strong style="color:var(--text)">Hozzájárulás visszavonása</strong> – a kalibrációs profil bármikor törölhető a fiókbeállításokban<br><br>
         Joggyakorlás: <span style="color:var(--gold)">info@humano.hu</span> · Válaszidő: 30 nap
       </div>
     </div>
@@ -1290,7 +1293,7 @@
         · EU-s Supabase szerverek (Frankfurt régió)<br>
         · HTTPS/TLS titkosítás<br>
         · Jelszavak bcrypt titkosítással (Supabase Auth)<br>
-        · Row Level Security (RLS)<br>
+        · Row Level Security (RLS) – minden táblán, beleértve a typing_profiles táblát<br>
         · API kulcsok kriptográfiailag generáltak, hashelt formában tárolva
       </div>
     </div>
