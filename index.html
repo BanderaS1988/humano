@@ -466,31 +466,35 @@
             </div>
           </div>
 
-          <!-- CERT PANEL -->
-          <div id="cert-panel" style="display:none" class="card cert-panel">
-              <input type="hidden" id="timelapse-doc-input" value="">
-
-            <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.35rem">✦ Szöveg hitelesítve</div>
-            <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
-
-            <div class="cert-id-box">
-              <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono)">Dokumentum azonosító</div>
-              <div class="cert-id-val" id="cert-id-val">–</div>
-              <div style="font-size:.65rem;color:var(--muted);margin-top:.65rem;font-family:var(--font-mono)">SHA-256 lenyomat</div>
-              <div class="cert-hash-val" id="cert-hash-val">–</div>
-            </div>
-
-
-
-            <!-- Beillesztés arány a tanúsítványon -->
-            <div id="cert-paste-ratio" style="display:none;margin-top:.75rem;background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem">
-              <div style="font-size:.68rem;font-weight:700;color:var(--gold3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.4rem">📋 Szöveg összetétele</div>
-              <div style="font-size:.8rem;color:var(--muted)">
-                Kézzel gépelt: <strong id="cert-typed-pct" style="color:var(--gold)">–%</strong> &nbsp;|&nbsp;
-                Beillesztett: <strong id="cert-pasted-pct" style="color:var(--gold3)">–%</strong>
-              </div>
-              <div style="font-size:.7rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)">A hitelesítés súlya a kézzel gépelt tartalmon van.</div>
-            </div>
+         <!-- CERT PANEL -->
+<div id="cert-panel" style="display:none" class="card cert-panel">
+    <input type="hidden" id="timelapse-doc-input" value="">
+    <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.35rem">✦ Szöveg hitelesítve</div>
+    <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
+    <div class="cert-id-box">
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono)">Dokumentum azonosító</div>
+        <div class="cert-id-val" id="cert-id-val">–</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.65rem;font-family:var(--font-mono)">SHA-256 lenyomat</div>
+        <div class="cert-hash-val" id="cert-hash-val">–</div>
+    </div>
+    <!-- Bizalmi szint badge -->
+    <div style="margin-top:.75rem">
+        <span id="cert-trust-badge"
+              style="display:none;align-items:center;gap:.4rem;padding:.3rem .9rem;
+                     border-radius:20px;background:rgba(201,168,76,.1);
+                     border:1px solid rgba(201,168,76,.25);font-size:.85rem;font-weight:700">
+        </span>
+    </div>
+    <!-- Beillesztés arány a tanúsítványon -->
+    <div id="cert-paste-ratio" style="display:none;margin-top:.75rem;background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem">
+        <div style="font-size:.68rem;font-weight:700;color:var(--gold3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.4rem">📋 Szöveg összetétele</div>
+        <div style="font-size:.8rem;color:var(--muted)">
+            Kézzel gépelt: <strong id="cert-typed-pct" style="color:var(--gold)">–%</strong> &nbsp;|&nbsp;
+            Beillesztett: <strong id="cert-pasted-pct" style="color:var(--gold3)">–%</strong>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)">A hitelesítés súlya a kézzel gépelt tartalmon van.</div>
+    </div>
+</div>
 
             <!-- OTS badge -->
             <div style="margin-top:1rem">
