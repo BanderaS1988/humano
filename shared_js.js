@@ -141,6 +141,7 @@ function _onSectionActivated(hash) {
     if (hash === 'dashboard') loadDashboard();
     if (hash === 'admin') loadAdmin();
     if (hash === 'landing') loadPublicStats();
+    if (hash === 'calibration') calInit();
     if (hash === 'faq') renderFaq();
     if (hash === 'my-docs') loadMyDocs();
     if (hash === 'profile') loadProfile();
@@ -161,7 +162,7 @@ function _loadPageFromHash() {
     const validHashes = [
         'landing', 'auth', 'editor', 'dashboard', 'my-docs', 'admin',
         'profile', 'verify-unified', 'pub-verify', 'roadmap',
-        'about', 'supporters', 'faq', 'privacy'
+        'about', 'supporters', 'faq', 'privacy', 'calibration'
     ];
     const hash = window.location.hash.replace('#', '');
     _showSection(validHashes.includes(hash) ? hash : 'landing');
@@ -178,7 +179,6 @@ function requireAuth(p) {
 }
 
 
-/* ─── 5. AUTH UI FRISSÍTÉS ──────────────────────────────────── */
 async function updateNavAuth(user) {
     const nu = document.getElementById('nav-user');
     const nb = document.getElementById('nav-auth-btn');
@@ -191,6 +191,11 @@ async function updateNavAuth(user) {
         if (nb) nb.style.display = 'none';
         if (nl) nl.style.display = 'inline-flex';
         checkAdminAccess();
+        
+        // ─── IDE JÖN ──────────────────────────
+        checkCalibration();  // Ellenőrzi, hogy kell-e kalibrációs oldal
+        // ─────────────────────────────────────
+        
     } else {
         if (nu) nu.style.display = 'none';
         if (nb) nb.style.display = 'inline-flex';
