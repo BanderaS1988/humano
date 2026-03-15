@@ -194,6 +194,8 @@ async function updateNavAuth(user) {
         
         // ─── IDE JÖN ──────────────────────────
         checkCalibration();  // Ellenőrzi, hogy kell-e kalibrációs oldal
+       
+      checkCalibrationAge();
         // ─────────────────────────────────────
         
     } else {
