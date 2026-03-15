@@ -4120,5 +4120,149 @@ function calProfileDistance(current, profile) {
 // if (user) { ... checkCalibration(); }
 // ÉS a _onSectionActivated-ba:
 // if (hash === 'calibration') { calInit(); }
+
+/* ─── PECSÉT GENERÁTOR ──────────────────────────────────────── */
+
+function generateSealCanvas(docId, author, date, otsStatus, size = 400) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const cx = size / 2, cy = size / 2;
+    const R = size * 0.44;
+    const r2 = R * 0.78;
+
+    // Háttér
+    ctx.fillStyle = '#060608';
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Fogazott külső kör
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = size * 0.012;
+    const teeth = 36;
+    ctx.beginPath();
+    for (let i = 0; i < teeth * 2; i++) {
+        const ang = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
+        const rr = i % 2 === 0 ? R : R * 0.92;
+        const x = cx + Math.cos(ang) * rr;
+        const y = cy + Math.sin(ang) * rr;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // Belső körök
+    ctx.lineWidth = size * 0.006;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = size * 0.003;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r2 * 0.72, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Köríves szöveg fent: HUMANO
+    const topText = '✦  H U M A N O  ✦';
+    ctx.font = `bold ${size * 0.052}px Georgia, serif`;
+    ctx.fillStyle = '#c9a84c';
+    ctx.textAlign = 'center';
+    const arcR = r2 * 0.87;
+    const arcStart = -Math.PI * 0.78;
+    const charW = size * 0.052;
+    const totalAng = (topText.length * charW) / arcR;
+    for (let i = 0; i < topText.length; i++) {
+        const ang = arcStart + (i / topText.length) * totalAng * 1.05;
+        ctx.save();
+        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
+        ctx.rotate(ang + Math.PI / 2);
+        ctx.fillText(topText[i], 0, 0);
+        ctx.restore();
+    }
+
+    // Köríves szöveg lent
+    const botText = 'A Z   E M B E R I   A L K O T Á S   H I T E L E S Í T Ő J E';
+    ctx.font = `${size * 0.028}px Georgia, serif`;
+    ctx.fillStyle = '#8a6a1a';
+    const botCharW = size * 0.028;
+    const botTotal = (botText.length * botCharW * 0.72) / arcR;
+    const botStart = Math.PI * 0.12;
+    for (let i = 0; i < botText.length; i++) {
+        const ang = botStart + (i / botText.length) * botTotal * 1.1 - botTotal * 0.55;
+        ctx.save();
+        ctx.translate(cx + Math.cos(ang) * arcR, cy + Math.sin(ang) * arcR);
+        ctx.rotate(ang - Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText(botText[i], 0, 0);
+        ctx.restore();
+    }
+
+    // Középső ✦
+    ctx.font = `bold ${size * 0.13}px Georgia, serif`;
+    ctx.fillStyle = '#c9a84c';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✦', cx, cy - size * 0.12);
+
+    // Szerző
+    if (author) {
+        ctx.font = `${size * 0.03}px Georgia, serif`;
+        ctx.fillStyle = '#c9a84c';
+        const shortAuthor = author.length > 20 ? author.substring(0, 18) + '…' : author;
+        ctx.fillText(shortAuthor, cx, cy - size * 0.04);
+    }
+
+    // DOC ID
+    ctx.font = `bold ${size * 0.042}px 'Courier New', monospace`;
+    ctx.fillStyle = '#c9a84c';
+    const idText = (docId || 'DOC-XXXXXXXX-XXXX').substring(0, 22);
+    ctx.fillText(idText, cx, cy + size * 0.04);
+
+    // Dátum
+    ctx.font = `${size * 0.032}px Georgia, serif`;
+    ctx.fillStyle = '#8a6a1a';
+    ctx.fillText(date || new Date().toLocaleDateString('hu-HU'), cx, cy + size * 0.14);
+
+    // OTS státusz
+    ctx.font = `italic ${size * 0.028}px Georgia, serif`;
+    ctx.fillStyle = '#8a6a1a';
+    ctx.fillText(
+        otsStatus === 'confirmed' ? '⛓ Bitcoin blokklánc ✓' : 'SHA-256 hitelesített',
+        cx, cy + size * 0.22
+    );
+
+    ctx.textBaseline = 'alphabetic';
+    return canvas;
+}
+
+async function downloadSeal(docId) {
+    if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
+    showToast('⏳ Pecsét generálása...');
+
+    let author = currentUser?.email || '–';
+    let otsStatus = 'pending';
+    let date = new Date().toLocaleDateString('hu-HU');
+
+    const { data: doc } = await db.from('documents')
+        .select('author_name, created_at, ots_receipt')
+        .eq('doc_id', docId).single();
+
+    if (doc) {
+        author = doc.author_name || author;
+        otsStatus = doc.ots_receipt ? 'confirmed' : 'pending';
+        date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('hu-HU') : date;
+    }
+
+    const canvas = generateSealCanvas(docId, author, date, otsStatus, 400);
+    const a = document.createElement('a');
+    a.download = `HUMANO-pecsét-${docId}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✅ Pecsét letöltve!');
+}
    
 });
