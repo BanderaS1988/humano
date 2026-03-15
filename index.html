@@ -454,17 +454,27 @@
   </div>
 </div>
 
-          <!-- Opciók -->
-          <div class="options-row" style="margin-top:.75rem">
-            <input type="email" class="form-control" id="target-email-input" placeholder="📧 Fogadó e-mail (opcionális)" style="flex:1;min-width:220px">
-            <div class="public-toggle" onclick="togglePublic()">
-              <input type="checkbox" id="doc-is-public">
-              <div>
-                <div style="font-size:.8rem;font-weight:600">Nyilvános Registry-ben</div>
-                <div style="font-size:.68rem;color:var(--muted)">Csak metaadatok – tartalom nem látható</div>
-              </div>
-            </div>
-          </div>
+        <!-- Opciók -->
+<div class="options-row" style="margin-top:.75rem">
+    <select id="doc-category" class="form-control" style="max-width:220px;font-size:.85rem">
+        <option value="">Kategória (opcionális)</option>
+        <option value="essay">Esszé / Dolgozat</option>
+        <option value="fiction">Szépirodalom</option>
+        <option value="journalism">Újságírás / Cikk</option>
+        <option value="academic">Tudományos</option>
+        <option value="business">Üzleti szöveg</option>
+        <option value="poetry">Vers / Líra</option>
+        <option value="other">Egyéb</option>
+    </select>
+    <input type="email" class="form-control" id="target-email-input" placeholder="📧 Fogadó e-mail (opcionális)" style="flex:1;min-width:220px">
+    <div class="public-toggle" onclick="togglePublic()">
+        <input type="checkbox" id="doc-is-public">
+        <div>
+            <div style="font-size:.8rem;font-weight:600">Nyilvános Registry-ben</div>
+            <div style="font-size:.68rem;color:var(--muted)">Csak metaadatok – tartalom nem látható</div>
+        </div>
+    </div>
+</div>
 
          <!-- CERT PANEL -->
 <div id="cert-panel" style="display:none" class="card cert-panel">
@@ -1909,8 +1919,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function editorSave() {
     if (!currentUser) { showToast('❌ Be kell jelentkezni!'); return; }
-
     const title     = document.getElementById('doc-title-input')?.value?.trim();
+    const category  = document.getElementById('doc-category')?.value || null;
     const content   = document.getElementById('doc-content-area')?.innerHTML || '';
     const plainText = document.getElementById('doc-content-area')?.innerText || '';
 
@@ -1918,10 +1928,8 @@ async function editorSave() {
     if (plainText.trim().split(/\s+/).filter(Boolean).length < 100) {
         showToast('❌ Minimum 100 szó szükséges!'); return;
     }
-
     const btn = document.getElementById('btn-save');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
-
     try {
         const hash = await sha256(plainText);
         const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
@@ -1953,35 +1961,36 @@ async function editorSave() {
               ))
             : 0;
 
-  const processData = {
-    keystrokeCount:    E.keys,
-    deletionCount:     E.dels,
-    pauseCount:        E.pauses,
-    focusSwitches:     E.focusSwitches,
-    rhythmWarnings:    E.warns,
-    repeatKeyCount:    E.repeatKeys,
-    humanIndex:        E.humanPct      || 0,        // szám a DB-be
-    humanCategory:     E.humanCategory || '–',      // ÚJ – kategória szöveg
-    humanCV:           E.humanCV       || 0,         // ÚJ – nyers cv érték
-    sessionDurationMs: E.sessionStart ? Date.now() - E.sessionStart : 0,
-    rhythmMeanMs:      meanMs,
-    rhythmStddevMs:    stddevMs,
-    pulseDataPoints:   E.pulseHistory.slice(),
-    events:            E.events.slice(-100),
-    typedChars,
-    pastedChars,
-    typedPct:    Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
-    pastedPct:   Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
-    pasteEvents: pasteEvents.length,
-    entropyCV:   E.entropyCV  || 0,
-    entropyPct:  E.entropyPct || 0,
-};
+        const processData = {
+            keystrokeCount:    E.keys,
+            deletionCount:     E.dels,
+            pauseCount:        E.pauses,
+            focusSwitches:     E.focusSwitches,
+            rhythmWarnings:    E.warns,
+            repeatKeyCount:    E.repeatKeys,
+            humanIndex:        E.humanPct      || 0,
+            humanCategory:     E.humanCategory || '–',
+            humanCV:           E.humanCV       || 0,
+            sessionDurationMs: E.sessionStart ? Date.now() - E.sessionStart : 0,
+            rhythmMeanMs:      meanMs,
+            rhythmStddevMs:    stddevMs,
+            pulseDataPoints:   E.pulseHistory.slice(),
+            events:            E.events.slice(-100),
+            typedChars,
+            pastedChars,
+            typedPct:    Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
+            pastedPct:   Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
+            pasteEvents: pasteEvents.length,
+            entropyCV:   E.entropyCV  || 0,
+            entropyPct:  E.entropyPct || 0,
+        };
 
         const isPublic = document.getElementById('doc-is-public')?.checked || false;
 
         const { error } = await db.from('documents').insert({
             doc_id:       docId,
             title,
+            category,
             content,
             hash,
             author_id:    currentUser.id,
@@ -1997,7 +2006,7 @@ async function editorSave() {
 
         await db.from('profiles').update({ used_credits: used + 1 }).eq('id', currentUser.id);
 
-        // ── Timelapse flush ──
+        // Timelapse flush
         const prevTempId = E.tempDocId;
         E.certDocId = docId;
 
@@ -2014,7 +2023,6 @@ async function editorSave() {
         E.tempDocId = null;
         localStorage.removeItem('humano_temp_doc_id');
         clearCurrentDraft();
-        // ─────────────────────
 
         // Cert panel
         document.getElementById('cert-id-val').textContent   = docId;
@@ -2036,18 +2044,18 @@ async function editorSave() {
             if (certPasted) certPasted.textContent  = pPct + '%';
         }
 
-// OTS – háttérben fut, nem blokkolja a UI-t
+        // OTS
         document.getElementById('cert-ots-badge').textContent    = '⛓️ OpenTimestamps – feldolgozás folyamatban...';
         document.getElementById('btn-ots-refresh').style.display = 'inline-flex';
         tsaStamp(hash, docId);
 
-        // Timelapse widget auto-betöltés
+        // Timelapse widget
         const tlWidget = document.getElementById('tl-widget');
         const tlInput  = document.getElementById('timelapse-doc-input');
-       if (tlWidget && tlInput) {
-    tlInput.value = docId;
-    tlWidget.style.display = 'block';
-    }
+        if (tlWidget && tlInput) {
+            tlInput.value = docId;
+            tlWidget.style.display = 'block';
+        }
 
         showToast('✅ Szöveg hitelesítve és mentve!');
         await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
