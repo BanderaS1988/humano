@@ -1457,20 +1457,23 @@ function renderDocs(docs) {
     </div>`;
         return;
     }
-    el.innerHTML = docs.map(d => `
+    el.innerHTML = docs.map(d => {
+        const badge = getHumanoBadge(d.process_data?.humanIndex || 0);
+        return `
     <div class="doc-row">
       <div style="flex:1;min-width:0">
         <div class="doc-title-cell">${esc(d.title || 'Cím nélkül')}</div>
         <div class="doc-meta-cell">${d.doc_id} · v${d.version || 1} · ${fmtDate(d.saved_at)} · ${d.process_data?.keystrokeCount ?? 0} leütés · ${d.process_data?.humanIndex ? d.process_data.humanIndex + '% emberi ·' : ''} ${d.ots_receipt ? '⛓️ OTS ✓' : d.ots_pending ? '⏳ OTS' : '–'}</div>
       </div>
       <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;flex-wrap:wrap">
-        <span class="badge badge-gold">✅</span>
+        <span style="padding:.2rem .65rem;border-radius:20px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);font-size:.72rem;font-weight:700;color:${badge.color}">${badge.icon} ${badge.label}</span>
         <button class="btn btn-outline btn-sm" onclick="verifyDoc('${esc(d.doc_id)}')">🔍</button>
         <button class="btn btn-outline btn-sm" onclick="newVersion('${esc(d.doc_id)}')">📝</button>
         ${d.ots_receipt ? `<button class="btn btn-outline btn-sm" onclick="downloadOtsFile('${esc(d.doc_id)}')" title=".ots letöltés">⛓️</button>` : ''}
         <button class="btn btn-danger btn-sm" onclick="deleteDoc('${esc(d.doc_id)}')">🗑</button>
       </div>
-    </div>`).join('');
+    </div>`;
+    }).join('');
 }
 
 function filterDocs() {
