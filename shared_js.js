@@ -1590,11 +1590,13 @@ function renderVerifyResultUnified(doc) {
     const pd = doc.process_data || {};
     const rhythmOk = (pd.rhythmWarnings || 0) < 5;
     const humanLabel = pd.humanCategory || (pd.humanIndex ? pd.humanIndex + '%' : '–');
+    const badge = getHumanoBadge(pd.humanIndex || 0);
 
     document.getElementById('v-icon-unified').textContent = rhythmOk ? '✅' : '⚠️';
     document.getElementById('v-title-unified').textContent = doc.title || 'Cím nélkül';
     document.getElementById('v-verdict-unified').innerHTML = rhythmOk
-        ? `<span style="color:var(--success)">✅ Rögzített munkamenet – emberi dinamika – Ritmus: <strong>${humanLabel}</strong></span>`
+        ? `<span style="color:var(--success)">✅ Rögzített munkamenet – emberi dinamika – Ritmus: <strong>${humanLabel}</strong></span>
+           <span style="display:inline-flex;align-items:center;gap:.35rem;margin-left:.75rem;padding:.25rem .7rem;border-radius:20px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);font-size:.78rem;font-weight:700;color:${badge.color}">${badge.icon} ${badge.label}</span>`
         : `<span style="color:var(--danger)">⚠️ Szokatlan gépelési ritmus (${pd.rhythmWarnings} figyelmeztetés)</span>`;
 
     document.getElementById('v-hash-unified').textContent = doc.hash || '–';
@@ -1607,6 +1609,7 @@ function renderVerifyResultUnified(doc) {
         ['Törlések', pd.deletionCount ?? '–'],
         ['Szünetek', pd.pauseCount ?? '–'],
         ['Ritmus', humanLabel],
+        ['Bizalmi szint', `${badge.icon} ${badge.label}`],
     ];
     document.getElementById('v-meta-unified').innerHTML = meta
         .map(([l, v]) => `<div class="meta-item"><label>${l}</label><span>${v}</span></div>`)
@@ -1666,6 +1669,7 @@ function renderVerifyResultUnified(doc) {
     document.getElementById('v-result-unified').style.display = 'block';
     document.getElementById('v-result-unified').scrollIntoView({ behavior: 'smooth' });
 }
+
 
 async function searchRegistryUnified() {
     const q = (document.getElementById('reg-search-unified')?.value || '').trim();
@@ -3226,6 +3230,16 @@ function updateCertPanel(docId, hash, savedAt, otsReceipt, otsPending) {
         if (g('tl-ots-time')) g('tl-ots-time').textContent = 'Bitcoin blokkláncon rögzítve ✓';
     }
     if (g('tl-public-dot')) { g('tl-public-dot').className = 'tl-dot done'; g('tl-public-dot').textContent = '✓'; }
+
+    // Bizalmi szint badge
+    const badge = getHumanoBadge(E.humanPct || 0);
+    const badgeEl = g('cert-trust-badge');
+    if (badgeEl) {
+        badgeEl.textContent = `${badge.icon} ${badge.label}`;
+        badgeEl.style.color = badge.color;
+        badgeEl.style.display = 'inline-flex';
+    }
+
     generateQR('cert-qr-container', docId);
     const bl = g('badge-preview-link');
     const bll = g('badge-doc-id-label');
