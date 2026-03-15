@@ -3762,4 +3762,302 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('resize', () => {
         if (typeof initPulseCanvas === 'function') initPulseCanvas();
     });
+
+
+
+
+
+/* ─── KALIBRÁCIÓ ────────────────────────────────────────────── */
+
+// Kalibrációs állapot
+const CAL = {
+  step1Events: [],   // másolás közben rögzített leütések
+  step2Events: [],   // szabad írás közben rögzített leütések
+  step1LastKey: null,
+  step2LastKey: null,
+  step1SessionStart: null,
+  step2SessionStart: null,
+};
+
+// ── KALIBRÁCIÓ MEGJELENÍTÉSE (első bejelentkezésnél) ──
+async function checkCalibration() {
+  if (!currentUser) return;
+  const { data } = await db
+    .from('typing_profiles')
+    .select('id')
+    .eq('user_id', currentUser.id)
+    .limit(1);
+  if (!data || !data.length) {
+    // Nincs még profil – megmutatjuk a kalibrációt
+    setTimeout(() => showPage('calibration'), 800);
+  }
+}
+
+// ── KALIBRÁCIÓS OLDAL INICIALIZÁLÁSA ──
+function calInit() {
+  const area1 = document.getElementById('cal-area-1');
+  const area2 = document.getElementById('cal-area-2');
+  if (!area1 || !area2) return;
+
+  // Paste tiltása a kalibrációs mezőkben
+  [area1, area2].forEach(el => {
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      showToast('📋 Kalibrációban beillesztés nem engedélyezett – kérlek gépeld be.');
+    });
+    el.addEventListener('drop', e => e.preventDefault());
+  });
+
+  // 1. mező – másolás rögzítése
+  area1.addEventListener('keydown', e => {
+    if (!e.isTrusted || e.repeat) return;
+    const now = Date.now();
+    if (!CAL.step1SessionStart) CAL.step1SessionStart = now;
+    if (e.key === 'Backspace') {
+      CAL.step1Events.push({ type: 'delete', ts: now });
+    } else if (e.key.length === 1) {
+      const interval = CAL.step1LastKey ? now - CAL.step1LastKey : 150;
+      CAL.step1Events.push({ type: 'key', ts: now, interval });
+      CAL.step1LastKey = now;
+    }
+    setTimeout(() => calUpdate1(), 10);
+  });
+
+  // 2. mező – szabad írás rögzítése
+  area2.addEventListener('keydown', e => {
+    if (!e.isTrusted || e.repeat) return;
+    const now = Date.now();
+    if (!CAL.step2SessionStart) CAL.step2SessionStart = now;
+    if (e.key === 'Backspace') {
+      CAL.step2Events.push({ type: 'delete', ts: now });
+    } else if (e.key.length === 1) {
+      const interval = CAL.step2LastKey ? now - CAL.step2LastKey : 150;
+      CAL.step2Events.push({ type: 'key', ts: now, interval });
+      CAL.step2LastKey = now;
+    }
+    setTimeout(() => calUpdate2(), 10);
+  });
+}
+
+// ── 1. MEZŐ FRISSÍTÉSE ──
+function calUpdate1() {
+  const area = document.getElementById('cal-area-1');
+  if (!area) return;
+  const len = area.innerText.replace(/\n/g, '').length;
+  const target = 347;
+  const pct = Math.min(100, Math.round((len / target) * 100));
+  const charsEl = document.getElementById('cal-1-chars');
+  const progressEl = document.getElementById('cal-1-progress');
+  const btnEl = document.getElementById('cal-1-btn');
+  if (charsEl) charsEl.textContent = len;
+  if (progressEl) progressEl.style.width = pct + '%';
+  if (btnEl) btnEl.disabled = len < target * 0.85; // 85% elég
+}
+
+// ── 2. MEZŐ FRISSÍTÉSE ──
+function calUpdate2() {
+  const area = document.getElementById('cal-area-2');
+  if (!area) return;
+  const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
+  const wordsEl = document.getElementById('cal-2-words');
+  const btnEl = document.getElementById('cal-2-btn');
+  if (wordsEl) wordsEl.textContent = words;
+  if (btnEl) btnEl.disabled = words < 30;
+}
+
+// ── 1. LÉPÉS KÉSZ ──
+function calStep1Complete() {
+  // Lépésjelzők frissítése
+  const ind1 = document.getElementById('cal-step-1-indicator');
+  const ind2 = document.getElementById('cal-step-2-indicator');
+  if (ind1) ind1.style.borderColor = 'var(--success)';
+  if (ind2) {
+    ind2.style.borderColor = 'var(--gold)';
+    ind2.style.background = 'rgba(201,168,76,.06)';
+    ind2.querySelector('div').style.background = 'linear-gradient(135deg,#a07830,#c9a84c)';
+    ind2.querySelector('div').style.color = '#0c0a04';
+    ind2.querySelector('div').style.border = 'none';
+    ind2.querySelectorAll('div')[1].querySelector('div').style.color = 'var(--gold2)';
+  }
+
+  // 1. lépés elrejtése, 2. megjelenítése
+  document.getElementById('cal-step-1').style.display = 'none';
+  document.getElementById('cal-step-2').style.display = 'block';
+  document.getElementById('cal-area-2').focus();
+  showToast('✅ Másolási minta rögzítve – most írj szabadon!');
+}
+
+// ── 2. LÉPÉS KÉSZ – MENTÉS ──
+async function calStep2Complete() {
+  const btn = document.getElementById('cal-2-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
+
+  try {
+    // Feature vektor kiszámítása mindkét mintából
+    const transcriptionFeatures = calExtractFeatures(CAL.step1Events);
+    const compositionFeatures = calExtractFeatures(CAL.step2Events);
+
+    // Mentés Supabase-be – két sor (transcription + composition)
+    const rows = [
+      {
+        user_id: currentUser.id,
+        profile_type: 'transcription',
+        burst_mean: transcriptionFeatures.burstMean,
+        pause_variance: transcriptionFeatures.pauseVariance,
+        revision_rate: transcriptionFeatures.revisionRate,
+        rhythm_entropy: transcriptionFeatures.rhythmEntropy,
+        sample_count: CAL.step1Events.filter(e => e.type === 'key').length,
+      },
+      {
+        user_id: currentUser.id,
+        profile_type: 'composition',
+        burst_mean: compositionFeatures.burstMean,
+        pause_variance: compositionFeatures.pauseVariance,
+        revision_rate: compositionFeatures.revisionRate,
+        rhythm_entropy: compositionFeatures.rhythmEntropy,
+        sample_count: CAL.step2Events.filter(e => e.type === 'key').length,
+      }
+    ];
+
+    const { error } = await db.from('typing_profiles').insert(rows);
+    if (error) throw error;
+
+    // Eredmény megjelenítése
+    document.getElementById('cal-step-2').style.display = 'none';
+    document.getElementById('cal-skip-wrap').style.display = 'none';
+    document.getElementById('cal-result').style.display = 'block';
+
+    // Eredmény számok
+    document.getElementById('cal-result-entropy').textContent =
+      compositionFeatures.rhythmEntropy.toFixed(2);
+    document.getElementById('cal-result-burst').textContent =
+      Math.round(compositionFeatures.burstMean) + ' ms';
+    document.getElementById('cal-result-revision').textContent =
+      (compositionFeatures.revisionRate * 100).toFixed(1) + '%';
+
+    showToast('✦ Kalibrációs profil elmentve!');
+
+  } catch (err) {
+    console.error('Kalibráció mentési hiba:', err);
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Kalibráció befejezése'; }
+    showToast('❌ Hiba a mentés közben – próbáld újra.');
+  }
+}
+
+// ── KIHAGYÁS ──
+function calSkip() {
+  showToast('👌 Kihagyva – bármikor elvégezheted a Dashboardon.');
+  showPage('dashboard');
+}
+
+// ── FEATURE VEKTOR KISZÁMÍTÁSA ──
+function calExtractFeatures(events) {
+  const keyEvents = events.filter(e => e.type === 'key');
+  const deleteEvents = events.filter(e => e.type === 'delete');
+
+  if (keyEvents.length < 5) {
+    return { burstMean: 0, pauseVariance: 0, revisionRate: 0, rhythmEntropy: 0 };
+  }
+
+  const intervals = keyEvents
+    .map(e => e.interval)
+    .filter(v => v && v > 0 && v < 10000);
+
+  // Átlagos intervallum
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+  // Szórás
+  const variance = intervals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / intervals.length;
+  const stddev = Math.sqrt(variance);
+
+  // Burst mean – átlagos folyamatos gépelési szakasz hossza (ms)
+  let bursts = [];
+  let currentBurst = [];
+  intervals.forEach(iv => {
+    if (iv < 1500) {
+      currentBurst.push(iv);
+    } else {
+      if (currentBurst.length > 0) {
+        bursts.push(currentBurst.reduce((a, b) => a + b, 0));
+        currentBurst = [];
+      }
+    }
+  });
+  if (currentBurst.length > 0) bursts.push(currentBurst.reduce((a, b) => a + b, 0));
+  const burstMean = bursts.length ? bursts.reduce((a, b) => a + b, 0) / bursts.length : mean;
+
+  // Pause variance – 1500ms feletti szünetek szórása
+  const pauses = intervals.filter(v => v >= 1500);
+  const pauseMean = pauses.length ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
+  const pauseVariance = pauses.length
+    ? pauses.reduce((s, v) => s + Math.pow(v - pauseMean, 2), 0) / pauses.length
+    : 0;
+
+  // Revision rate – törlések / összes leütés
+  const revisionRate = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
+
+  // Rhythm entropy – Shannon entrópia az intervallum-eloszláson
+  const buckets = {};
+  intervals.forEach(v => {
+    const bucket = Math.floor(v / 100) * 100;
+    buckets[bucket] = (buckets[bucket] || 0) + 1;
+  });
+  const total = intervals.length;
+  const rhythmEntropy = -Object.values(buckets).reduce((s, count) => {
+    const p = count / total;
+    return s + (p > 0 ? p * Math.log2(p) : 0);
+  }, 0);
+
+  return { burstMean, pauseVariance, revisionRate, rhythmEntropy };
+}
+
+// ── CREATIVE AUTHORSHIP PROBABILITY (mentéskor hívja az editor) ──
+async function getCreativeAuthorshipScore(sessionEvents) {
+  if (!currentUser) return null;
+
+  // Lekérjük a felhasználó profilját
+  const { data: profiles } = await db
+    .from('typing_profiles')
+    .select('*')
+    .eq('user_id', currentUser.id);
+
+  if (!profiles || profiles.length < 2) return null;
+
+  const compProfile = profiles.find(p => p.profile_type === 'composition');
+  const transProfile = profiles.find(p => p.profile_type === 'transcription');
+  if (!compProfile || !transProfile) return null;
+
+  // Aktuális munkamenet feature vektora
+  const current = calExtractFeatures(sessionEvents);
+
+  // Távolság a composition profiltól
+  const distComp = calProfileDistance(current, compProfile);
+  // Távolság a transcription profiltól
+  const distTrans = calProfileDistance(current, transProfile);
+
+  // Valószínűség: minél közelebb a composition-hoz, annál magasabb
+  const total = distComp + distTrans;
+  if (total === 0) return 50;
+  const score = Math.round((distTrans / total) * 100);
+  return Math.min(99, Math.max(1, score));
+}
+
+// ── PROFIL TÁVOLSÁG KISZÁMÍTÁSA ──
+function calProfileDistance(current, profile) {
+  const w = { burstMean: 0.25, pauseVariance: 0.25, revisionRate: 0.25, rhythmEntropy: 0.25 };
+  const normalize = (val, ref) => ref === 0 ? 0 : Math.abs(val - ref) / Math.max(ref, 0.001);
+  return (
+    w.burstMean * normalize(current.burstMean, profile.burst_mean) +
+    w.pauseVariance * normalize(current.pauseVariance, profile.pause_variance) +
+    w.revisionRate * normalize(current.revisionRate, profile.revision_rate) +
+    w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy)
+  );
+}
+
+// ── BEKAPCSOLÁS: checkCalibration hívása login után ──
+// A shared_js.js updateNavAuth függvényébe kell hívni:
+// if (user) { ... checkCalibration(); }
+// ÉS a _onSectionActivated-ba:
+// if (hash === 'calibration') { calInit(); }
+   
 });
