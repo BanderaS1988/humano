@@ -3354,13 +3354,21 @@ function editorKeyDown(e) {
             localStorage.setItem('humano_temp_doc_id', E.tempDocId);
         }
     }
-    if (E.lastKey && (now - E.lastKey) > 3000) {
-        E.pauses++;
-        E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
-        document.getElementById('s-pauses').textContent = E.pauses;
-        document.getElementById('sidebar-pauses').textContent = E.pauses;
-        updatePauseInsight();
+ if (E.lastKey && (now - E.lastKey) > 3000) {
+    E.pauses++;
+    E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
+    document.getElementById('s-pauses').textContent = E.pauses;
+    document.getElementById('sidebar-pauses').textContent = E.pauses;
+    updatePauseInsight();
+
+    const pauseMs = now - E.lastKey;
+    if (pauseMs > 30 * 60 * 1000) {
+        showToast('⏸ Hosszú szünet – új munkamenetként rögzítve');
+        E.sessionBreaks = (E.sessionBreaks || 0) + 1;
+    } else if (pauseMs > 5 * 60 * 1000) {
+        showToast('💭 5 perces szünet – folytatod az írást?');
     }
+}
     if (e.key === 'Backspace' || e.key === 'Delete') {
         E.dels++;
         document.getElementById('s-dels').textContent = E.dels;
@@ -3369,7 +3377,8 @@ function editorKeyDown(e) {
         updatePasteRatio();
         tlRecord('delete');
         checkTlFlush();
-    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.repeat) {
             E.warns++;
             E.repeatKeys++;
@@ -3804,6 +3813,24 @@ async function checkCalibration() {
     // Nincs még profil – megmutatjuk a kalibrációt
     setTimeout(() => showPage('calibration'), 800);
   }
+}
+
+   async function checkCalibrationAge() {
+    if (!currentUser) return;
+    const { data } = await db
+        .from('typing_profiles')
+        .select('created_at')
+        .eq('user_id', currentUser.id)
+        .limit(1);
+    
+    if (!data?.length) return;
+    
+    const ageMs = Date.now() - new Date(data[0].created_at);
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+    
+    if (ageDays > 30) {
+        showToast('📅 30 napja kalibráltál – érdemes frissíteni a profilod');
+    }
 }
 
 // ── KALIBRÁCIÓS OLDAL INICIALIZÁLÁSA ──
