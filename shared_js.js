@@ -916,6 +916,14 @@ async function submitSendEmail(e) {
 }
 
 /* ─── 12. UI SEGÉDFÜGGVÉNYEK ────────────────────────────────── */
+
+function getHumanoBadge(pct) {
+    if (pct >= 90) return { label: 'Platina', color: '#a8d8ea', icon: '💎' };
+    if (pct >= 70) return { label: 'Arany',   color: '#c9a84c', icon: '🥇' };
+    if (pct >= 50) return { label: 'Ezüst',   color: '#9e9e9e', icon: '🥈' };
+    return             { label: 'Bronz',   color: '#cd7f32', icon: '🥉' };
+}
+
 function fmtDate(iso) {
     if (!iso) return '–';
     const d = new Date(iso);
@@ -3924,7 +3932,9 @@ async function calStep2Complete() {
       }
     ];
 
-    const { error } = await db.from('typing_profiles').insert(rows);
+    const { error } = await db.from('typing_profiles').upsert(rows, {
+    onConflict: 'user_id,profile_type'
+});
     if (error) throw error;
 
     // Eredmény megjelenítése
