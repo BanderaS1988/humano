@@ -1,15 +1,12 @@
 // ============================================================
 // HUMANO – ollama_engine.js
-// A Vercel frontend ezt a fájlt használja.
-// Minden kérés a lokális ngrok-server.js proxyn keresztül megy.
+// Vercel frontend → ngrok proxy → lokális Ollama
+// Fix domain – nem kell frissíteni újraindítás után
 // ============================================================
 
-// ⚠️ Ezt az URL-t frissítsd minden ngrok újraindítás után!
-// A szerver automatikusan olvassa a /status végpontból.
-let PROXY_BASE = 'https://elvina-recriminative-karol.ngrok-free.dev';
+const PROXY_BASE = 'https://elvina-recriminative-karol.ngrok-free.dev';
 
-// Automatikus URL frissítés – 5 percenként próbálja a /status-t
-// Ha a proxy elérhető, megtartja az URL-t, különben jelzi a hibát
+// ── Proxy státusz ellenőrzés (induláskor + 5 percenként) ──
 async function checkProxyStatus() {
     try {
         const res  = await fetch(`${PROXY_BASE}/status`, {
@@ -25,7 +22,6 @@ async function checkProxyStatus() {
         console.warn('⚠️ Proxy nem elérhető:', PROXY_BASE);
     }
 }
-
 checkProxyStatus();
 setInterval(checkProxyStatus, 5 * 60 * 1000);
 
@@ -35,7 +31,7 @@ async function proxyPost(endpoint, body) {
         const res = await fetch(`${PROXY_BASE}${endpoint}`, {
             method:  'POST',
             headers: {
-                'Content-Type':              'application/json',
+                'Content-Type':               'application/json',
                 'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify(body)
@@ -52,8 +48,7 @@ async function proxyPost(endpoint, body) {
     }
 }
 
-// ── Publikus függvények – ezeket hívja a living_entity.js ──
-
+// ── Publikus függvények ──
 async function ollamaGenerate(prompt, systemPrompt = '') {
     return await proxyPost('/generate', { prompt, system: systemPrompt });
 }
