@@ -2,15 +2,14 @@
 // HUMANO – living_entity.js
 // Az élő rendszer vezérlője
 // ============================================================
-// Függőség: a hívó oldalon (index.html / shared_js.js) elérhetőnek
-// kell lennie: db (Supabase kliens), showToast(), esc(), fmtDate()
+// Függőség: db (Supabase kliens), showToast(), esc(), fmtDate()
 // ============================================================
 
-// ── ÉLŐ RENDSZER ÁLLAPOT ──
-let livingEntityActive   = false;
+// ── ÁLLAPOT ──
+let livingEntityActive    = false;
 let livingEntityIntervals = [];
 
-// ── BELÉPÉSI PONT – Admin gomb hívja ──
+// ── AKTIVÁLÁS ──
 async function activateLivingEntity() {
     if (livingEntityActive) {
         showToast('⚡ A rendszer már él!');
@@ -20,10 +19,10 @@ async function activateLivingEntity() {
     const confirmed = confirm(
         '🔴 HUMANO ÉLŐ RENDSZER AKTIVÁLÁSA\n\n' +
         'Ez elindítja:\n' +
-        '• Automatikus story-generálás\n' +
-        '• Signal queue figyelés\n' +
-        '• Heti press release\n' +
-        '• Alkotói portrék\n\n' +
+        '• Automatikus story-generálás (óránként)\n' +
+        '• Signal queue figyelés (óránként)\n' +
+        '• Alkotói portrék (óránként)\n' +
+        '• Napi press release (naponta egyszer)\n\n' +
         'Az Ollama (qwen2.5:3b) fut-e lokálisan?'
     );
     if (!confirmed) return;
@@ -35,30 +34,38 @@ async function activateLivingEntity() {
     }
 
     livingEntityActive = true;
+
     await logLivingAction('ACTIVATION', 'Élő rendszer aktiválva', {
         model:     'qwen2.5:3b',
+        cycle:     '1 óránként',
+        press:     'naponta egyszer',
         timestamp: new Date().toISOString()
     });
 
     showToast('🔴 HUMANO ÉL – A rendszer elindult!');
     updateLivingEntityUI(true);
 
+    // Azonnal fut egyet
     await runLivingCycle();
 
-    const cycleInterval = setInterval(runLivingCycle, 6 * 60 * 60 * 1000);
+    // Óránkénti ciklus
+    const cycleInterval = setInterval(runLivingCycle, 60 * 60 * 1000);
     livingEntityIntervals.push(cycleInterval);
 
-    scheduleWeeklyPressRelease();
+    // Napi press release ütemezés
+    scheduleDailyPressRelease();
 }
 
+// ── LEÁLLÍTÁS ──
 async function deactivateLivingEntity() {
     livingEntityActive = false;
     livingEntityIntervals.forEach(i => clearInterval(i));
     livingEntityIntervals = [];
-    updateLivingEntityUI(false);   // onclick visszaáll activate-re (ld. lent)
+    updateLivingEntityUI(false);
     showToast('⏸ Élő rendszer leállítva.');
 }
 
+// ── OLLAMA STÁTUSZ ──
 async function checkOllamaStatus() {
     try {
         const res  = await fetch(`${PROXY_BASE}/status`, {
@@ -71,25 +78,32 @@ async function checkOllamaStatus() {
     }
 }
 
-// ── FŐ CIKLUS ──
+// ── FŐ CIKLUS (óránként) ──
 async function runLivingCycle() {
     if (!livingEntityActive) return;
-    console.log('🔄 Élő ciklus indítása:', new Date().toISOString());
 
-    await Promise.allSettled([
+    const ts = new Date().toISOString();
+    console.log('🔄 Élő ciklus indítása:', ts);
+
+    const results = await Promise.allSettled([
         generateStoriesForNewDocs(),
         processSignalQueue(),
         generateCreatorPortraits(),
     ]);
 
-    await logLivingAction('CYCLE_COMPLETE', 'Ciklus befejezve', {
-        timestamp: new Date().toISOString()
+    // Logoljuk ha valamelyik elhalt
+    results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+            const names = ['generateStoriesForNewDocs', 'processSignalQueue', 'generateCreatorPortraits'];
+            console.error(`Ciklus hiba [${names[i]}]:`, r.reason);
+        }
     });
+
+    await logLivingAction('CYCLE_COMPLETE', 'Óránkénti ciklus befejezve', { timestamp: ts });
 }
 
 // ── 1. STORY GENERÁLÁS ──
 async function generateStoriesForNewDocs() {
-    // LEFT JOIN a story_pages-szel → nincs párhuzamos feldolgozási verseny
     const { data: docs } = await db
         .from('documents')
         .select('*, story_pages!left(doc_id)')
@@ -122,7 +136,6 @@ async function generateStoriesForNewDocs() {
         });
 
         if (error) {
-            // Lehetséges race condition: másik ciklus már beszúrta
             if (error.code === '23505') {
                 console.warn(`story_pages: ${doc.doc_id} már létezik, kihagyva.`);
             } else {
@@ -140,11 +153,8 @@ async function generateStoriesForNewDocs() {
     }
 }
 
-// ── 2. SIGNAL QUEUE FELDOLGOZÁS ──
-// Atomi "foglalás" UPDATE-tel, hogy párhuzamos ciklusok ne vegyék fel
-// ugyanazt a signal-t.
+// ── 2. SIGNAL QUEUE ──
 async function processSignalQueue() {
-    // Először foglaljuk le az elemeket – csak azokat, ahol status='pending'
     const { data: claimed } = await db
         .from('signal_queue')
         .update({ status: 'processing' })
@@ -162,7 +172,6 @@ async function processSignalQueue() {
         );
 
         if (!answer) {
-            // Visszaállítjuk, hogy ne ragadjon 'processing'-ban
             await db.from('signal_queue')
                 .update({ status: 'pending' })
                 .eq('id', signal.id);
@@ -204,7 +213,6 @@ async function generateCreatorPortraits() {
         const portrait = await ollamaGenerateCreatorPortrait(docs, user.username);
         if (!portrait) continue;
 
-        // Csak akkor írja felül, ha bio még mindig null (TOCTOU ellen)
         await db.from('profiles')
             .update({ bio: portrait })
             .eq('id', user.id)
@@ -219,20 +227,24 @@ async function generateCreatorPortraits() {
     }
 }
 
-// ── 4. HETI PRESS RELEASE ──
-async function generateWeeklyPressRelease() {
-    const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+// ── 4. NAPI PRESS RELEASE ──
+async function generateDailyPressRelease() {
+    if (!livingEntityActive) return;
+
+    console.log('📰 Napi press release generálás:', new Date().toISOString());
+
+    const since24 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const [
-        { count: newDocs   },
-        { count: newUsers  },
-        { count: totalDocs },
-        { data:  hiData    },
-        { count: otsCount  },
+        { count: newDocs      },
+        { count: newUsers     },
+        { count: totalDocs    },
+        { data:  hiData       },
+        { count: otsCount     },
         { data:  docsForHours }
     ] = await Promise.all([
-        db.from('documents').select('*', { count: 'exact', head: true }).gte('created_at', since7),
-        db.from('profiles') .select('*', { count: 'exact', head: true }).gte('created_at', since7),
+        db.from('documents').select('*', { count: 'exact', head: true }).gte('created_at', since24),
+        db.from('profiles') .select('*', { count: 'exact', head: true }).gte('created_at', since24),
         db.from('documents').select('*', { count: 'exact', head: true }),
         db.from('documents').select('process_data').not('process_data', 'is', null).limit(100),
         db.from('documents').select('*', { count: 'exact', head: true }).not('ots_receipt', 'is', null),
@@ -243,8 +255,8 @@ async function generateWeeklyPressRelease() {
         ? Math.round(hiData.reduce((s, d) => s + (d.process_data?.humanIndex || 0), 0) / hiData.length)
         : 0;
 
-    const totalChars  = docsForHours?.reduce((s, d) => s + (d.content?.length || 0), 0) || 0;
-    const humanHours  = (totalChars / 18000).toFixed(0);
+    const totalChars = docsForHours?.reduce((s, d) => s + (d.content?.length || 0), 0) || 0;
+    const humanHours = (totalChars / 18000).toFixed(0);
 
     const stats = {
         totalDocs: totalDocs || 0,
@@ -255,12 +267,15 @@ async function generateWeeklyPressRelease() {
     };
 
     const content_hu = await ollamaGeneratePressRelease(stats);
-    if (!content_hu) return;
+    if (!content_hu) {
+        console.warn('Press release generálás sikertelen – Ollama nem válaszolt.');
+        return;
+    }
 
     const content_en = await ollamaTranslate(content_hu, 'en');
-    const title = `HUMANO Heti Jelentés – ${new Date().toLocaleDateString('hu-HU')}`;
+    const title = `HUMANO Napi Jelentés – ${new Date().toLocaleDateString('hu-HU')}`;
 
-    await db.from('press_releases').insert({
+    const { error } = await db.from('press_releases').insert({
         title,
         content_hu,
         content_en,
@@ -268,23 +283,38 @@ async function generateWeeklyPressRelease() {
         published:      true,
     });
 
-    await logLivingAction('PRESS_RELEASE', 'Heti sajtóanyag generálva', stats);
-    showToast('📰 Heti sajtóanyag elkészítve!');
+    if (error) {
+        console.error('Press release insert hiba:', error.message);
+        return;
+    }
+
+    await logLivingAction('PRESS_RELEASE', 'Napi sajtóanyag generálva', stats);
+    showToast('📰 Napi sajtóanyag elkészítve!');
 }
 
-function scheduleWeeklyPressRelease() {
-    const now        = new Date();
-    const nextSunday = new Date(now);
-    nextSunday.setDate(now.getDate() + (7 - now.getDay()) % 7 || 7);
-    nextSunday.setHours(8, 0, 0, 0);
-    const msUntil = nextSunday - now;
+// ── NAPI PRESS RELEASE ÜTEMEZÉS (minden nap 08:00) ──
+function scheduleDailyPressRelease() {
+    function msUntilNextRun() {
+        const now  = new Date();
+        const next = new Date(now);
+        next.setHours(8, 0, 0, 0);
+        if (next <= now) next.setDate(next.getDate() + 1);
+        return next - now;
+    }
 
-    const t = setTimeout(() => {
-        generateWeeklyPressRelease();
-        const weekly = setInterval(generateWeeklyPressRelease, 7 * 24 * 60 * 60 * 1000);
-        livingEntityIntervals.push(weekly);
-    }, msUntil);
-    livingEntityIntervals.push(t);
+    function scheduleNext() {
+        const t = setTimeout(async () => {
+            await generateDailyPressRelease();
+            // Következő nap ugyanez
+            scheduleNext();
+        }, msUntilNextRun());
+        livingEntityIntervals.push(t);
+    }
+
+    scheduleNext();
+
+    const nextRun = new Date(Date.now() + msUntilNextRun());
+    console.log('📅 Következő napi press release:', nextRun.toLocaleString('hu-HU'));
 }
 
 // ── SIGNAL MANUÁLIS HOZZÁADÁSA ──
@@ -354,19 +384,16 @@ function updateLivingEntityUI(active) {
     const status = document.getElementById('living-entity-status');
 
     if (btn) {
-        btn.textContent = active ? '⏸ Rendszer leállítása' : '🔴 ÉLŐ RENDSZER AKTIVÁLÁSA';
-        btn.style.background = active
-            ? 'rgba(224,85,85,.15)'
-            : 'rgba(201,168,76,.15)';
-        // Mindig frissen rendelje hozzá – ne maradjon el a handler csere
-        btn.onclick = active ? deactivateLivingEntity : activateLivingEntity;
+        btn.textContent      = active ? '⏸ Rendszer leállítása' : '🔴 ÉLŐ RENDSZER AKTIVÁLÁSA';
+        btn.style.background = active ? 'rgba(224,85,85,.15)' : 'rgba(201,168,76,.15)';
+        btn.onclick          = active ? deactivateLivingEntity : activateLivingEntity;
     }
     if (dot) {
         dot.style.background = active ? '#e05555' : 'var(--muted2)';
         dot.style.animation  = active ? 'pulse-dot 1s infinite' : 'none';
     }
     if (status) {
-        status.textContent = active ? 'ÉL – Következő ciklus: 6 óra múlva' : 'INAKTÍV';
+        status.textContent = active ? 'ÉL – Ciklus: óránként | Press: naponta 08:00' : 'INAKTÍV';
         status.style.color = active ? '#e05555' : 'var(--muted)';
     }
 }
@@ -473,6 +500,7 @@ async function loadSignalQueue() {
 
 async function generateAnswerForSignal(signalId) {
     showToast('🤖 Ollama gondolkodik...');
+
     const { data: signal } = await db
         .from('signal_queue')
         .select('*')
