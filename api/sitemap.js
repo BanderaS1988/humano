@@ -21,13 +21,8 @@ module.exports = async function handler(req, res) {
 
     const baseUrl = 'https://humano-hu.vercel.app';
 
-    // CSAK valódi oldalak – NINCSENEK #-es linkek!
     const staticPages = [
-        { url: '/', priority: '1.0', changefreq: 'daily' },
-        // Ha később külön oldalakat csinálsz ezekből, ide jöhetnek:
-        // { url: '/verify', priority: '0.9', changefreq: 'weekly' },
-        // { url: '/roadmap', priority: '0.7', changefreq: 'monthly' },
-        // { url: '/about', priority: '0.6', changefreq: 'monthly' },
+        { url: '/', priority: '1.0', changefreq: 'daily' }
     ];
 
     const docUrls = (docs || []).map(d => ({
