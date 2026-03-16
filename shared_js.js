@@ -474,7 +474,7 @@ function generateQR(containerId, docId) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
-    const url = `https://humano.hu/verify/${docId}`;
+    const url = `https://humano-hu.vercel.app/verify/${docId}`;
     const img = document.createElement('img');
     img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}&color=C9A84C&bgcolor=FFFFFF&margin=8&format=png`;
     img.alt = `QR kód – ${docId}`;
