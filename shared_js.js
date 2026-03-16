@@ -1376,38 +1376,40 @@ async function deleteApiKey(id) {
 
 
 /* ─── 17. PROFIL ────────────────────────────────────────────── */
+function setEl(id, val, prop = 'value') {
+    const el = document.getElementById(id);
+    if (el) el[prop] = val ?? '';
+}
+
 async function loadProfile() {
     if (!currentUser) return;
     if (!document.getElementById('p-username')) return;
-    const { data: p } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-    const { count: dc } = await db.from('documents').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id);
+
+    const [{ data: p }, { count: dc }] = await Promise.all([
+        db.from('profiles').select('*').eq('id', currentUser.id).single(),
+        db.from('documents').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id)
+    ]);
 
     if (!p) return;
 
-    document.getElementById('p-username').value = p.username || '';
-    document.getElementById('p-humano-id').value = p.humano_id || '';
-    document.getElementById('p-email').value = currentUser.email || '';
+    setEl('p-username',   p.username);
+    setEl('p-humano-id',  p.humano_id);
+    setEl('p-email',      currentUser.email);
+    setEl('p-fullname',   p.fullname);
+    setEl('p-website',    p.website);
+    setEl('p-location',   p.location);
+    setEl('p-occupation', p.occupation);
+    setEl('p-bio',        p.bio);
 
-    document.getElementById('p-fullname').value = p.fullname || '';
-    document.getElementById('p-website').value = p.website || '';
-    document.getElementById('p-location').value = p.location || '';
-    document.getElementById('p-occupation').value = p.occupation || '';
-    document.getElementById('p-bio').value = p.bio || '';
-
-    document.getElementById('p-stat-docs').textContent = dc ?? '–';
-
-    let planText = 'Ingyenes';
-    if (p.plan === 'premium') planText = 'Pro';
-    else if (p.plan === 'student') planText = 'Tanuló';
-    else if (p.plan === 'institution') planText = 'Intézményi';
-    document.getElementById('p-stat-plan').textContent = planText;
+    setEl('p-stat-docs',  dc ?? '–', 'textContent');
+    setEl('p-stat-plan',  { premium: 'Pro', student: 'Tanuló', institution: 'Intézményi' }[p.plan] || 'Ingyenes', 'textContent');
 
     window._originalProfile = {
-        fullname: p.fullname || '',
-        website: p.website || '',
-        location: p.location || '',
+        fullname:   p.fullname   || '',
+        website:    p.website    || '',
+        location:   p.location   || '',
         occupation: p.occupation || '',
-        bio: p.bio || ''
+        bio:        p.bio        || ''
     };
 
     initProfileListeners();
