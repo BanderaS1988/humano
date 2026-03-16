@@ -61,9 +61,11 @@ async function deactivateLivingEntity() {
 
 async function checkOllamaStatus() {
     try {
-        const res  = await fetch('http://localhost:11434/api/tags');
+        const res  = await fetch(`${PROXY_BASE}/status`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
         const data = await res.json();
-        return data.models?.some(m => m.name.includes('qwen2.5')) ?? false;
+        return data.ok ?? false;
     } catch {
         return false;
     }
