@@ -2223,6 +2223,61 @@ async function editorSave() {
             tlWidget.style.display = 'block';
         }
 
+
+// ── Alkotói Jelenlét összehasonlítás ──
+try {
+    const { data: profiles } = await db
+        .from('typing_profiles')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('profile_type', 'composition');
+
+    if (profiles && profiles.length > 0) {
+        const baseline = profiles[0];
+        const currentFeatures = calExtractFeatures(
+            E.events.filter(e => e.type === 'key' || e.type === 'delete')
+                .map(e => ({ type: e.type === 'key' ? 'key' : 'delete', ts: e.ts, interval: e.interval }))
+        );
+        const distance = calProfileDistance(currentFeatures, baseline);
+
+        // 0 = tökéletes egyezés, 1+ = nagy eltérés
+        let trustLevel, trustColor, trustLabel;
+        if (distance < 0.25) {
+            trustLevel = 'platinum';
+            trustColor = '#e8f4ff';
+            trustLabel = '💎 Platina – tökéletes egyezés a profiloddal';
+        } else if (distance < 0.5) {
+            trustLevel = 'gold';
+            trustColor = 'var(--gold)';
+            trustLabel = '⭐ Arany – erős egyezés a profiloddal';
+        } else if (distance < 0.75) {
+            trustLevel = 'silver';
+            trustColor = '#c0c0c0';
+            trustLabel = '🥈 Ezüst – közepes egyezés a profiloddal';
+        } else {
+            trustLevel = 'bronze';
+            trustColor = '#cd7f32';
+            trustLabel = '🥉 Bronz – gyenge egyezés a profiloddal';
+        }
+
+        // Mentés a documents táblába
+        await db.from('documents')
+            .update({ trust_level: trustLevel, trust_distance: distance })
+            .eq('doc_id', docId);
+
+        // Megjelenítés a cert-panelen
+        const badge = document.getElementById('cert-trust-badge');
+        if (badge) {
+            badge.style.display = 'inline-flex';
+            badge.style.color = trustColor;
+            badge.style.borderColor = trustColor;
+            badge.textContent = trustLabel;
+        }
+    }
+} catch (err) {
+    console.warn('Alkotói Jelenlét hiba:', err);
+}
+      
         showToast('✅ Szöveg hitelesítve és mentve!');
         await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
         if (btn) btn.textContent = '✅ Hitelesítve';
