@@ -4016,7 +4016,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const wordsEl = document.getElementById('cal-2-words');
         const btnEl = document.getElementById('cal-2-btn');
         if (wordsEl) wordsEl.textContent = words;
-        if (btnEl) btnEl.disabled = words < 30;
+        if (btnEl) btnEl.disabled = words < 40;
     }
 
     window.calInit = calInit;
