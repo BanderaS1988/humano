@@ -365,6 +365,70 @@ async function deleteAccount() {
     }
 }
 
+async function exportMyData() {
+    if (!currentUser) return showToast('❌ Be kell jelentkezni!');
+    showToast('⏳ Adatok összegyűjtése...');
+    try {
+        const [
+            { data: profile },
+            { data: docs },
+            { data: typingProfile },
+            { data: apiKeys }
+        ] = await Promise.all([
+            db.from('profiles').select('*').eq('id', currentUser.id).single(),
+            db.from('documents').select('doc_id,title,hash,created_at,process_data,is_public,ots_receipt').eq('author_id', currentUser.id),
+            db.from('typing_profiles').select('*').eq('user_id', currentUser.id),
+            db.from('api_keys').select('id,name,created_at,expires_at').eq('user_id', currentUser.id)
+        ]);
+
+        const exportData = {
+            export_date: new Date().toISOString(),
+            humano_version: '2026',
+            user: {
+                email: currentUser.email,
+                humano_id: profile?.humano_id,
+                username: profile?.username,
+                plan: profile?.plan,
+                created_at: profile?.created_at,
+                fullname: profile?.fullname,
+                website: profile?.website,
+                location: profile?.location,
+                occupation: profile?.occupation,
+                bio: profile?.bio,
+            },
+            documents: (docs || []).map(d => ({
+                doc_id: d.doc_id,
+                title: d.title,
+                hash: d.hash,
+                created_at: d.created_at,
+                is_public: d.is_public,
+                blockchain_confirmed: !!d.ots_receipt,
+                biometrics: d.process_data || {},
+            })),
+            typing_profile: typingProfile || [],
+            api_keys: (apiKeys || []).map(k => ({
+                id: k.id,
+                name: k.name,
+                created_at: k.created_at,
+                expires_at: k.expires_at,
+            })),
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `HUMANO-export-${profile?.humano_id || 'data'}-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ Adatok exportálva!');
+    } catch (err) {
+        showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
+    }
+}
+
 
 /* ─── 7. KRIPTOGRÁFIA ───────────────────────────────────────── */
 async function sha256(text) {
