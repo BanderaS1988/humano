@@ -782,6 +782,7 @@
 
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.25rem">
         <button class="btn btn-gold btn-sm" onclick="downloadUnifiedPdf()">📄 PDF Tanúsítvány</button>
+        <button class="btn btn-outline btn-sm" id="v-tl-btn-unified" style="display:none" onclick="openUnifiedTimelapse()">▶ Idővonal</button>
         <button class="btn btn-outline btn-sm" id="v-ots-dl-btn-unified" style="display:none" onclick="downloadOtsFile(document.getElementById('v-input-unified').value)">⬇️ .ots letöltés</button>
         <button class="btn btn-outline btn-sm" onclick="copyUnifiedLink()">🔗 Megosztási link</button>
       </div>
@@ -1513,6 +1514,10 @@
 </div>
     <div class="card" style="margin-bottom:1.5rem"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">🧬 Biometrikus adatok</div><div id="pub-v-biometric-table" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.82rem"></div></div>
     <div class="card" style="margin-bottom:1.5rem;text-align:center"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⛓️ Bitcoin Blokklánc Időbélyeg</div><div id="pub-v-ots-badge"></div></div>
+    <div class="card" style="margin-bottom:1.5rem;text-align:center">
+  <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">▶ Alkotói Idővonal</div>
+  <button class="btn btn-outline" style="width:100%;padding:.65rem" id="pub-tl-btn" onclick="openPubTimelapse()" style="display:none">▶ Idővonal megtekintése</button>
+</div>
   </div>
 </div>
 
