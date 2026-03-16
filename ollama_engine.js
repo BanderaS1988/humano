@@ -20,7 +20,8 @@ async function checkProxyStatus() {
     } catch {
         console.warn('⚠️ Proxy nem elérhető:', PROXY_BASE);
     }
-} // ← EZ HIÁNYZOTT – most javítva
+    // FIX: ez a záró } hiányzott – a függvény törzse lezáratlan volt
+}
 
 checkProxyStatus();
 setInterval(checkProxyStatus, 5 * 60 * 1000);
@@ -50,30 +51,30 @@ async function proxyPost(endpoint, body) {
 
 // ── Publikus függvények ──
 async function ollamaGenerate(prompt, systemPrompt = '') {
-    return proxyPost('/generate', { prompt, system: systemPrompt });
+    return await proxyPost('/generate', { prompt, system: systemPrompt });
 }
 
 async function ollamaTranslate(text, targetLang) {
     if (!text?.trim()) return null;
-    return proxyPost('/translate', { text, targetLang });
+    return await proxyPost('/translate', { text, targetLang });
 }
 
 async function ollamaGenerateStoryFromDoc(doc) {
     if (!doc) return null;
-    return proxyPost('/story', { doc });
+    return await proxyPost('/story', { doc });
 }
 
 async function ollamaGenerateForumAnswer(question, platform = 'general') {
     if (!question?.trim()) return null;
-    return proxyPost('/forum-answer', { question, platform });
+    return await proxyPost('/forum-answer', { question, platform });
 }
 
 async function ollamaGeneratePressRelease(stats) {
     if (!stats) return null;
-    return proxyPost('/press-release', stats);
+    return await proxyPost('/press-release', stats);
 }
 
 async function ollamaGenerateCreatorPortrait(docs, username) {
     if (!docs?.length || !username) return null;
-    return proxyPost('/portrait', { docs, username });
+    return await proxyPost('/portrait', { docs, username });
 }
