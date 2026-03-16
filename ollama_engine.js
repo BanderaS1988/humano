@@ -2,14 +2,17 @@
 // HUMANO – ollama_engine.js
 // ============================================================
 
-const OLLAMA_BASE = 'https://elvina-recriminative-karol.ngrok-free.dev';
+const OLLAMA_BASE  = 'https://elvina-recriminative-karol.ngrok-free.dev';
 const OLLAMA_MODEL = 'qwen2.5:3b';
 
 async function ollamaGenerate(prompt, systemPrompt = '') {
     try {
         const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            },
             body: JSON.stringify({
                 model:  OLLAMA_MODEL,
                 prompt,
