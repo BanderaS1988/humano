@@ -3803,18 +3803,19 @@ async function checkCalibration() {
 }
 
 async function checkCalibrationAge() {
-  if (!currentUser) return;
-  const { data } = await db
-    .from('typing_profiles')
-    .select('created_at')
-    .eq('user_id', currentUser.id)
-    .limit(1);
-  if (!data?.length) return;
-  const ageMs = Date.now() - new Date(data[0].created_at);
-  const ageDays = ageMs / (1000 * 60 * 60 * 24);
-  if (ageDays > 30) {
-    showToast('📅 30 napja kalibráltál – érdemes frissíteni a profilod');
-  }
+    if (!currentUser) return;
+    const { data } = await db
+        .from('typing_profiles')
+        .select('created_at')
+        .eq('user_id', currentUser.id)
+        .limit(1);
+    if (!data?.length) return;
+    const ageMs = Date.now() - new Date(data[0].created_at);
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+    if (ageDays > 30) {
+        const go = confirm('📅 30+ napja kalibráltál – érdemes frissíteni a gépelési profilod a pontosabb tanúsítványokhoz. Elvégzed most?');
+        if (go) showPage('calibration');
+    }
 }
 
 /* ─── PECSÉT GENERÁTOR ──────────────────────────────────────── */
