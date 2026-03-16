@@ -1,9 +1,30 @@
 // ============================================================
 // HUMANO – ollama_engine.js
+// Automatikusan lekéri az aktuális ngrok URL-t
 // ============================================================
 
-const OLLAMA_BASE  = 'https://elvina-recriminative-karol.ngrok-free.dev';
 const OLLAMA_MODEL = 'qwen2.5:3b';
+let   OLLAMA_BASE  = 'http://localhost:11434'; // fallback, ha ngrok nem fut
+
+// Induláskor lekéri az aktuális ngrok URL-t
+async function refreshNgrokUrl() {
+    try {
+        const res  = await fetch('http://localhost:4567/ngrok-url');
+        const data = await res.json();
+        if (data.url) {
+            OLLAMA_BASE = data.url;
+            console.log('✅ Ngrok URL frissítve:', OLLAMA_BASE);
+        }
+    } catch {
+        console.warn('⚠️ ngrok-server nem elérhető – localhost:11434 használva');
+    }
+}
+
+// Azonnal lefut, majd 5 percenként frissít
+refreshNgrokUrl();
+setInterval(refreshNgrokUrl, 5 * 60 * 1000);
+
+// ============================================================
 
 async function ollamaGenerate(prompt, systemPrompt = '') {
     try {
