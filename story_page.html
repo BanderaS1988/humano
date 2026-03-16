@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title id="page-title">HUMANO – Alkotói Napló</title>
+  <meta name="description" id="page-desc" content="Hitelesített emberi alkotás – HUMANO"/>
+  <link rel="stylesheet" href="shared_css.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<nav id="nav">
+  <div class="nav-logo gt" onclick="window.location='/'">✦ HUMANO</div>
+</nav>
+
+<div style="max-width:760px;margin:4rem auto;padding:0 2rem">
+  <div id="story-loading" style="text-align:center;padding:4rem;color:var(--muted)">⏳ Betöltés...</div>
+
+  <article id="story-content" style="display:none">
+    <div style="font-size:.72rem;font-family:var(--font-mono);color:var(--muted);
+                text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem"
+         id="s-date"></div>
+
+    <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:700;
+               margin-bottom:1rem;line-height:1.3" id="s-title"></h1>
+
+    <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);
+                border-radius:var(--r);padding:1.25rem;margin-bottom:2rem;
+                font-size:.95rem;color:var(--text);line-height:1.9" id="s-story"></div>
+
+    <!-- Biometrikus adatok -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+                gap:1rem;margin-bottom:2rem" id="s-biometric"></div>
+
+    <!-- SHA-256 -->
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:.65rem;font-family:var(--font-mono);color:var(--muted);
+                  text-transform:uppercase;margin-bottom:.35rem">SHA-256</div>
+      <div style="font-family:var(--font-mono);font-size:.72rem;word-break:break-all;
+                  color:var(--gold2);background:var(--surface2);padding:.75rem;
+                  border-radius:var(--r-sm)" id="s-hash"></div>
+    </div>
+
+    <!-- OTS -->
+    <div id="s-ots" style="margin-bottom:2rem"></div>
+
+    <!-- JSON API link -->
+    <div style="background:var(--surface2);border:1px solid var(--border);
+                border-radius:var(--r);padding:1.1rem;margin-bottom:2rem">
+      <div style="font-size:.72rem;font-weight:700;color:var(--gold2);
+                  margin-bottom:.5rem;font-family:var(--font-mono)">
+        🔗 API Végpont – Hivatkozáshoz
+      </div>
+      <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--muted);
+                  word-break:break-all" id="s-api-url"></div>
+      <button onclick="copyApiUrl()"
+              style="margin-top:.65rem;background:none;border:1px solid var(--gold4);
+                     border-radius:var(--r-sm);padding:.3rem .8rem;color:var(--gold3);
+                     cursor:pointer;font-size:.72rem">
+        📋 Link másolása
+      </button>
+    </div>
+
+    <a href="/" style="color:var(--gold);font-size:.85rem">← Vissza a HUMANO-ra</a>
+  </article>
+</div>
+
+<!-- shared_js.js már inicializálja a `db` Supabase klienst – NEM hozunk létre másikat -->
+<script src="shared_js.js"></script>
+<script>
+// ── Biometrikus mező definíciók ──
+const BIO_FIELDS = [
+    { label: 'Leütések',    key: 'keystrokeCount',    fmt: v => v },
+    { label: 'Javítások',   key: 'deletionCount',     fmt: v => v },
+    { label: 'Szünetek',    key: 'pauseCount',         fmt: v => v },
+    { label: 'Humán Index', key: 'humanIndex',         fmt: v => v + '%' },
+    { label: 'Gépelési idő',key: 'sessionDurationMs',  fmt: v => Math.round(v / 60000) + ' perc' },
+    { label: 'Entrópia',    key: 'entropyPct',         fmt: v => v + '%' },
+];
+
+async function loadStoryPage() {
+    const docId = window.location.pathname.split('/story/')[1]?.toUpperCase();
+    const loadingEl = document.getElementById('story-loading');
+
+    if (!docId) {
+        loadingEl.textContent = '❌ Nincs dokumentum azonosító.';
+        return;
+    }
+
+    const [{ data: doc }, { data: story }] = await Promise.all([
+        db.from('documents').select('*').eq('doc_id', docId).single(),
+        db.from('story_pages').select('*').eq('doc_id', docId).maybeSingle()
+    ]);
+
+    if (!doc) {
+        loadingEl.textContent = '❌ Dokumentum nem található.';
+        return;
+    }
+
+    loadingEl.style.display = 'none';
+    document.getElementById('story-content').style.display = 'block';
+
+    const pd       = doc.process_data || {};
+    const title    = doc.title || 'Névtelen alkotás';
+    const apiUrl   = `https://humano.hu/api/verify/${doc.doc_id}`;
+
+    document.title = `${title} – HUMANO Alkotói Napló`;
+    document.getElementById('page-desc').content =
+        story?.seo_description || title;
+
+    document.getElementById('s-date').textContent =
+        new Date(doc.created_at).toLocaleDateString('hu-HU', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+    document.getElementById('s-title').textContent = title;
+    document.getElementById('s-story').textContent =
+        story?.story_hu || 'Ez a dokumentum hitelesített emberi alkotás.';
+    document.getElementById('s-hash').textContent = doc.hash || '–';
+    document.getElementById('s-api-url').textContent = apiUrl;
+
+    // Biometrikus kártyák
+    document.getElementById('s-biometric').innerHTML = BIO_FIELDS.map(({ label, key, fmt }) => {
+        const raw = pd[key];
+        const display = (raw !== null && raw !== undefined) ? fmt(raw) : '–';
+        return `
+            <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem;text-align:center">
+                <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;
+                            color:var(--gold)">${display}</div>
+                <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono);
+                            text-transform:uppercase;margin-top:.25rem">${label}</div>
+            </div>`;
+    }).join('');
+
+    document.getElementById('s-ots').innerHTML = doc.ots_receipt
+        ? '<span style="background:rgba(74,184,112,.1);border:1px solid rgba(74,184,112,.25);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:#4ab870">⛓️ Bitcoin blokkláncon rögzítve ✓</span>'
+        : '<span style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:var(--gold3)">⏳ Blokklánc rögzítés folyamatban</span>';
+}
+
+function copyApiUrl() {
+    const docId = window.location.pathname.split('/story/')[1]?.toUpperCase();
+    const url   = `https://humano.hu/api/verify/${docId}`;
+    // copyToClipboard a shared_js.js-ből érkezik
+    copyToClipboard(url);
+    showToast('📋 Link másolva!');
+}
+
+loadStoryPage();
+</script>
+</body>
+</html>
