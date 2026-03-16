@@ -2,7 +2,7 @@
 // HUMANO – ollama_engine.js
 // ============================================================
 
-const OLLAMA_BASE  = 'http://localhost:11434';
+const OLLAMA_BASE = 'https://elvina-recriminative-karol.ngrok-free.dev';
 const OLLAMA_MODEL = 'qwen2.5:3b';
 
 async function ollamaGenerate(prompt, systemPrompt = '') {
