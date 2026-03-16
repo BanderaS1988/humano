@@ -3213,3 +3213,8 @@ textarea.form-control {
     border: none !important;
     text-decoration: none !important;
 }
+/* ─── PAGE WRAP ─────────────────────────────────────────────── */
+.page-wrap {
+    max-width: 100%;
+    width: 100%;
+}
