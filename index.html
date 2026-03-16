@@ -1191,6 +1191,122 @@
     <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)">
       <table class="admin-table"><thead><tr><th>DOC ID</th><th>Cím</th><th>Szerző</th><th>Létrehozva</th><th>Hash</th><th>OTS</th></tr></thead><tbody id="admin-docs-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Betöltés...</td></tr></tbody></table>
     </div>
+
+    <!-- ═══ ÉLŐ ENTITÁS PANEL ═══ -->
+    <div style="margin-top:2.5rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span id="living-entity-dot"
+                style="width:10px;height:10px;border-radius:50%;
+                       background:var(--muted2);display:inline-block"></span>
+          <span id="living-entity-status"
+                style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">
+            INAKTÍV
+          </span>
+        </div>
+        <button id="living-entity-btn"
+                onclick="activateLivingEntity()"
+                style="background:rgba(201,168,76,.15);border:1.5px solid var(--gold);
+                       border-radius:var(--r);padding:.65rem 1.25rem;cursor:pointer;
+                       color:var(--gold);font-size:.85rem;font-weight:700">
+          🔴 ÉLŐ RENDSZER AKTIVÁLÁSA
+        </button>
+        <button onclick="runLivingCycle()"
+                class="btn btn-outline btn-sm">
+          🔄 Azonnali ciklus
+        </button>
+        <button onclick="generateWeeklyPressRelease()"
+                class="btn btn-outline btn-sm">
+          📰 Press release most
+        </button>
+        <div id="ollama-status"
+             style="font-size:.75rem;font-family:var(--font-mono);color:var(--muted)">
+          Ellenőrzés...
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem">
+        <div class="card stat-card">
+          <div class="s-label">Generált story</div>
+          <div class="s-val gt" id="story-count">–</div>
+        </div>
+        <div class="card stat-card">
+          <div class="s-label">Signal queue</div>
+          <div class="s-val gt" id="signal-count">–</div>
+        </div>
+        <div class="card stat-card">
+          <div class="s-label">Sajtóanyagok</div>
+          <div class="s-val gt" id="press-count">–</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+          <div style="font-size:1rem;font-weight:700;color:var(--gold2)">
+            📡 Kérdés-figyelő Queue
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="loadSignalQueue()">⟳ Frissítés</button>
+            <button class="btn btn-gold btn-sm" onclick="openAddSignalModal()">+ Jelzés hozzáadása</button>
+          </div>
+        </div>
+        <div id="signal-queue-list">
+          <div style="color:var(--muted);font-size:.82rem;padding:1rem">Betöltés...</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem">
+        <div style="font-size:1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">
+          📰 Sajtóanyagok
+        </div>
+        <div id="press-list">
+          <div style="color:var(--muted);font-size:.82rem;padding:1rem">Betöltés...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div style="font-size:1rem;font-weight:700;color:var(--gold2)">📋 Élő Napló</div>
+          <button class="btn btn-outline btn-sm" onclick="loadLivingLog()">⟳</button>
+        </div>
+        <div id="living-log-list" style="display:flex;flex-direction:column;gap:.35rem">
+          <div style="color:var(--muted);font-size:.82rem;padding:1rem">Betöltés...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signal hozzáadás modal -->
+    <div class="modal-overlay" id="add-signal-modal">
+      <div class="modal-box" style="max-width:500px">
+        <div class="modal-title">📡 Jelzés hozzáadása</div>
+        <div class="form-group">
+          <label class="form-label">Kérdés szövege</label>
+          <textarea class="form-control" id="signal-question" style="min-height:80px"
+                    placeholder="Pl: Hogyan bizonyíthatom hogy én írtam a szöveget?"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Forrás</label>
+          <input class="form-control" id="signal-source" placeholder="reddit.com/r/writing" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Forrás URL (opcionális)</label>
+          <input class="form-control" id="signal-url" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Platform stílus</label>
+          <select class="form-control" id="signal-platform">
+            <option value="general">Általános</option>
+            <option value="reddit">Reddit</option>
+            <option value="quora">Quora</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:.75rem">
+          <button class="btn btn-gold" onclick="submitAddSignal()">✦ Hozzáadás</button>
+          <button class="btn btn-outline" onclick="document.getElementById('add-signal-modal').classList.remove('open')">Mégse</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2127,6 +2243,34 @@ async function editorSave() {
         showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
         if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
     }
+}
+
+ // Élő entitás modal kezelők
+document.getElementById('add-signal-modal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('add-signal-modal'))
+        document.getElementById('add-signal-modal').classList.remove('open');
+});
+
+function openAddSignalModal() {
+    document.getElementById('add-signal-modal').classList.add('open');
+}
+
+async function submitAddSignal() {
+    const q = document.getElementById('signal-question')?.value?.trim();
+    const s = document.getElementById('signal-source')?.value?.trim();
+    const u = document.getElementById('signal-url')?.value?.trim();
+    const p = document.getElementById('signal-platform')?.value;
+    if (!q) { showToast('❌ Adj meg egy kérdést!'); return; }
+    await addSignalManually(q, s || 'manual', p || 'general');
+    if (u) {
+        await db.from('signal_queue')
+            .update({ source_url: u })
+            .eq('question_text', q);
+    }
+    document.getElementById('add-signal-modal').classList.remove('open');
+    document.getElementById('signal-question').value = '';
+    document.getElementById('signal-source').value = '';
+    document.getElementById('signal-url').value = '';
 }
 </script>
 </body>
