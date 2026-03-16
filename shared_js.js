@@ -1671,6 +1671,11 @@ function renderVerifyResultUnified(doc) {
     if (hasOts) document.getElementById('v-ots-dl-btn-unified').style.display = 'inline-flex';
 
     generateQR('v-qr-container-unified', doc.doc_id);
+   const tlBtn = document.getElementById('v-tl-btn-unified');
+if (tlBtn) {
+    tlBtn.style.display = 'inline-flex';
+    tlBtn.dataset.docId = doc.doc_id;
+}
     document.getElementById('v-result-unified').style.display = 'block';
     document.getElementById('v-result-unified').scrollIntoView({ behavior: 'smooth' });
 }
@@ -1946,6 +1951,12 @@ function renderPubVerify(doc) {
     document.getElementById('pub-v-ots-badge').innerHTML = otsHtml;
 
     drawPubSpectrum(pd);
+
+   const pubTlBtn = document.getElementById('pub-tl-btn');
+if (pubTlBtn) {
+    pubTlBtn.style.display = 'block';
+    pubTlBtn.dataset.docId = doc.doc_id;
+}
 }
 
 function drawPubSpectrum(pd) {
@@ -4102,5 +4113,23 @@ window.calUpdate2 = calUpdate2;
                w.revisionRate * normalize(current.revisionRate, profile.revision_rate) +
                w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy);
     };
+
+   function openUnifiedTimelapse() {
+    const btn = document.getElementById('v-tl-btn-unified');
+    const docId = btn?.dataset?.docId;
+    if (!docId) { showToast('❌ Nincs dokumentum kiválasztva!'); return; }
+    document.getElementById('timelapse-doc-input').value = docId;
+    document.getElementById('tl-modal').classList.add('open');
+    loadTimelapse(docId);
+}
+
+function openPubTimelapse() {
+    const btn = document.getElementById('pub-tl-btn');
+    const docId = btn?.dataset?.docId;
+    if (!docId) { showToast('❌ Nincs dokumentum azonosító!'); return; }
+    document.getElementById('timelapse-doc-input').value = docId;
+    document.getElementById('tl-modal').classList.add('open');
+    loadTimelapse(docId);
+}
 
 });
