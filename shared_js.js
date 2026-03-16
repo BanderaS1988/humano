@@ -4001,13 +4001,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     function calUpdate1() {
         const area = document.getElementById('cal-area-1'); if (!area) return;
         const len = area.innerText.replace(/\n/g, '').length;
-        const pct = Math.min(100, Math.round((len / 347) * 100));
+        const pct = Math.min(100, Math.round((len / 320) * 100));
         const charsEl = document.getElementById('cal-1-chars');
         const progressEl = document.getElementById('cal-1-progress');
         const btnEl = document.getElementById('cal-1-btn');
         if (charsEl) charsEl.textContent = len;
         if (progressEl) progressEl.style.width = pct + '%';
-        if (btnEl) btnEl.disabled = len < 347 * 0.85;
+        if (btnEl) btnEl.disabled = len < 320 * 0.85;
     }
 
     function calUpdate2() {
