@@ -65,22 +65,35 @@
   </article>
 </div>
 
-<!-- shared_js.js már inicializálja a `db` Supabase klienst – NEM hozunk létre másikat -->
+<!-- shared_js.js inicializálja a `db` Supabase klienst -->
 <script src="shared_js.js"></script>
 <script>
 // ── Biometrikus mező definíciók ──
 const BIO_FIELDS = [
-    { label: 'Leütések',    key: 'keystrokeCount',    fmt: v => v },
-    { label: 'Javítások',   key: 'deletionCount',     fmt: v => v },
-    { label: 'Szünetek',    key: 'pauseCount',         fmt: v => v },
-    { label: 'Humán Index', key: 'humanIndex',         fmt: v => v + '%' },
-    { label: 'Gépelési idő',key: 'sessionDurationMs',  fmt: v => Math.round(v / 60000) + ' perc' },
-    { label: 'Entrópia',    key: 'entropyPct',         fmt: v => v + '%' },
+    { label: 'Leütések',     key: 'keystrokeCount',   fmt: v => v },
+    { label: 'Javítások',    key: 'deletionCount',    fmt: v => v },
+    { label: 'Szünetek',     key: 'pauseCount',       fmt: v => v },
+    { label: 'Humán Index',  key: 'humanIndex',       fmt: v => v + '%' },
+    { label: 'Gépelési idő', key: 'sessionDurationMs',fmt: v => Math.round(v / 60000) + ' perc' },
+    { label: 'Entrópia',     key: 'entropyPct',       fmt: v => v + '%' },
 ];
 
 async function loadStoryPage() {
-    const docId = window.location.pathname.split('/story/')[1]?.toUpperCase();
     const loadingEl = document.getElementById('story-loading');
+
+    // FIX: db race condition – megvárjuk amíg a shared_js.js inicializálja a db-t.
+    // Ha a db 2 másodpercen belül nem érhető el, hibaüzenetet mutatunk.
+    let attempts = 0;
+    while (typeof db === 'undefined' && attempts < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        attempts++;
+    }
+    if (typeof db === 'undefined') {
+        loadingEl.textContent = '❌ Adatbázis kapcsolat nem jött létre. Kérjük, töltsd újra az oldalt.';
+        return;
+    }
+
+    const docId = window.location.pathname.split('/story/')[1]?.toUpperCase();
 
     if (!docId) {
         loadingEl.textContent = '❌ Nincs dokumentum azonosító.';
@@ -100,9 +113,9 @@ async function loadStoryPage() {
     loadingEl.style.display = 'none';
     document.getElementById('story-content').style.display = 'block';
 
-    const pd       = doc.process_data || {};
-    const title    = doc.title || 'Névtelen alkotás';
-    const apiUrl   = `https://humano.hu/api/verify/${doc.doc_id}`;
+    const pd     = doc.process_data || {};
+    const title  = doc.title || 'Névtelen alkotás';
+    const apiUrl = `https://humano.hu/api/verify/${doc.doc_id}`;
 
     document.title = `${title} – HUMANO Alkotói Napló`;
     document.getElementById('page-desc').content =
@@ -120,7 +133,7 @@ async function loadStoryPage() {
 
     // Biometrikus kártyák
     document.getElementById('s-biometric').innerHTML = BIO_FIELDS.map(({ label, key, fmt }) => {
-        const raw = pd[key];
+        const raw     = pd[key];
         const display = (raw !== null && raw !== undefined) ? fmt(raw) : '–';
         return `
             <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem;text-align:center">
@@ -139,12 +152,12 @@ async function loadStoryPage() {
 function copyApiUrl() {
     const docId = window.location.pathname.split('/story/')[1]?.toUpperCase();
     const url   = `https://humano.hu/api/verify/${docId}`;
-    // copyToClipboard a shared_js.js-ből érkezik
     copyToClipboard(url);
     showToast('📋 Link másolva!');
 }
 
-loadStoryPage();
+// DOMContentLoaded-re várunk, hogy a shared_js.js biztosan lefutott
+document.addEventListener('DOMContentLoaded', loadStoryPage);
 </script>
 </body>
 </html>
