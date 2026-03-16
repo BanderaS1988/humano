@@ -338,12 +338,13 @@ async function approveAndPublish(signalId) {
 
 // ── LOG HELPER ──
 async function logLivingAction(actionType, description, meta = {}) {
-    await db.from('living_entity_log').insert({
+    const { error } = await db.from('living_entity_log').insert({
         action_type: actionType,
         description,
         meta,
         result: 'success'
-    }).catch(err => console.warn('Log írás sikertelen:', err.message));
+    });
+    if (error) console.warn('Log írás sikertelen:', error.message);
 }
 
 // ── UI FRISSÍTÉS ──
