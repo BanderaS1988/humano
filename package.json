@@ -1,0 +1,21 @@
+{
+  "name": "humano-sdk",
+  "version": "1.0.1",
+  "description": "Official SDK for the HUMANO human authorship certification platform",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "keywords": [
+    "humano",
+    "authorship",
+    "certification",
+    "blockchain",
+    "ai-detection"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
