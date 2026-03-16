@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/story/:path*", "destination": "/story_page.html" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
   ]
 }
