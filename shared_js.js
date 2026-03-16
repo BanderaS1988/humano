@@ -83,7 +83,7 @@ let lastSavedTitle = '';
 const FAQS = [
     { q: 'Mi az a HUMANO?', a: 'A HUMANO egy digitális szöveg-hitelesítési platform, amely biometrikus gépelési adatok, SHA-256 kriptográfia és Bitcoin blokklánc időbélyeg kombinációjával bizonyítja, hogy egy szöveg emberi kéz munkája.' },
     { q: 'Hogyan működik a biometrikus rögzítés?', a: 'A rendszer milliszekundumos pontossággal méri a billentyűleütések közti intervallumokat, a szüneteket, a javítási arányt, az ablakváltások számát. Ebből kiszámítja a gépelési ritmus változatosságát, és kategóriába sorolja: Gépies, Vegyes, Emberi vagy Intenzív alkotás.' },    { q: 'Miért van tiltva a beillesztés (paste)?', a: 'Mert a HUMANO a keletkezést hitelesíti, nem a végeredményt. Ha bemásolható lenne a szöveg, a rendszer értéktelen lenne.' },
-    { q: 'Hogyan működik a QR kód mobilon?', a: 'A QR kód a https://humano.hu/verify/DOC-XXXX URL-t tartalmazza. Bármilyen okostelefonnal beolvasva azonnal megnyílik a hitelesítési oldal.' },
+    { q: 'Hogyan működik a QR kód mobilon?', a: 'A QR kód a https://humano-hu.vercel.app/verify/DOC-XXXX URL-t tartalmazza. Bármilyen okostelefonnal beolvasva azonnal megnyílik a hitelesítési oldal.' },
     { q: 'Mi az az OpenTimestamps (OTS)?', a: 'Az OpenTimestamps egy nyílt forráskódú protokoll, amely a dokumentum SHA-256 hash-ét a Bitcoin blokkláncba rögzíti. Ez matematikailag bizonyítja, hogy a hash adott időpontban már létezett.' },
     { q: 'Hogyan tölthetem le a PDF tanúsítványt?', a: 'A hitelesítés után megjelenő panelben kattints a "📄 PDF Tanúsítvány" gombra. A PDF tartalmazza a DOC ID-t, SHA-256 hash-t, biometrikus adatokat, QR kódot és a blokklánc státuszt.' },
     { q: 'Biztonságban vannak az adataim?', a: 'A szövegek EU-s Supabase szervereken tárolódnak, GDPR-kompatibilis módon. A blokkláncon rögzített hash visszavonhatatlan, de nem tartalmaz személyes adatot.' },
@@ -529,7 +529,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
 
     // ── Ellenőrzési URL ──
     doc.setTextColor(100, 80, 30); doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
-    doc.text('Ellenorzesi URL: https://humano.hu/verify/' + (docId || ''), W / 2, y, { align: 'center' });
+    doc.text('Ellenorzesi URL: https://humano-hu.vercel.app/verify/' + (docId || ''), W / 2, y, { align: 'center' });
     y += 5;
 
     doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
@@ -689,7 +689,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     y += 4;
 
     // ── QR kód bal + összefoglaló adatok jobb ──
-    const verifyUrl = 'https://humano.hu/verify/' + (docId || '');
+    const verifyUrl = 'https://humano-hu.vercel.app/verify/' + (docId || '');
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(verifyUrl) + '&color=C9A84C&bgcolor=1a1a2e&margin=4&format=png';
     const blockH = H - 20 - y;
 
@@ -747,7 +747,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
     doc.line(PL, H - 16, W - PR, H - 16);
     doc.setTextColor(100, 80, 30); doc.setFontSize(6); doc.setFont('helvetica', 'normal');
-    doc.text('Ellenorzes: humano.hu · opentimestamps.org · SHA-256 · Bitcoin blokklánc', W / 2, H - 11, { align: 'center' });
+    doc.text('Ellenorzes: humano-hu.vercel.app · opentimestamps.org · SHA-256 · Bitcoin blokklánc', W / 2, H - 11, { align: 'center' });
     doc.setFontSize(5.5);
     doc.text('Generalva: ' + new Date().toLocaleString('hu-HU'), W / 2, H - 6, { align: 'center' });
 
@@ -759,7 +759,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
 function openSocialModal() {
     const docId = E.certDocId || document.getElementById('cert-id-val')?.textContent;
     const title = E.certTitle || '–';
-    const link = `https://humano.hu/verify/${docId}`;
+    const link = `https://humano-hu.vercel.app/verify/${docId}`;
     const text = `Épp hitelesítettem ezt a szöveget a HUMANO platformon – Bitcoin blokklánccal igazolva, hogy emberi kéz írta. 🖊️✦\n\n"${title}"\n\n${link}\n\n#HumanoVerified #EmberiAlkotás #AI`;
     _buildSocialGrid(link, text);
     document.getElementById('social-modal')?.classList.add('open');
@@ -767,8 +767,8 @@ function openSocialModal() {
 
 function openFlexSocialModal() {
     const s = window._flexStats || {};
-    const text = `Eddig ${(s.totalChars || 0).toLocaleString('hu-HU')} karaktert írtam a HUMANO platformon – ez ${s.humanHours || 0} óra tiszta emberi munka, Bitcoin blokklánccal igazolva. 🖊️✦ #HumanoVerified #EmberiAlkotás #AI\n\nhttps://humano.hu`;
-    _buildSocialGrid('https://humano.hu', text);
+    const text = `Eddig ${(s.totalChars || 0).toLocaleString('hu-HU')} karaktert írtam a HUMANO platformon – ez ${s.humanHours || 0} óra tiszta emberi munka, Bitcoin blokklánccal igazolva. 🖊️✦ #HumanoVerified #EmberiAlkotás #AI\n\nhttps://humano-hu.vercel.app`;
+    _buildSocialGrid('https://humano-hu.vercel.app', text);
     document.getElementById('social-modal')?.classList.add('open');
 }
 
@@ -813,8 +813,8 @@ function shareCopyClipboard() {
     const docId = E.certDocId || document.getElementById('cert-id-val')?.textContent;
     const hash = E.certHash || document.getElementById('cert-hash-val')?.textContent;
     const title = E.certTitle || document.getElementById('doc-title-input')?.value || '–';
-    const link = `https://humano.hu/verify/${docId}`;
-    const text = `HUMANO Hitelesített Szöveg\n${'─'.repeat(36)}\nCím: ${title}\nDOC ID: ${docId}\nSHA-256: ${hash}\nEllenőrző link: ${link}\n${'─'.repeat(36)}\nHitelesítve: humano.hu · Bitcoin blokklánc`;
+    const link = `https://humano-hu.vercel.app/verify/${docId}`;
+    const text = `HUMANO Hitelesített Szöveg\n${'─'.repeat(36)}\nCím: ${title}\nDOC ID: ${docId}\nSHA-256: ${hash}\nEllenőrző link: ${link}\n${'─'.repeat(36)}\nHitelesítve: humano-hu.vercel.app · Bitcoin blokklánc`;
     copyToClipboard(text);
     showToast('📋 Vágólapra másolva!');
 }
@@ -822,7 +822,7 @@ function shareCopyClipboard() {
 function copyVerifyLink(docId) {
     const id = docId || E.certDocId || document.getElementById('cert-id-val')?.textContent;
     if (!id || id === '–') { showToast('Nincs dokumentum azonosító!'); return; }
-    copyToClipboard(`https://humano.hu/verify/${id}`);
+    copyToClipboard(`https://humano-hu.vercel.app/verify/${id}`);
     showToast('🔗 Link másolva!');
 }
 
@@ -843,7 +843,7 @@ function copyVerifyBadgeCode() {
 }
 
 function getBadgeHtml(docId) {
-    const url = `https://humano.hu/verify/${docId}`;
+    const url = `https://humano-hu.vercel.app/verify/${docId}`;
     return `<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;background:rgba(6,6,8,.95);border:1.5px solid #c9a84c;font-family:Georgia,serif;font-size:12px;color:#c9a84c;text-decoration:none;">✦ <span><strong style="display:block;font-size:11px;letter-spacing:.5px">HUMANO HITELESÍTETT</strong><span style="display:block;font-size:9px;color:#8a6a20;letter-spacing:.3px">${docId}</span></span></a>`;
 }
 
@@ -852,7 +852,7 @@ function openSendEmailModal() {
     const docId = E.certDocId || document.getElementById('cert-id-val')?.textContent;
     const hash = E.certHash || document.getElementById('cert-hash-val')?.textContent;
     const title = E.certTitle || document.getElementById('doc-title-input')?.value || '–';
-    const link = `https://humano.hu/verify/${docId}`;
+    const link = `https://humano-hu.vercel.app/verify/${docId}`;
 
     document.getElementById('send-doc-id-hidden').value = docId;
     document.getElementById('send-verify-link-hidden').value = link;
@@ -1768,7 +1768,7 @@ async function downloadUnifiedPdf() {
 function copyUnifiedLink() {
     const docId = document.getElementById('v-input-unified')?.value || '';
     if (!docId) { showToast('❌ Nincs dokumentum kiválasztva!'); return; }
-    copyToClipboard(`https://humano.hu/verify/${docId}`);
+    copyToClipboard(`https://humano-hu.vercel.app/verify/${docId}`);
     showToast('🔗 Megosztási link másolva!');
 }
 
@@ -1833,7 +1833,7 @@ function renderMyDocs(docs) {
         const otsHtml = d.ots_receipt
             ? '<span class="badge badge-success" style="font-size:.65rem">⛓️ BTC</span>'
             : d.ots_pending ? '<span class="badge badge-muted" style="font-size:.65rem">⏳ OTS</span>' : '';
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('https://humano.hu/verify/' + d.doc_id)}&color=C9A84C&bgcolor=FFFFFF&margin=6&format=png`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('https://humano-hu.vercel.app/verify/' + d.doc_id)}&color=C9A84C&bgcolor=FFFFFF&margin=6&format=png`;
         return `<div class="doc-card">
       <div class="doc-card-header">
         <div>
@@ -2892,7 +2892,7 @@ function savePulseImage() {
     ctx.fillStyle = '#6a5020';
     ctx.font = '18px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`humano.hu · ${new Date().toLocaleString('hu-HU')} · #HumanoAnalysis`, exportW / 2, exportH - 40);
+    ctx.fillText(`humano-hu.vercel.app · ${new Date().toLocaleString('hu-HU')} · #HumanoAnalysis`, exportW / 2, exportH - 40);
 
     const link = document.createElement('a');
     link.download = `HUMANO-analízis-${Date.now()}.png`;
@@ -3249,7 +3249,7 @@ function updateCertPanel(docId, hash, savedAt, otsReceipt, otsPending) {
     const bl = g('badge-preview-link');
     const bll = g('badge-doc-id-label');
     const bc = g('badge-html-code');
-    if (bl) bl.href = `https://humano.hu/verify/${docId}`;
+    if (bl) bl.href = `https://humano-hu.vercel.app/verify/${docId}`;
     if (bll) bll.textContent = docId;
     if (bc) bc.textContent = getBadgeHtml(docId);
 }
@@ -3527,7 +3527,7 @@ function allowPaste() {
 
 function flexCopyText() {
     const s = window._flexStats || {};
-    const text = `${(s.totalChars || 0).toLocaleString('hu-HU')} karakter – ${s.humanHours || 0} óra tiszta emberi munka – ${s.docCount || 0} hitelesített dokumentum. Átlag Humán Index: ${s.avgHI || 0}%. humano.hu #HumanoVerified`;
+    const text = `${(s.totalChars || 0).toLocaleString('hu-HU')} karakter – ${s.humanHours || 0} óra tiszta emberi munka – ${s.docCount || 0} hitelesített dokumentum. Átlag Humán Index: ${s.avgHI || 0}%. humano-hu.vercel.app #HumanoVerified`;
     copyToClipboard(text);
     showToast('📋 Szöveg másolva!');
 }
