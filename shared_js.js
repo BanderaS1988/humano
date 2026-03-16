@@ -139,8 +139,7 @@ function _showSection(hash) {
 
 function _onSectionActivated(hash) {
     if (hash === 'dashboard') loadDashboard();
-    if (hash === 'admin') loadAdmin();
-   
+    if (hash === 'admin') { loadAdmin(); loadLivingEntityDashboard(); }
     if (hash === 'landing') loadPublicStats();
     if (hash === 'calibration') calInit();
     if (hash === 'faq') renderFaq();
@@ -148,8 +147,7 @@ function _onSectionActivated(hash) {
     if (hash === 'profile') loadProfile();
     if (hash === 'verify-unified') loadLatestRegistryUnified();
     if (hash === 'supporters') trackEvent('Subscription_Click', {});
-    if (hash === 'roadmap') loadFeatureVotes();   // ← EZT ADD HOZZÁ
-    loadLivingEntityDashboard();
+    if (hash === 'roadmap') loadFeatureVotes();
     if (hash === 'editor') {
         setTimeout(() => {
             document.getElementById('doc-title-input')?.focus();
