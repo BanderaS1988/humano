@@ -4009,12 +4009,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.target === document.getElementById('info-modal')) closeInfoModal();
     });
 
-    document.getElementById('humTlBtnPlay')?.addEventListener('click', () => timelapsePlaying ? timelapseStopPlay() : timelapseStartPlay());
-    document.getElementById('humTlBtnRewind')?.addEventListener('click', () => { timelapseStopPlay(); timelapseFrameIdx = 0; timelapseAccumMs = 0; timelapseRenderFrame(0); });
+    document.getElementById('humTlBtnPlay')?.addEventListener('click', () =>
+        timelapsePlaying ? timelapseStopPlay() : timelapseStartPlay()
+    );
+    document.getElementById('humTlBtnRewind')?.addEventListener('click', () => {
+        timelapseStopPlay();
+        timelapseFrameIdx = 0;
+        timelapseAccumMs  = 0;
+        timelapseRenderFrame(0);
+    });
     document.getElementById('humTlSlider')?.addEventListener('input', () => {
         timelapseStopPlay();
         timelapseFrameIdx = parseInt(document.getElementById('humTlSlider').value, 10);
-        timelapseAccumMs = timelapseEvents[timelapseFrameIdx]?.ts_ms ?? 0;
+        timelapseAccumMs  = timelapseEvents[timelapseFrameIdx]?.ts_ms ?? 0;
         timelapseRenderFrame(timelapseFrameIdx);
     });
 
@@ -4031,13 +4038,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof initPulseCanvas === 'function') initPulseCanvas();
     });
 
-    /* ─── KALIBRÁCIÓ ── */
+
+    // ── KALIBRÁCIÓ ──
 
     const CAL = {
-        step1Events: [],
-        step2Events: [],
-        step1LastKey: null,
-        step2LastKey: null,
+        step1Events:      [],
+        step2Events:      [],
+        step1LastKey:     null,
+        step2LastKey:     null,
         step1SessionStart: null,
         step2SessionStart: null,
     };
@@ -4046,28 +4054,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         const area1 = document.getElementById('cal-area-1');
         const area2 = document.getElementById('cal-area-2');
         if (!area1 || !area2) return;
+
         [area1, area2].forEach(el => {
-            el.addEventListener('paste', e => { e.preventDefault(); showToast('📋 Kalibrációban beillesztés nem engedélyezett – kérlek gépeld be.'); });
+            el.addEventListener('paste', e => {
+                e.preventDefault();
+                showToast('📋 Kalibrációban beillesztés nem engedélyezett – kérlek gépeld be.');
+            });
             el.addEventListener('drop', e => e.preventDefault());
         });
+
         area1.addEventListener('keydown', e => {
             if (!e.isTrusted || e.repeat) return;
             const now = Date.now();
             if (!CAL.step1SessionStart) CAL.step1SessionStart = now;
-            if (e.key === 'Backspace') { CAL.step1Events.push({ type: 'delete', ts: now }); }
-            else if (e.key.length === 1) {
+            if (e.key === 'Backspace') {
+                CAL.step1Events.push({ type: 'delete', ts: now });
+            } else if (e.key.length === 1) {
                 const interval = CAL.step1LastKey ? now - CAL.step1LastKey : 150;
                 CAL.step1Events.push({ type: 'key', ts: now, interval });
                 CAL.step1LastKey = now;
             }
             setTimeout(() => calUpdate1(), 10);
         });
+
         area2.addEventListener('keydown', e => {
             if (!e.isTrusted || e.repeat) return;
             const now = Date.now();
             if (!CAL.step2SessionStart) CAL.step2SessionStart = now;
-            if (e.key === 'Backspace') { CAL.step2Events.push({ type: 'delete', ts: now }); }
-            else if (e.key.length === 1) {
+            if (e.key === 'Backspace') {
+                CAL.step2Events.push({ type: 'delete', ts: now });
+            } else if (e.key.length === 1) {
                 const interval = CAL.step2LastKey ? now - CAL.step2LastKey : 150;
                 CAL.step2Events.push({ type: 'key', ts: now, interval });
                 CAL.step2LastKey = now;
@@ -4076,40 +4092,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-  function calUpdate1() {
-    const area = document.getElementById('cal-area-1'); if (!area) return;
-    const len = area.innerText.replace(/\n/g, '').length;
-    const pct = Math.min(100, Math.round((len / 380) * 100));
-    const charsEl = document.getElementById('cal-1-chars');
-    const progressEl = document.getElementById('cal-1-progress');
-    const btnEl = document.getElementById('cal-1-btn');
-    if (charsEl) charsEl.textContent = len;
-    if (progressEl) progressEl.style.width = pct + '%';
-    if (btnEl) btnEl.disabled = len < 380 * 0.85;
-}
-function calUpdate2() {
-    const area = document.getElementById('cal-area-2'); if (!area) return;
-    const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
-    const wordsEl = document.getElementById('cal-2-words');
-    const btnEl = document.getElementById('cal-2-btn');
-    if (wordsEl) wordsEl.textContent = words;
-    if (btnEl) btnEl.disabled = words < 40;
-}
-window.calInit = calInit;
-window.calUpdate1 = calUpdate1;
-window.calUpdate2 = calUpdate2;
+    function calUpdate1() {
+        const area = document.getElementById('cal-area-1');
+        if (!area) return;
+        const len        = area.innerText.replace(/\n/g, '').length;
+        const pct        = Math.min(100, Math.round((len / 380) * 100));
+        const charsEl    = document.getElementById('cal-1-chars');
+        const progressEl = document.getElementById('cal-1-progress');
+        const btnEl      = document.getElementById('cal-1-btn');
+        if (charsEl)    charsEl.textContent    = len;
+        if (progressEl) progressEl.style.width = pct + '%';
+        if (btnEl)      btnEl.disabled          = len < 380 * 0.85;
+    }
 
-    window.calStep1Complete = function() {
+    function calUpdate2() {
+        const area    = document.getElementById('cal-area-2');
+        if (!area) return;
+        const words   = area.innerText.trim().split(/\s+/).filter(Boolean).length;
+        const wordsEl = document.getElementById('cal-2-words');
+        const btnEl   = document.getElementById('cal-2-btn');
+        if (wordsEl) wordsEl.textContent = words;
+        if (btnEl)   btnEl.disabled      = words < 40;
+    }
+
+    window.calInit    = calInit;
+    window.calUpdate1 = calUpdate1;
+    window.calUpdate2 = calUpdate2;
+
+    window.calStep1Complete = function () {
         const ind1 = document.getElementById('cal-step-1-indicator');
         const ind2 = document.getElementById('cal-step-2-indicator');
         if (ind1) ind1.style.borderColor = 'var(--success)';
         if (ind2) {
             ind2.style.borderColor = 'var(--gold)';
-            ind2.style.background = 'rgba(201,168,76,.06)';
-            ind2.querySelector('div').style.background = 'linear-gradient(135deg,#a07830,#c9a84c)';
-            ind2.querySelector('div').style.color = '#0c0a04';
-            ind2.querySelector('div').style.border = 'none';
-            ind2.querySelectorAll('div')[1].querySelector('div').style.color = 'var(--gold2)';
+            ind2.style.background  = 'rgba(201,168,76,.06)';
+            const divs = ind2.querySelectorAll('div');
+            if (divs[0]) {
+                divs[0].style.background = 'linear-gradient(135deg,#a07830,#c9a84c)';
+                divs[0].style.color      = '#0c0a04';
+                divs[0].style.border     = 'none';
+            }
+            if (divs[1]?.querySelector('div')) {
+                divs[1].querySelector('div').style.color = 'var(--gold2)';
+            }
         }
         document.getElementById('cal-step-1').style.display = 'none';
         document.getElementById('cal-step-2').style.display = 'block';
@@ -4117,23 +4142,23 @@ window.calUpdate2 = calUpdate2;
         showToast('✅ Másolási minta rögzítve – most írj szabadon!');
     };
 
-    window.calStep2Complete = async function() {
+    window.calStep2Complete = async function () {
         const btn = document.getElementById('cal-2-btn');
         if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
         try {
             const transcriptionFeatures = calExtractFeatures(CAL.step1Events);
-            const compositionFeatures = calExtractFeatures(CAL.step2Events);
+            const compositionFeatures   = calExtractFeatures(CAL.step2Events);
             const rows = [
                 { user_id: currentUser.id, profile_type: 'transcription', burst_mean: transcriptionFeatures.burstMean, pause_variance: transcriptionFeatures.pauseVariance, revision_rate: transcriptionFeatures.revisionRate, rhythm_entropy: transcriptionFeatures.rhythmEntropy, sample_count: CAL.step1Events.filter(e => e.type === 'key').length },
-                { user_id: currentUser.id, profile_type: 'composition', burst_mean: compositionFeatures.burstMean, pause_variance: compositionFeatures.pauseVariance, revision_rate: compositionFeatures.revisionRate, rhythm_entropy: compositionFeatures.rhythmEntropy, sample_count: CAL.step2Events.filter(e => e.type === 'key').length }
+                { user_id: currentUser.id, profile_type: 'composition',   burst_mean: compositionFeatures.burstMean,   pause_variance: compositionFeatures.pauseVariance,   revision_rate: compositionFeatures.revisionRate,   rhythm_entropy: compositionFeatures.rhythmEntropy,   sample_count: CAL.step2Events.filter(e => e.type === 'key').length }
             ];
             const { error } = await db.from('typing_profiles').upsert(rows, { onConflict: 'user_id,profile_type' });
             if (error) throw error;
-            document.getElementById('cal-step-2').style.display = 'none';
+            document.getElementById('cal-step-2').style.display   = 'none';
             document.getElementById('cal-skip-wrap').style.display = 'none';
-            document.getElementById('cal-result').style.display = 'block';
-            document.getElementById('cal-result-entropy').textContent = compositionFeatures.rhythmEntropy.toFixed(2);
-            document.getElementById('cal-result-burst').textContent = Math.round(compositionFeatures.burstMean) + ' ms';
+            document.getElementById('cal-result').style.display    = 'block';
+            document.getElementById('cal-result-entropy').textContent  = compositionFeatures.rhythmEntropy.toFixed(2);
+            document.getElementById('cal-result-burst').textContent    = Math.round(compositionFeatures.burstMean) + ' ms';
             document.getElementById('cal-result-revision').textContent = (compositionFeatures.revisionRate * 100).toFixed(1) + '%';
             showToast('✦ Kalibrációs profil elmentve!');
         } catch (err) {
@@ -4143,46 +4168,54 @@ window.calUpdate2 = calUpdate2;
         }
     };
 
-    window.calSkip = function() {
+    window.calSkip = function () {
         showToast('👌 Kihagyva – bármikor elvégezheted a Dashboardon.');
         showPage('dashboard');
     };
 
-    window.calExtractFeatures = function(events) {
-        const keyEvents = events.filter(e => e.type === 'key');
+    window.calExtractFeatures = function (events) {
+        const keyEvents    = events.filter(e => e.type === 'key');
         const deleteEvents = events.filter(e => e.type === 'delete');
         if (keyEvents.length < 5) return { burstMean: 0, pauseVariance: 0, revisionRate: 0, rhythmEntropy: 0 };
         const intervals = keyEvents.map(e => e.interval).filter(v => v && v > 0 && v < 10000);
-        const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        const mean      = intervals.reduce((a, b) => a + b, 0) / intervals.length;
         let bursts = [], currentBurst = [];
         intervals.forEach(iv => {
             if (iv < 1500) { currentBurst.push(iv); }
             else { if (currentBurst.length > 0) { bursts.push(currentBurst.reduce((a, b) => a + b, 0)); currentBurst = []; } }
         });
         if (currentBurst.length > 0) bursts.push(currentBurst.reduce((a, b) => a + b, 0));
-        const burstMean = bursts.length ? bursts.reduce((a, b) => a + b, 0) / bursts.length : mean;
-        const pauses = intervals.filter(v => v >= 1500);
-        const pauseMean = pauses.length ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
+        const burstMean     = bursts.length ? bursts.reduce((a, b) => a + b, 0) / bursts.length : mean;
+        const pauses        = intervals.filter(v => v >= 1500);
+        const pauseMean     = pauses.length ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
         const pauseVariance = pauses.length ? pauses.reduce((s, v) => s + Math.pow(v - pauseMean, 2), 0) / pauses.length : 0;
-        const revisionRate = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
+        const revisionRate  = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
         const buckets = {};
         intervals.forEach(v => { const b = Math.floor(v / 100) * 100; buckets[b] = (buckets[b] || 0) + 1; });
-        const total = intervals.length;
-        const rhythmEntropy = -Object.values(buckets).reduce((s, count) => { const p = count / total; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+        const total         = intervals.length;
+        const rhythmEntropy = -Object.values(buckets).reduce((s, count) => {
+            const p = count / total;
+            return s + (p > 0 ? p * Math.log2(p) : 0);
+        }, 0);
         return { burstMean, pauseVariance, revisionRate, rhythmEntropy };
     };
 
-    window.calProfileDistance = function(current, profile) {
-        const w = { burstMean: 0.25, pauseVariance: 0.25, revisionRate: 0.25, rhythmEntropy: 0.25 };
+    window.calProfileDistance = function (current, profile) {
+        const w         = { burstMean: 0.25, pauseVariance: 0.25, revisionRate: 0.25, rhythmEntropy: 0.25 };
         const normalize = (val, ref) => ref === 0 ? 0 : Math.abs(val - ref) / Math.max(ref, 0.001);
-        return w.burstMean * normalize(current.burstMean, profile.burst_mean) +
-               w.pauseVariance * normalize(current.pauseVariance, profile.pause_variance) +
-               w.revisionRate * normalize(current.revisionRate, profile.revision_rate) +
-               w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy);
+        return w.burstMean     * normalize(current.burstMean,     profile.burst_mean)
+             + w.pauseVariance * normalize(current.pauseVariance, profile.pause_variance)
+             + w.revisionRate  * normalize(current.revisionRate,  profile.revision_rate)
+             + w.rhythmEntropy * normalize(current.rhythmEntropy, profile.rhythm_entropy);
     };
 
-   function openUnifiedTimelapse() {
-    const btn = document.getElementById('v-tl-btn-unified');
+});
+
+
+// ── TIMELAPSE FUNKCIÓK (globálisak – DOMContentLoaded-en KÍVÜL) ──
+
+function openUnifiedTimelapse() {
+    const btn   = document.getElementById('v-tl-btn-unified');
     const docId = btn?.dataset?.docId;
     if (!docId) { showToast('❌ Nincs dokumentum kiválasztva!'); return; }
     document.getElementById('timelapse-doc-input').value = docId;
@@ -4191,7 +4224,7 @@ window.calUpdate2 = calUpdate2;
 }
 
 function openPubTimelapse() {
-    const btn = document.getElementById('pub-tl-btn');
+    const btn   = document.getElementById('pub-tl-btn');
     const docId = btn?.dataset?.docId;
     if (!docId) { showToast('❌ Nincs dokumentum azonosító!'); return; }
     document.getElementById('timelapse-doc-input').value = docId;
