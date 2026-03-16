@@ -3998,30 +3998,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function calUpdate1() {
-        const area = document.getElementById('cal-area-1'); if (!area) return;
-        const len = area.innerText.replace(/\n/g, '').length;
-        const pct = Math.min(100, Math.round((len / 320) * 100));
-        const charsEl = document.getElementById('cal-1-chars');
-        const progressEl = document.getElementById('cal-1-progress');
-        const btnEl = document.getElementById('cal-1-btn');
-        if (charsEl) charsEl.textContent = len;
-        if (progressEl) progressEl.style.width = pct + '%';
-        if (btnEl) btnEl.disabled = len < 320 * 0.85;
-    }
-
-    function calUpdate2() {
-        const area = document.getElementById('cal-area-2'); if (!area) return;
-        const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
-        const wordsEl = document.getElementById('cal-2-words');
-        const btnEl = document.getElementById('cal-2-btn');
-        if (wordsEl) wordsEl.textContent = words;
-        if (btnEl) btnEl.disabled = words < 40;
-    }
-
-    window.calInit = calInit;
-    window.calUpdate1 = calUpdate1;
-    window.calUpdate2 = calUpdate2;
+  function calUpdate1() {
+    const area = document.getElementById('cal-area-1'); if (!area) return;
+    const len = area.innerText.replace(/\n/g, '').length;
+    const pct = Math.min(100, Math.round((len / 380) * 100));
+    const charsEl = document.getElementById('cal-1-chars');
+    const progressEl = document.getElementById('cal-1-progress');
+    const btnEl = document.getElementById('cal-1-btn');
+    if (charsEl) charsEl.textContent = len;
+    if (progressEl) progressEl.style.width = pct + '%';
+    if (btnEl) btnEl.disabled = len < 380 * 0.85;
+}
+function calUpdate2() {
+    const area = document.getElementById('cal-area-2'); if (!area) return;
+    const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
+    const wordsEl = document.getElementById('cal-2-words');
+    const btnEl = document.getElementById('cal-2-btn');
+    if (wordsEl) wordsEl.textContent = words;
+    if (btnEl) btnEl.disabled = words < 40;
+}
+window.calInit = calInit;
+window.calUpdate1 = calUpdate1;
+window.calUpdate2 = calUpdate2;
 
     window.calStep1Complete = function() {
         const ind1 = document.getElementById('cal-step-1-indicator');
