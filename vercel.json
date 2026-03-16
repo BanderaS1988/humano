@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/story/:path*", "destination": "/story_page.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
