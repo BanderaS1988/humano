@@ -3,7 +3,14 @@
 // Az élő rendszer vezérlője
 // ============================================================
 // Függőség: db (Supabase kliens), showToast(), esc(), fmtDate()
+// ollama_engine.js-nek ELŐBB kell betöltődnie (PROXY_BASE miatt)
 // ============================================================
+
+// ── PROXY_BASE guard – ha az ollama_engine.js még nem töltődött be ──
+// FIX: runtime ReferenceError helyett értelmes hibaüzenet
+if (typeof PROXY_BASE === 'undefined') {
+    console.error('❌ HIBA: ollama_engine.js nincs betöltve living_entity.js előtt!');
+}
 
 // ── ÁLLAPOT ──
 let livingEntityActive    = false;
@@ -13,6 +20,12 @@ let livingEntityIntervals = [];
 async function activateLivingEntity() {
     if (livingEntityActive) {
         showToast('⚡ A rendszer már él!');
+        return;
+    }
+
+    // PROXY_BASE guard futásidőben
+    if (typeof PROXY_BASE === 'undefined') {
+        showToast('❌ ollama_engine.js nincs betöltve!');
         return;
     }
 
@@ -59,7 +72,11 @@ async function activateLivingEntity() {
 // ── LEÁLLÍTÁS ──
 async function deactivateLivingEntity() {
     livingEntityActive = false;
-    livingEntityIntervals.forEach(i => clearInterval(i));
+    // FIX: clearInterval + clearTimeout egyaránt – mindkettő működik mindkét ID-re
+    livingEntityIntervals.forEach(id => {
+        clearInterval(id);
+        clearTimeout(id);
+    });
     livingEntityIntervals = [];
     updateLivingEntityUI(false);
     showToast('⏸ Élő rendszer leállítva.');
@@ -91,7 +108,6 @@ async function runLivingCycle() {
         generateCreatorPortraits(),
     ]);
 
-    // Logoljuk ha valamelyik elhalt
     results.forEach((r, i) => {
         if (r.status === 'rejected') {
             const names = ['generateStoriesForNewDocs', 'processSignalQueue', 'generateCreatorPortraits'];
@@ -303,11 +319,16 @@ function scheduleDailyPressRelease() {
     }
 
     function scheduleNext() {
+        // FIX: a régi timeout ID-t eltávolítjuk mielőtt újat adunk hozzá,
+        // hogy a tömb ne nőjön korlátlanul hosszú futás esetén
         const t = setTimeout(async () => {
+            const idx = livingEntityIntervals.indexOf(t);
+            if (idx !== -1) livingEntityIntervals.splice(idx, 1);
+
             await generateDailyPressRelease();
-            // Következő nap ugyanez
             scheduleNext();
         }, msUntilNextRun());
+
         livingEntityIntervals.push(t);
     }
 
@@ -563,16 +584,14 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ============================================================
-// GLOBÁLIS HOZZÁFÉRHETŐVÉ TÉTEL – hogy a gombok működjenek
-// ============================================================
-window.activateLivingEntity = activateLivingEntity;
-window.deactivateLivingEntity = deactivateLivingEntity;
-window.runLivingCycle = runLivingCycle;
-window.addSignalManually = addSignalManually;
-window.approveAndPublish = approveAndPublish;
+// ── GLOBÁLIS HOZZÁFÉRHETŐVÉ TÉTEL ──
+window.activateLivingEntity    = activateLivingEntity;
+window.deactivateLivingEntity  = deactivateLivingEntity;
+window.runLivingCycle          = runLivingCycle;
+window.addSignalManually       = addSignalManually;
+window.approveAndPublish       = approveAndPublish;
 window.generateAnswerForSignal = generateAnswerForSignal;
-window.loadSignalQueue = loadSignalQueue;
-window.loadLivingLog = loadLivingLog;
-window.loadStoryStats = loadStoryStats;
-window.loadPressReleases = loadPressReleases;
+window.loadSignalQueue         = loadSignalQueue;
+window.loadLivingLog           = loadLivingLog;
+window.loadStoryStats          = loadStoryStats;
+window.loadPressReleases       = loadPressReleases;
