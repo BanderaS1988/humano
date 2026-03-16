@@ -366,6 +366,33 @@ async function approveAndPublish(signalId) {
     loadSignalQueue();
 }
 
+// ── VÁLASZ GENERÁLÁS SIGNALHOZ ──
+async function generateAnswerForSignal(signalId) {
+    showToast('🤖 Ollama gondolkodik...');
+
+    const { data: signal } = await db
+        .from('signal_queue')
+        .select('*')
+        .eq('id', signalId)
+        .single();
+
+    if (!signal) return;
+
+    const answer = await ollamaGenerateForumAnswer(signal.question_text, signal.platform);
+
+    if (!answer) {
+        showToast('❌ Ollama nem elérhető!');
+        return;
+    }
+
+    await db.from('signal_queue')
+        .update({ generated_answer: answer, status: 'ready' })
+        .eq('id', signalId);
+
+    showToast('✅ Válasz kész – jóváhagyásra vár!');
+    loadSignalQueue();
+}
+
 // ── LOG HELPER ──
 async function logLivingAction(actionType, description, meta = {}) {
     const { error } = await db.from('living_entity_log').insert({
@@ -498,32 +525,6 @@ async function loadSignalQueue() {
     `).join('');
 }
 
-async function generateAnswerForSignal(signalId) {
-    showToast('🤖 Ollama gondolkodik...');
-
-    const { data: signal } = await db
-        .from('signal_queue')
-        .select('*')
-        .eq('id', signalId)
-        .single();
-
-    if (!signal) return;
-
-    const answer = await ollamaGenerateForumAnswer(signal.question_text, signal.platform);
-
-    if (!answer) {
-        showToast('❌ Ollama nem elérhető!');
-        return;
-    }
-
-    await db.from('signal_queue')
-        .update({ generated_answer: answer, status: 'ready' })
-        .eq('id', signalId);
-
-    showToast('✅ Válasz kész – jóváhagyásra vár!');
-    loadSignalQueue();
-}
-
 async function loadStoryStats() {
     const { count } = await db
         .from('story_pages')
@@ -561,3 +562,17 @@ async function loadPressReleases() {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ============================================================
+// GLOBÁLIS HOZZÁFÉRHETŐVÉ TÉTEL – hogy a gombok működjenek
+// ============================================================
+window.activateLivingEntity = activateLivingEntity;
+window.deactivateLivingEntity = deactivateLivingEntity;
+window.runLivingCycle = runLivingCycle;
+window.addSignalManually = addSignalManually;
+window.approveAndPublish = approveAndPublish;
+window.generateAnswerForSignal = generateAnswerForSignal;
+window.loadSignalQueue = loadSignalQueue;
+window.loadLivingLog = loadLivingLog;
+window.loadStoryStats = loadStoryStats;
+window.loadPressReleases = loadPressReleases;
