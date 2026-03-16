@@ -4232,4 +4232,3 @@ function openPubTimelapse() {
     loadTimelapse(docId);
 }
 
-});
