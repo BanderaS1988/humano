@@ -1496,29 +1496,32 @@
     <div class="card" style="margin-bottom:1.5rem"><div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);text-transform:uppercase;margin-bottom:.5rem">SHA-256 Hash</div><div style="font-family:var(--font-mono);font-size:.72rem;word-break:break-all;color:var(--gold2);background:var(--surface2);padding:.75rem;border-radius:6px;line-height:1.6" id="pub-v-hash">–</div></div>
     <div class="pub-spectrum-wrap"><div class="pub-spectrum-title">📊 Gépelési Spektrum</div><canvas id="pub-spectrum-canvas" height="100"></canvas></div>
     <div class="card" style="margin-bottom:1.5rem">
-  <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⚡ Gépelési sebesség elemzés</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;font-size:.85rem">
-    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
-      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Karakterszám</div>
-      <div style="font-weight:700;color:var(--gold2)" id="pub-tp-chars">–</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⚡ Gépelési sebesség elemzés</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;font-size:.85rem">
+        <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Karakterszám</div>
+          <div style="font-weight:700;color:var(--gold2)" id="pub-tp-chars">–</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Írási idő</div>
+          <div style="font-weight:700;color:var(--gold2)" id="pub-tp-mins">–</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem;grid-column:span 2">
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Értékelés</div>
+          <div style="font-weight:700" id="pub-tp-verdict">–</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem" id="pub-tp-desc">–</div>
+        </div>
+      </div>
     </div>
-    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem">
-      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Írási idő</div>
-      <div style="font-weight:700;color:var(--gold2)" id="pub-tp-mins">–</div>
-    </div>
-    <div style="background:var(--surface2);border-radius:6px;padding:.5rem .75rem;grid-column:span 2">
-      <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Értékelés</div>
-      <div style="font-weight:700" id="pub-tp-verdict">–</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem" id="pub-tp-desc">–</div>
-    </div>
-  </div>
-</div>
     <div class="card" style="margin-bottom:1.5rem"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">🧬 Biometrikus adatok</div><div id="pub-v-biometric-table" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.82rem"></div></div>
-    <div class="card" style="margin-bottom:1.5rem;text-align:center"><div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⛓️ Bitcoin Blokklánc Időbélyeg</div><div id="pub-v-ots-badge"></div></div>
     <div class="card" style="margin-bottom:1.5rem;text-align:center">
-  <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">▶ Alkotói Idővonal</div>
-  <button class="btn btn-outline" style="width:100%;padding:.65rem" id="pub-tl-btn" onclick="openPubTimelapse()" style="display:none">▶ Idővonal megtekintése</button>
-</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">⛓️ Bitcoin Blokklánc Időbélyeg</div>
+      <div id="pub-v-ots-badge"></div>
+    </div>
+    <div class="card" style="margin-bottom:1.5rem;text-align:center">
+      <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:.75rem">▶ Alkotói Idővonal</div>
+      <button class="btn btn-outline" id="pub-tl-btn" onclick="openPubTimelapse()" style="display:none;width:100%;padding:.65rem">▶ Idővonal megtekintése</button>
+    </div>
   </div>
 </div>
 
