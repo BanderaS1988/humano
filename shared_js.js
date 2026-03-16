@@ -1314,7 +1314,7 @@ async function deleteApiKey(id) {
 /* ─── 17. PROFIL ────────────────────────────────────────────── */
 async function loadProfile() {
     if (!currentUser) return;
-
+    if (!document.getElementById('p-username')) return;
     const { data: p } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     const { count: dc } = await db.from('documents').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id);
 
