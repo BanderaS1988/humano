@@ -898,7 +898,8 @@ textarea.form-control {
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
-    align-items: start
+    align-items: start;
+    grid-auto-rows: min-content;
 }
 
 .editor-main {
