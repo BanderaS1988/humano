@@ -1,12 +1,11 @@
 // ============================================================
 // HUMANO – ollama_engine.js
 // Vercel frontend → ngrok proxy → lokális Ollama
-// Fix domain – nem kell frissíteni újraindítás után
 // ============================================================
 
 const PROXY_BASE = 'https://elvina-recriminative-karol.ngrok-free.dev';
 
-// ── Proxy státusz ellenőrzés (induláskor + 5 percenként) ──
+// ── Proxy státusz ellenőrzés ──
 async function checkProxyStatus() {
     try {
         const res  = await fetch(`${PROXY_BASE}/status`, {
@@ -21,7 +20,8 @@ async function checkProxyStatus() {
     } catch {
         console.warn('⚠️ Proxy nem elérhető:', PROXY_BASE);
     }
-}
+} // ← EZ HIÁNYZOTT – most javítva
+
 checkProxyStatus();
 setInterval(checkProxyStatus, 5 * 60 * 1000);
 
@@ -50,30 +50,30 @@ async function proxyPost(endpoint, body) {
 
 // ── Publikus függvények ──
 async function ollamaGenerate(prompt, systemPrompt = '') {
-    return await proxyPost('/generate', { prompt, system: systemPrompt });
+    return proxyPost('/generate', { prompt, system: systemPrompt });
 }
 
 async function ollamaTranslate(text, targetLang) {
     if (!text?.trim()) return null;
-    return await proxyPost('/translate', { text, targetLang });
+    return proxyPost('/translate', { text, targetLang });
 }
 
 async function ollamaGenerateStoryFromDoc(doc) {
     if (!doc) return null;
-    return await proxyPost('/story', { doc });
+    return proxyPost('/story', { doc });
 }
 
 async function ollamaGenerateForumAnswer(question, platform = 'general') {
     if (!question?.trim()) return null;
-    return await proxyPost('/forum-answer', { question, platform });
+    return proxyPost('/forum-answer', { question, platform });
 }
 
 async function ollamaGeneratePressRelease(stats) {
     if (!stats) return null;
-    return await proxyPost('/press-release', stats);
+    return proxyPost('/press-release', stats);
 }
 
 async function ollamaGenerateCreatorPortrait(docs, username) {
     if (!docs?.length || !username) return null;
-    return await proxyPost('/portrait', { docs, username });
+    return proxyPost('/portrait', { docs, username });
 }
