@@ -1152,12 +1152,13 @@
         Az előfizetés lemondása azonnal érvényes – a hitelesítési előzmények és a HUMANO ID megmaradnak. A fiók törlése visszafordíthatatlan, az adatok véglegesen törlődnek (a blokkláncon rögzített hash-ek kivételével).
       </div>
       <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="cancelSubscription()">⚠️ Előfizetés lemondása</button>
-        <button class="btn btn-outline btn-sm" style="border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteAccount()">🗑 Fiók törlése</button>
-      </div>
+  <button class="btn btn-outline btn-sm" onclick="exportMyData()">📦 Adataim exportálása (JSON)</button>
+  <button class="btn btn-outline btn-sm" onclick="cancelSubscription()">⚠️ Előfizetés lemondása</button>
+  <button class="btn btn-outline btn-sm" style="border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteAccount()">🗑 Fiók törlése</button>
+</div>
     </div>
   </div>
-</div>
+
 
 <!-- ═══ ADMIN ═══ -->
 <div id="page-admin" class="page">
