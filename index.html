@@ -521,12 +521,14 @@
     <input type="hidden" id="timelapse-doc-input" value="">
     <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.35rem">✦ Szöveg hitelesítve</div>
     <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
+    
     <div class="cert-id-box">
         <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono)">Dokumentum azonosító</div>
         <div class="cert-id-val" id="cert-id-val">–</div>
         <div style="font-size:.65rem;color:var(--muted);margin-top:.65rem;font-family:var(--font-mono)">SHA-256 lenyomat</div>
         <div class="cert-hash-val" id="cert-hash-val">–</div>
     </div>
+
     <!-- Bizalmi szint badge -->
     <div style="margin-top:.75rem">
         <span id="cert-trust-badge"
@@ -535,6 +537,7 @@
                      border:1px solid rgba(201,168,76,.25);font-size:.85rem;font-weight:700">
         </span>
     </div>
+
     <!-- Beillesztés arány a tanúsítványon -->
     <div id="cert-paste-ratio" style="display:none;margin-top:.75rem;background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem">
         <div style="font-size:.68rem;font-weight:700;color:var(--gold3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.4rem">📋 Szöveg összetétele</div>
@@ -544,147 +547,81 @@
         </div>
         <div style="font-size:.7rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)">A hitelesítés súlya a kézzel gépelt tartalmon van.</div>
     </div>
-</div>
 
-            <!-- OTS badge -->
-            <div style="margin-top:1rem">
-              <span class="badge badge-muted" id="cert-ots-badge">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
-              <button class="btn btn-outline btn-sm" id="btn-ots-refresh" onclick="refreshOtsStatus()" style="display:none;margin-left:.5rem">🔄 Frissítés</button>
-              <button class="btn btn-outline btn-sm" id="btn-ots-download" onclick="downloadOtsFile(E.certDocId)" style="display:none;margin-left:.5rem">⬇️ .ots letöltés</button>
-            </div>
+    <!-- OTS badge -->
+    <div style="margin-top:1rem">
+        <span class="badge badge-muted" id="cert-ots-badge">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
+        <button class="btn btn-outline btn-sm" id="btn-ots-refresh" onclick="refreshOtsStatus()" style="display:none;margin-left:.5rem">🔄 Frissítés</button>
+        <button class="btn btn-outline btn-sm" id="btn-ots-download" onclick="downloadOtsFile(E.certDocId)" style="display:none;margin-left:.5rem">⬇️ .ots letöltés</button>
+    </div>
 
-            <div id="cert-ots-verify-box" style="display:none;margin-top:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
-              <a id="cert-ots-link" href="#" target="_blank" class="btn btn-outline btn-sm">🔗 Ellenőrzés opentimestamps.org-on</a>
-            </div>
+    <div id="cert-ots-verify-box" style="display:none;margin-top:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <a id="cert-ots-link" href="#" target="_blank" class="btn btn-outline btn-sm">🔗 Ellenőrzés opentimestamps.org-on</a>
+    </div>
 
-            <!-- Timeline -->
-            <div class="timeline-wrap" style="margin-top:1.1rem">
-              <div class="tl-item">
-                <div class="tl-dot done">✓</div>
-                <div class="tl-body"><div class="tl-label">SHA-256 hash kiszámítva</div><div class="tl-time" id="tl-hash-time">–</div></div>
-              </div>
-              <div class="tl-item">
-                <div class="tl-dot done">✓</div>
-                <div class="tl-body"><div class="tl-label">HUMANO adatbázisba mentve</div><div class="tl-time" id="tl-db-time">–</div></div>
-              </div>
-              <div class="tl-item">
-                <div class="tl-dot pending" id="tl-ots-dot">⏳</div>
-                <div class="tl-body"><div class="tl-label">OpenTimestamps – Bitcoin blokklánc</div><div class="tl-time" id="tl-ots-time">Feldolgozás folyamatban (~1 óra)...</div></div>
-              </div>
-              <div class="tl-item">
-                <div class="tl-dot done" id="tl-public-dot">✓</div>
-                <div class="tl-body"><div class="tl-label">Registry-be kerülve</div><div class="tl-time">–</div></div>
-              </div>
-            </div>
+    <!-- Timeline -->
+    <div class="timeline-wrap" style="margin-top:1.1rem">
+        <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-body"><div class="tl-label">SHA-256 hash kiszámítva</div><div class="tl-time" id="tl-hash-time">–</div></div>
+        </div>
+        <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-body"><div class="tl-label">HUMANO adatbázisba mentve</div><div class="tl-time" id="tl-db-time">–</div></div>
+        </div>
+        <div class="tl-item">
+            <div class="tl-dot pending" id="tl-ots-dot">⏳</div>
+            <div class="tl-body"><div class="tl-label">OpenTimestamps – Bitcoin blokklánc</div><div class="tl-time" id="tl-ots-time">Feldolgozás folyamatban (~1 óra)...</div></div>
+        </div>
+        <div class="tl-item">
+            <div class="tl-dot done" id="tl-public-dot">✓</div>
+            <div class="tl-body"><div class="tl-label">Registry-be kerülve</div><div class="tl-time">–</div></div>
+        </div>
+    </div>
 
-            <!-- QR -->
-            <div style="margin-top:1.1rem">
-              <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód – mobil ellenőrzéshez</div>
-              <div class="qr-wrap" id="cert-qr-container"></div>
-            </div>
+    <!-- QR -->
+    <div style="margin-top:1.1rem">
+        <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód – mobil ellenőrzéshez</div>
+        <div class="qr-wrap" id="cert-qr-container"></div>
+    </div>
 
-            <!-- Badge -->
-            <div style="margin-top:1.1rem">
-              <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható HUMANO Pecsét</div>
-              <div style="margin-bottom:.6rem">
-                <a id="badge-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;background:rgba(6,6,8,.95);border:1.5px solid var(--gold);font-family:var(--font-display);font-size:12px;color:var(--gold);text-decoration:none;">
-                  ✦ <span><strong id="badge-doc-id-label" style="display:block;font-size:11px;letter-spacing:.5px">HUMANO HITELESÍTETT</strong></span>
-                </a>
-              </div>
-              <div style="font-size:.68rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--font-mono)">HTML kód (kattints a másoláshoz):</div>
-              <div class="badge-embed-box" id="badge-html-code" onclick="copyBadgeCode()" title="Kattints a másoláshoz">–</div>
-            </div>
+    <!-- Badge -->
+    <div style="margin-top:1.1rem">
+        <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.65rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható HUMANO Pecsét</div>
+        <div style="margin-bottom:.6rem">
+            <a id="badge-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;background:rgba(6,6,8,.95);border:1.5px solid var(--gold);font-family:var(--font-display);font-size:12px;color:var(--gold);text-decoration:none;">
+                ✦ <span><strong id="badge-doc-id-label" style="display:block;font-size:11px;letter-spacing:.5px">HUMANO HITELESÍTETT</strong></span>
+            </a>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--font-mono)">HTML kód (kattints a másoláshoz):</div>
+        <div class="badge-embed-box" id="badge-html-code" onclick="copyBadgeCode()" title="Kattints a másoláshoz">–</div>
+    </div>
 
-           <!-- Megosztás -->
-<div style="margin-top:1.1rem;background:var(--surface2);border:1px solid var(--gold4);border-radius:var(--r);padding:1.25rem">
-  <div style="font-size:.75rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás & Küldés</div>
-  <div class="share-grid">
-    <button class="share-btn" onclick="shareCopyClipboard()"><span class="sb-icon">📋</span><span class="sb-label">Vágólapra</span><span class="sb-desc">Szöveg + DOC ID + link</span></button>
-    <button class="share-btn" onclick="openSendEmailModal()"><span class="sb-icon">📧</span><span class="sb-label">Email küldés</span><span class="sb-desc">Hitelesítési adatok</span></button>
-    <button class="share-btn" onclick="downloadPdfCert()"><span class="sb-icon">📄</span><span class="sb-label">PDF Tanúsítvány</span><span class="sb-desc">QR kóddal, biometrikus adatokkal</span></button>
-    <button class="share-btn" onclick="copyVerifyLink()"><span class="sb-icon">🔗</span><span class="sb-label">Megosztási link</span><span class="sb-desc">humano.hu/verify/...</span></button>
-    <button class="share-btn" onclick="downloadSeal(E.certDocId)"><span class="sb-icon">🏷️</span><span class="sb-label">Pecsét letöltése</span><span class="sb-desc">PNG – bárhova beilleszthető</span></button>
-  </div>
-</div>
+    <!-- Megosztás -->
+    <div style="margin-top:1.1rem;background:var(--surface2);border:1px solid var(--gold4);border-radius:var(--r);padding:1.25rem">
+        <div style="font-size:.75rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás & Küldés</div>
+        <div class="share-grid">
+            <button class="share-btn" onclick="shareCopyClipboard()"><span class="sb-icon">📋</span><span class="sb-label">Vágólapra</span><span class="sb-desc">Szöveg + DOC ID + link</span></button>
+            <button class="share-btn" onclick="openSendEmailModal()"><span class="sb-icon">📧</span><span class="sb-label">Email küldés</span><span class="sb-desc">Hitelesítési adatok</span></button>
+            <button class="share-btn" onclick="downloadPdfCert()"><span class="sb-icon">📄</span><span class="sb-label">PDF Tanúsítvány</span><span class="sb-desc">QR kóddal, biometrikus adatokkal</span></button>
+            <button class="share-btn" onclick="copyVerifyLink()"><span class="sb-icon">🔗</span><span class="sb-label">Megosztási link</span><span class="sb-desc">humano.hu/verify/...</span></button>
+            <button class="share-btn" onclick="downloadSeal(E.certDocId)"><span class="sb-icon">🏷️</span><span class="sb-label">Pecsét letöltése</span><span class="sb-desc">PNG – bárhova beilleszthető</span></button>
+        </div>
+    </div>
 
-     <!-- Timelapse -->
-            <div id="tl-widget" style="display:none;margin-top:1rem">
-              <button class="btn btn-outline" style="width:100%;padding:.65rem"
-                      onclick="openTlModal()">▶ Alkotói idővonal megtekintése</button>
-            </div>
+    <!-- Timelapse -->
+    <div id="tl-widget" style="display:none;margin-top:1rem">
+        <button class="btn btn-outline" style="width:100%;padding:.65rem"
+                onclick="openTlModal()">▶ Alkotói idővonal megtekintése</button>
+    </div>
 
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
-              <button class="btn btn-outline btn-sm" onclick="copyId()">📋 ID másolása</button>
-              <button class="btn btn-outline btn-sm" onclick="copyBadgeCode()">🏷️ Badge kód</button>
-            </div>
+    <!-- Gyors akciók -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
+        <button class="btn btn-outline btn-sm" onclick="copyId()">📋 ID másolása</button>
+        <button class="btn btn-outline btn-sm" onclick="copyBadgeCode()">🏷️ Badge kód</button>
+    </div>
 
-          </div><!-- /cert-panel -->
-
-        </div><!-- /editor-main -->
-
-        <!-- JOBB: SIDEBAR -->
-        <div class="editor-sidebar">
-
-          <!-- Pulzusgrafikon -->
-          <div class="pulse-wrap">
-            <div class="pulse-title">
-              <span class="status-dot dot-idle" id="sidebar-dot"></span>
-              Élő Pulzusgrafikon
-            </div>
-            <canvas id="pulse-canvas" width="340" height="80"></canvas>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.5rem;gap:.5rem">
-              <div style="font-size:.68rem;color:var(--muted)">Gépelési ritmus valós idejű vizualizációja</div>
-              <div style="display:flex;gap:.4rem">
-                <button class="btn btn-outline btn-sm" onclick="openPulseInfo()" style="font-size:.68rem;padding:.22rem .55rem;white-space:nowrap">ℹ️ Mi ez?</button>
-                <button class="btn btn-outline btn-sm" onclick="savePulseImage()" style="font-size:.68rem;padding:.22rem .55rem;white-space:nowrap">📸 Mentés</button>
-              </div>
-            </div>
-            <div class="pause-insight" id="pause-insight" style="display:none"></div>
-          </div>
-
-          <!-- Humán Index -->
-          <div class="rhythm-card">
-            <div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.35rem">Humán Index</div>
-            <div class="rhythm-val" id="human-index">–%</div>
-            <div style="font-size:.72rem;color:var(--muted)">Billentyűleütés-dinamika alapján</div>
-            <div class="human-bar" style="margin-top:.5rem"><div class="human-bar-fill" id="human-pct-fill" style="width:0%"></div></div>
-            <div style="display:flex;justify-content:space-between;margin-top:.5rem">
-              <div style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)">Ritmus σ (szórás)</div>
-              <div style="font-family:var(--font-display);font-size:1.1rem;color:var(--gold)" id="rhythm-var">–</div>
-            </div>
-          </div>
-
-          <!-- Munkamenet statisztika -->
-          <div class="card">
-            <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.8rem;text-transform:uppercase;font-family:var(--font-mono)">📊 Munkamenet</div>
-            <div class="stats-grid">
-              <div class="stat-box"><div class="stat-val" id="sidebar-keys">0</div><div class="stat-lbl">Leütés</div></div>
-              <div class="stat-box"><div class="stat-val" id="sidebar-dels">0</div><div class="stat-lbl">Javítás</div></div>
-              <div class="stat-box"><div class="stat-val" id="sidebar-pauses">0</div><div class="stat-lbl">Szünet</div></div>
-              <div class="stat-box"><div class="stat-val" id="sidebar-focus">0</div><div class="stat-lbl">Ablakváltás</div></div>
-              <div class="stat-box stat-full"><div class="stat-val" id="sidebar-time">00:00</div><div class="stat-lbl">Írási idő</div></div>
-            </div>
-          </div>
-
-          <!-- HUMANO elv panel -->
-          <div class="card" style="border-color:rgba(201,168,76,.18);background:rgba(201,168,76,.02)">
-            <div style="font-size:.74rem;font-weight:700;color:var(--gold2);margin-bottom:.6rem">✦ A HUMANO alapelve</div>
-            <div style="font-size:.75rem;color:var(--muted);line-height:1.75">
-              A rendszer <strong style="color:var(--text)">nem tartalom-elemző</strong>, hanem <strong style="color:var(--text)">alkotási napló</strong>. A billentyűleütések időintervallumait, ritmusát és szünetekeit rögzíti – a szöveg tartalmának megismerése nélkül.<br><br>
-              A tanúsítvány tényeket közöl, nem ítéletet – az ellenőrző fél dönti el, mi az elfogadható.
-            </div>
-          </div>
-
-          <!-- Profi tipp -->
-          <div class="card" style="border-color:rgba(201,168,76,.1)">
-            <div style="font-size:.76rem;color:var(--gold);font-weight:700;margin-bottom:.4rem">💡 Profi tipp</div>
-<div style="font-size:.76rem;color:var(--muted);line-height:1.7" id="editor-tip">Írj természetesen, tarts szüneteket gondolkodás közben – ez növeli a ritmus-változatosságot.</div>          </div>
-
-        </div><!-- /sidebar -->
-      </div><!-- /editor-layout -->
-    </div><!-- /page-wrap -->
-  </div><!-- /editor-wrap -->
-</div><!-- /page-editor -->
+</div><!-- /cert-panel -->
 
 <!-- ═══ VERIFY UNIFIED ═══ -->
 <div id="page-verify-unified" class="page">
