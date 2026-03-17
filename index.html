@@ -1182,13 +1182,13 @@ document.addEventListener('humano:verify-result', () => {
     <div class="container">
       <div class="section-header">
         <h2><span class="gt">Csomagok</span></h2>
-        <p>Minden csomag tartalmazza az örökérvényű HUMANO hitelesítést és Bitcoin blokklánc időbélyeget.</p>
+        <p>Minden csomag tartalmazza a HUMANO hitelesítést és Bitcoin blokklánc időbélyeget.</p>
       </div>
 
       <!-- Első 30 nap banner -->
       <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25);border-radius:var(--r);padding:1.1rem 1.5rem;text-align:center;margin-bottom:2.5rem">
-        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.3rem">🎁 Első 30 nap – korlátlan hitelesítés</div>
-        <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Regisztráció után 30 napig korlátlanul használhatod a platformot – hogy tényleg megértsd az értékét, mielőtt döntesz.</div>
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.3rem">🎁 Első 30 nap – teljes kipróbálás</div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Regisztráció után 30 napig kipróbálhatod az összes funkciót – hogy lásd, mennyire hasznos a platform.</div>
       </div>
 
       <div class="grid-4" style="align-items:start">
@@ -1198,7 +1198,7 @@ document.addEventListener('humano:verify-result', () => {
           <div style="font-size:1.8rem;margin-bottom:.6rem">🆓</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Ingyenes</div>
           <div class="price-val gt">0 Ft</div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">30 nap után</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Alap használat, kipróbálás</div>
           <ul class="feature-list">
             <li class="active">Havi 10 hitelesítés</li>
             <li class="active">HUMANO ID + Badge</li>
@@ -1211,12 +1211,12 @@ document.addEventListener('humano:verify-result', () => {
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="showPage('auth')">Regisztrálok</button>
         </div>
 
-        <!-- EGYSZERI -->
+        <!-- EGYSZERI / KREDIT -->
         <div class="card pricing-card">
           <div style="font-size:1.8rem;margin-bottom:.6rem">⚡</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Kredit csomag</div>
           <div class="price-val gt">490 Ft<span class="price-period">/csomag</span></div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">3 hitelesítés, nincs előfizetés</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">3 hitelesítés, egyszeri vásárlás</div>
           <ul class="feature-list">
             <li class="active">3 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
@@ -1238,13 +1238,13 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">Havi 50 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
             <li class="active">QR kód + Badge</li>
-            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse visszajátszás</li>
+            <li class="active">Timelapse visszajátszás (publikus)</li>
             <li class="active">Prioritás support</li>
           </ul>
           <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_dRm4gAdao7F44lRd3DdEs00','_blank')">✦ Előfizetés</button>
         </div>
 
-        <!-- PRO -->
+        <!-- PRO / ALKOTÓ -->
         <div class="card pricing-card featured" style="position:relative">
           <div class="pricing-featured-badge">LEGJOBB VÁLASZTÁS</div>
           <div style="font-size:1.8rem;margin-bottom:.6rem">⭐</div>
@@ -1255,42 +1255,32 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">Korlátlan hitelesítés</li>
             <li class="active">Teljes API-hozzáférés</li>
             <li class="active">Egyedi badge design</li>
-            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse – publikus/privát megosztás</li>
+            <li class="active">Timelapse – publikus/privát megosztás</li>
             <li class="active">Prioritás support</li>
-            <li class="active" style="font-size:.78rem;color:var(--muted)">◎ C2PA kompatibilis metaadatok (opcionális)</li>
+            <li class="active" style="font-size:.78rem;color:var(--muted)">C2PA kompatibilis metaadatok (opcionális)</li>
           </ul>
           <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="window.open('https://buy.stripe.com/test_fZuaEYdao4sS9Gb4x7dEs01','_blank')">✦ Előfizetés</button>
         </div>
 
         <!-- INTÉZMÉNYI -->
-<div class="card pricing-card" style="grid-column:span 2; border-left:3px solid var(--gold)">
-  <div style="position:absolute;top:-12px;right:20px;background:var(--gold);color:#0c0a04;font-size:.65rem;font-weight:800;padding:.3rem .9rem;border-radius:20px;white-space:nowrap;letter-spacing:.5px">MAXIMÁLIS VÉDELEM</div>
-  <div style="font-size:1.8rem;margin-bottom:.6rem">🏛️</div>
-  <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi / Kiadói</div>
-  <div class="price-val gt">19 900 Ft<span class="price-period">/hó</span></div>
-  <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Egyetemeknek, kiadóknak, szerkesztőségeknek, kutatóintézeteknek</div>
-  <ul class="feature-list" style="margin-bottom:1.2rem">
-    <!-- MINDEN, ami a kisebb csomagokban benne van -->
-    <li class="active">✅ Minden funkció, ami az Alkotó / Pro csomagban</li>
-    <li class="active">✅ Korlátlan hitelesítés</li>
-    <li class="active">✅ PDF tanúsítvány + QR kód + Badge</li>
-    <li class="active">✅ Teljes API-hozzáférés</li>
-    <li class="active">✅ Timelapse visszajátszás</li>
-    <li class="active">✅ C2PA kompatibilis metaadatok</li>
-    
-    <!-- INTÉZMÉNYI SZINTŰ ELŐNYÖK -->
-    <li class="active" style="color:var(--gold);font-weight:600">🏢 Korlátlan felhasználó – teljes karok, tanszékek, szerkesztőségek</li>
-    <li class="active" style="color:var(--gold);font-weight:600">📊 Központi admin dashboard – összes dokumentum áttekintése</li>
-    <li class="active" style="color:var(--gold);font-weight:600">🔐 Szerepkörök – admin, oktató, hallgató, szerkesztő</li>
-    <li class="active" style="color:var(--gold);font-weight:600">📈 Részletes statisztikák – felhasználónként, szervezeti egységenként</li>
-    <li class="active" style="color:var(--gold);font-weight:600">⚖️ SLA garancia – 99.9% rendelkezésre állás</li>
-    <li class="active" style="color:var(--gold);font-weight:600">📧 Prioritásos support – dedikált kapcsolattartó</li>
-    <li class="active" style="color:var(--gold);font-weight:600">🔒 Egyedi adatkezelési megállapodás (DPA)</li>
-    <li class="active" style="color:var(--gold);font-weight:600">🔄 Intézményi SSO (SAML / LDAP / Google Workspace)</li>
-  </ul>
-  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="openPricingContact('institution')">📩 Egyedi ajánlatkérés</button>
-  <p style="font-size:.7rem;color:var(--muted2);margin-top:.75rem">Éves fizetés esetén 2 hónap ingyenes · Kérj egyedi árajánlatot!</p>
-</div>
+        <div class="card pricing-card" style="grid-column:span 2; border-left:3px solid var(--gold)">
+          <div style="position:absolute;top:-12px;right:20px;background:var(--gold);color:#0c0a04;font-size:.65rem;font-weight:800;padding:.3rem .9rem;border-radius:20px;white-space:nowrap;letter-spacing:.5px">INTÉZMÉNYI CSOMAG</div>
+          <div style="font-size:1.8rem;margin-bottom:.6rem">🏛️</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi / Kiadói</div>
+          <div class="price-val gt">Egyedi ár</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Egyetemeknek, kiadóknak, szerkesztőségeknek</div>
+          <ul class="feature-list" style="margin-bottom:1.2rem">
+            <li class="active">Minden funkció, ami az Alkotó / Pro csomagban</li>
+            <li class="active">Korlátlan hitelesítés</li>
+            <li class="active">PDF tanúsítvány + QR kód + Badge</li>
+            <li class="active">Teljes API-hozzáférés</li>
+            <li class="active">Timelapse visszajátszás</li>
+            <li class="active">C2PA kompatibilis metaadatok</li>
+            <li class="active">Korlátlan felhasználó – karok, tanszékek, szerkesztőségek</li>
+                     </ul>
+          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="openPricingContact('institution')">📩 Egyedi ajánlatkérés</button>
+          <p style="font-size:.7rem;color:var(--muted2);margin-top:.75rem">Éves fizetés esetén kedvezmény · Kérj egyedi árajánlatot!</p>
+        </div>
 
       </div>
 
@@ -1299,20 +1289,21 @@ document.addEventListener('humano:verify-result', () => {
         <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
           <div style="font-size:1.3rem;margin-bottom:.5rem">🎓</div>
           <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Diák / hallgató</div>
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd be a tanárodnak hogy te írtad a dolgozatot – nem AI.</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd a saját munkád hitelességét – dolgozatok, beadandók, pályázatok.</div>
         </div>
         <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
           <div style="font-size:1.3rem;margin-bottom:.5rem">✍️</div>
           <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Újságíró / szerző</div>
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd az elsőbbséget – te írtad, te publikáltad, Bitcoin blokklánc tanúsítja.</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd az elsőbbséget és a hitelességet – Bitcoin blokklánc tanúsítja.</div>
         </div>
         <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
           <div style="font-size:1.3rem;margin-bottom:.5rem">🏢</div>
           <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Intézmény</div>
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Hallgatói beadványok, dolgozatok, pályázatok hitelességének rendszerszintű ellenőrzése.</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Rendszerszintű ellenőrzés: hallgatói munkák, pályázatok, kiadói tartalmak.</div>
         </div>
       </div>
 
+      <!-- Kapcsolatfelvételi box -->
       <div id="pricing-contact-box" style="display:none;margin-top:3rem" class="card">
         <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem" id="pricing-contact-title">Előfizetési érdeklődés</div>
         <div id="pricing-contact-alert"></div>
@@ -1330,7 +1321,6 @@ document.addEventListener('humano:verify-result', () => {
     </div>
   </section>
 </div>
-
   
 <!-- ═══ ABOUT ═══ -->
 <div id="page-about" class="page">
