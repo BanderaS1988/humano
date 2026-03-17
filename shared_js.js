@@ -1296,6 +1296,35 @@ function timeSince(ts) {
     return Math.floor(sec / 3600) + ' óra';
 }
 
+
+async function openStripeCheckout(plan) {
+    if (!currentUser) { showPage('auth'); return; }
+    showToast('⏳ Átirányítás a fizetési oldalra...');
+    try {
+        const { data: { session } } = await db.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error('Nincs aktív munkamenet');
+
+        const res = await fetch('https://vidlijysdhbfvvytuzcg.supabase.co/functions/v1/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ plan }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Hiba');
+
+        window.location.href = data.url;
+
+    } catch (err) {
+        showToast('❌ Hiba: ' + err.message);
+    }
+}
+
+
 // Árazási kapcsolatfelvétel doboz
 function openPricingContact(plan) {
     const box = document.getElementById('pricing-contact-box');
