@@ -1263,21 +1263,34 @@ document.addEventListener('humano:verify-result', () => {
         </div>
 
         <!-- INTÉZMÉNYI -->
-        <div class="card pricing-card" style="grid-column:span 2">
-          <div style="font-size:1.8rem;margin-bottom:.6rem">🏢</div>
-          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi</div>
-          <div class="price-val gt">19 900 Ft<span class="price-period">/hó</span></div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Egyetemeknek, kiadóknak, szerkesztőségeknek</div>
-          <ul class="feature-list">
-            <li class="active">Korlátlan felhasználó</li>
- felület</li>
-            <li class="active">API integráció</li>
-            <li class="active">SLA garancia</li>
-            <li class="active">Dedikált support</li>
-            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse visszajátszás</li>
-          </ul>
-          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('institution')">Ajánlatkérés</button>
-        </div>
+<div class="card pricing-card" style="grid-column:span 2; border-left:3px solid var(--gold)">
+  <div style="position:absolute;top:-12px;right:20px;background:var(--gold);color:#0c0a04;font-size:.65rem;font-weight:800;padding:.3rem .9rem;border-radius:20px;white-space:nowrap;letter-spacing:.5px">MAXIMÁLIS VÉDELEM</div>
+  <div style="font-size:1.8rem;margin-bottom:.6rem">🏛️</div>
+  <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi / Kiadói</div>
+  <div class="price-val gt">19 900 Ft<span class="price-period">/hó</span></div>
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Egyetemeknek, kiadóknak, szerkesztőségeknek, kutatóintézeteknek</div>
+  <ul class="feature-list" style="margin-bottom:1.2rem">
+    <!-- MINDEN, ami a kisebb csomagokban benne van -->
+    <li class="active">✅ Minden funkció, ami az Alkotó / Pro csomagban</li>
+    <li class="active">✅ Korlátlan hitelesítés</li>
+    <li class="active">✅ PDF tanúsítvány + QR kód + Badge</li>
+    <li class="active">✅ Teljes API-hozzáférés</li>
+    <li class="active">✅ Timelapse visszajátszás</li>
+    <li class="active">✅ C2PA kompatibilis metaadatok</li>
+    
+    <!-- INTÉZMÉNYI SZINTŰ ELŐNYÖK -->
+    <li class="active" style="color:var(--gold);font-weight:600">🏢 Korlátlan felhasználó – teljes karok, tanszékek, szerkesztőségek</li>
+    <li class="active" style="color:var(--gold);font-weight:600">📊 Központi admin dashboard – összes dokumentum áttekintése</li>
+    <li class="active" style="color:var(--gold);font-weight:600">🔐 Szerepkörök – admin, oktató, hallgató, szerkesztő</li>
+    <li class="active" style="color:var(--gold);font-weight:600">📈 Részletes statisztikák – felhasználónként, szervezeti egységenként</li>
+    <li class="active" style="color:var(--gold);font-weight:600">⚖️ SLA garancia – 99.9% rendelkezésre állás</li>
+    <li class="active" style="color:var(--gold);font-weight:600">📧 Prioritásos support – dedikált kapcsolattartó</li>
+    <li class="active" style="color:var(--gold);font-weight:600">🔒 Egyedi adatkezelési megállapodás (DPA)</li>
+    <li class="active" style="color:var(--gold);font-weight:600">🔄 Intézményi SSO (SAML / LDAP / Google Workspace)</li>
+  </ul>
+  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="openPricingContact('institution')">📩 Egyedi ajánlatkérés</button>
+  <p style="font-size:.7rem;color:var(--muted2);margin-top:.75rem">Éves fizetés esetén 2 hónap ingyenes · Kérj egyedi árajánlatot!</p>
+</div>
 
       </div>
 
