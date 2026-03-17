@@ -1205,38 +1205,45 @@ async function submitSendEmail(e) {
 
     document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-info">⏳ Küldés...</div>';
 
-    const docId = document.getElementById('send-doc-id-hidden').value;
+    const docId      = document.getElementById('send-doc-id-hidden').value;
     const verifyLink = document.getElementById('send-verify-link-hidden').value;
-    const hash = document.getElementById('send-hash-hidden').value;
-    const subject = document.getElementById('send-subject').value;
-    const message = document.getElementById('send-message').value;
-
-    const formData = new FormData();
-    formData.append('to_email', toEmail);
-    formData.append('_subject', subject || `HUMANO hitelesített szöveg – ${E.certTitle || 'Dokumentum'}`);
-    formData.append('uzenet', message);
-    formData.append('doc_id', docId);
-    formData.append('ellenorzo_link', verifyLink);
-    formData.append('sha256_hash', hash);
-    formData.append('_replyto', toEmail);
+    const hash       = document.getElementById('send-hash-hidden').value;
+    const subject    = document.getElementById('send-subject').value;
+    const message    = document.getElementById('send-message').value;
 
     try {
-        const resp = await fetch(FORMSPREE_URL, {
+        const { data: { session } } = await db.auth.getSession();
+        const token = session?.access_token;
+
+        const res = await fetch(`${SUPA_URL}/functions/v1/send-email`, {
             method: 'POST',
-            body: formData,
-            headers: { Accept: 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                to:          toEmail,
+                subject:     subject || `HUMANO hitelesített szöveg`,
+                type:        'certification',
+                doc_id:      docId,
+                hash:        hash,
+                verify_link: verifyLink,
+                message:     message,
+            }),
         });
 
-        if (resp.ok) {
-            document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-success">✅ Sikeresen elküldve!</div>';
-            setTimeout(() => closeSendModal(), 2000);
-        } else {
-            document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-error">❌ Küldési hiba. Próbáld újra.</div>';
-        }
+        const data = await res.json();
+
+        if (!res.ok || data.error) throw new Error(data.error || 'Küldési hiba');
+
+        document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-success">✅ Sikeresen elküldve!</div>';
+        setTimeout(() => closeSendModal(), 2000);
+
     } catch (err) {
-        document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-error">❌ Hálózati hiba.</div>';
+        document.getElementById('send-modal-alert').innerHTML = `<div class="alert alert-error">❌ Hiba: ${err.message}</div>`;
     }
 }
+
 
 /* ─── 12. UI SEGÉDFÜGGVÉNYEK ────────────────────────────────── */
 
@@ -1350,20 +1357,33 @@ async function submitPricingForm(e) {
     e.preventDefault();
     const al = document.getElementById('pricing-contact-alert');
     if (al) al.innerHTML = '<div class="alert alert-info">⏳ Küldés...</div>';
-    const data = new FormData(e.target);
-    data.set('csomag_megjeloles', getPlanLabel(data.get('csomag') || ''));
+
+    const formData = new FormData(e.target);
+    const nev      = formData.get('nev') || '';
+    const email    = formData.get('email') || '';
+    const uzenet   = formData.get('uzenet') || '';
+    const csomag   = formData.get('csomag') || '';
+
     try {
-        const resp = await fetch(FORMSPREE_URL, {
-            method: 'POST', body: data, headers: { Accept: 'application/json' },
+        const res = await fetch(`${SUPA_URL}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to:      'info@humano.hu',
+                subject: `HUMANO előfizetési érdeklődés – ${getPlanLabel(csomag)}`,
+                type:    'general',
+                message: `Név: ${nev}\nEmail: ${email}\nCsomag: ${getPlanLabel(csomag)}\n\n${uzenet}`,
+            }),
         });
-        if (resp.ok) {
-            if (al) al.innerHTML = '<div class="alert alert-success">✅ Üzenet elküldve! Hamarosan visszajelzünk.</div>';
-            e.target.reset();
-        } else {
-            if (al) al.innerHTML = '<div class="alert alert-error">❌ Hiba küldéskor. Próbáld újra!</div>';
-        }
-    } catch {
-        if (al) al.innerHTML = '<div class="alert alert-error">❌ Hálózati hiba.</div>';
+
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Hiba');
+
+        if (al) al.innerHTML = '<div class="alert alert-success">✅ Üzenet elküldve! Hamarosan visszajelzünk.</div>';
+        e.target.reset();
+
+    } catch (err) {
+        if (al) al.innerHTML = `<div class="alert alert-error">❌ Hiba: ${err.message}</div>`;
     }
 }
 
