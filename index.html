@@ -1230,7 +1230,7 @@ document.addEventListener('humano:verify-result', () => {
             <li style="color:var(--muted2);list-style:none;font-size:.78rem;padding-left:.1rem">✗ Timelapse visszajátszás</li>
             <li style="color:var(--muted2);list-style:none;font-size:.78rem;padding-left:.1rem">✗ API hozzáférés</li>
           </ul>
-          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('lite')">Előfizetés</button>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="openStripeCheckout('lite')">Előfizetés</button>
         </div>
 
         <!-- PRO -->
@@ -1247,7 +1247,7 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">API hozzáférés</li>
             <li class="active" style="font-size:.78rem;color:var(--muted)">◎ C2PA metaadatok (opcionális)</li>
           </ul>
-          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="openPricingContact('pro')">✦ Előfizetés</button>
+          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;letter-spacing:.5px;box-shadow:0 0 18px rgba(201,168,76,.35)" onclick="openStripeCheckout('pro')">✦ Előfizetés</button>
         </div>
 
         <!-- INTÉZMÉNYI -->
@@ -1268,7 +1268,7 @@ document.addEventListener('humano:verify-result', () => {
     <li class="active" style="font-size:.78rem;color:var(--muted)">◎ Admin felület (egyedi fejlesztés)</li>
     <li class="active" style="font-size:.78rem;color:var(--muted)">◎ C2PA metaadatok (opcionális)</li>
   </ul>
-  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('institution')">📨 Egyedi ajánlatkérés</button>
+  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="openStripeCheckout('institution')">📨 Egyedi ajánlatkérés</button>
 </div>
       </div>
 
