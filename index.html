@@ -1193,6 +1193,7 @@ document.addEventListener('humano:verify-result', () => {
 
       <div class="grid-4" style="align-items:start">
 
+        <!-- INGYENES -->
         <div class="card pricing-card">
           <div style="font-size:1.8rem;margin-bottom:.6rem">🆓</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Ingyenes</div>
@@ -1202,27 +1203,33 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">Havi 10 hitelesítés</li>
             <li class="active">HUMANO ID + Badge</li>
             <li class="active">SHA-256 + OTS időbélyeg</li>
-            <li class="active">Nyilvános Registry</li>
-            <li class="active">PDF tanúsítvány</li>
+            <li class="active">Nyilvános Registry ellenőrzés</li>
+            <li class="active">Beágyazható badge</li>
+            <li style="color:var(--muted2);list-style:none;font-size:.78rem;padding-left:.1rem">✗ PDF tanúsítvány</li>
+            <li style="color:var(--muted2);list-style:none;font-size:.78rem;padding-left:.1rem">✗ Timelapse visszajátszás</li>
           </ul>
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="showPage('auth')">Regisztrálok</button>
         </div>
 
+        <!-- EGYSZERI -->
         <div class="card pricing-card">
           <div style="font-size:1.8rem;margin-bottom:.6rem">⚡</div>
-          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Egyszeri</div>
-          <div class="price-val gt">490 Ft<span class="price-period">/alkalom</span></div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Ha csak egyszer kell</div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Kredit csomag</div>
+          <div class="price-val gt">490 Ft<span class="price-period">/csomag</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">3 hitelesítés, nincs előfizetés</div>
           <ul class="feature-list">
-            <li class="active">1 hitelesítés</li>
+            <li class="active">3 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
             <li class="active">QR kód + Badge</li>
             <li class="active">Nincs előfizetés</li>
+            <li style="color:var(--muted2);list-style:none;font-size:.78rem;padding-left:.1rem">✗ Timelapse visszajátszás</li>
           </ul>
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_aFa28s8U85wW9Gb7JjdEs02','_blank')">✦ Megveszem</button>
         </div>
 
-        <div class="card pricing-card">
+        <!-- TANULÓ -->
+        <div class="card pricing-card" style="border-color:rgba(201,168,76,.35);position:relative">
+          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#0c0a04;font-size:.65rem;font-weight:800;padding:.3rem .9rem;border-radius:20px;white-space:nowrap;letter-spacing:.5px">FŐ AJÁNLAT</div>
           <div style="font-size:1.8rem;margin-bottom:.6rem">🎓</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Tanuló</div>
           <div class="price-val gt">1 490 Ft<span class="price-period">/hó</span></div>
@@ -1231,12 +1238,13 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">Havi 50 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
             <li class="active">QR kód + Badge</li>
-            <li class="active">Timelapse visszajátszás</li>
+            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse visszajátszás</li>
             <li class="active">Prioritás support</li>
           </ul>
-          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_dRm4gAdao7F44lRd3DdEs00','_blank')">Előfizetés</button>
+          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_dRm4gAdao7F44lRd3DdEs00','_blank')">✦ Előfizetés</button>
         </div>
 
+        <!-- PRO -->
         <div class="card pricing-card featured" style="position:relative">
           <div class="pricing-featured-badge">LEGJOBB VÁLASZTÁS</div>
           <div style="font-size:1.8rem;margin-bottom:.6rem">⭐</div>
@@ -1247,12 +1255,13 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">Korlátlan hitelesítés</li>
             <li class="active">Teljes API-hozzáférés</li>
             <li class="active">Egyedi badge design</li>
+            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse visszajátszás</li>
             <li class="active">Prioritás support</li>
-            <li class="active">Timelapse visszajátszás</li>
           </ul>
-          <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_fZuaEYdao4sS9Gb4x7dEs01','_blank')">✦ Előfizetés</button>
+          <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_fZuaEYdao4sS9Gb4x7dEs01','_blank')">✦ Előfizetés</button>
         </div>
 
+        <!-- INTÉZMÉNYI -->
         <div class="card pricing-card" style="grid-column:span 2">
           <div style="font-size:1.8rem;margin-bottom:.6rem">🏢</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi</div>
@@ -1264,6 +1273,7 @@ document.addEventListener('humano:verify-result', () => {
             <li class="active">API integráció</li>
             <li class="active">SLA garancia</li>
             <li class="active">Dedikált support</li>
+            <li class="active" style="color:var(--gold);font-weight:600">▶ Timelapse visszajátszás</li>
           </ul>
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('institution')">Ajánlatkérés</button>
         </div>
