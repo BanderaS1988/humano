@@ -126,6 +126,78 @@
 
   
 <!-- ═══ NAV ═══ -->
+<div id="biometric-consent-modal"
+     class="modal-overlay"
+     style="display:none;z-index:9800">
+  <div class="modal-box" style="max-width:520px">
+
+    <div style="text-align:center;margin-bottom:1.25rem">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🧬</div>
+      <div style="font-family:var(--font-display);font-size:1.4rem;
+                  font-weight:700;color:var(--gold2)">
+        Biometrikus adatkezelés
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);
+                  font-family:var(--font-mono);margin-top:.3rem">
+        GDPR 9. cikk – különleges adat
+      </div>
+    </div>
+
+    <p style="font-size:.87rem;color:var(--muted);line-height:1.8;margin-bottom:1rem">
+      A HUMANO hitelesítéshez <strong style="color:var(--text)">billentyűleütés-dinamikát</strong>
+      rögzít: a leütések közötti időintervallumokat, a javításokat és a gondolkodási szüneteket.
+      Az EU jog szerint ez <strong style="color:var(--gold)">biometrikus adatnak</strong> minősül.
+    </p>
+
+    <div style="background:var(--surface2);border-radius:var(--r-sm);
+                padding:1rem 1.25rem;margin-bottom:1rem;
+                font-size:.82rem;color:var(--muted);line-height:1.9">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">
+        Mit rögzítünk?
+      </div>
+      ✓ Leütések közötti időintervallumok (ms)<br>
+      ✓ Javítások és törlések száma<br>
+      ✓ Gondolkodási szünetek<br>
+      ✗ A leütött billentyűk karakterei <strong>NEM</strong> kerülnek rögzítésre<br>
+      ✗ IP-cím, helyzet, böngésző-ujjlenyomat <strong>NEM</strong> kerül rögzítésre
+    </div>
+
+    <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);
+                border-radius:var(--r-sm);padding:.85rem 1rem;
+                margin-bottom:1.25rem;font-size:.8rem;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--gold2)">A jogaid:</strong><br>
+      Bármikor visszavonhatod a beleegyezést a profiloldalon.
+      Visszavonás esetén az adatokat 30 napon belül töröljük.
+      A blokkláncon lévő hash-ek nem tartalmaznak biometrikus adatot,
+      ezért azok megmaradnak.
+    </div>
+
+    <p style="font-size:.75rem;text-align:center;margin-bottom:1.25rem">
+      <a href="/privacy.html#biometric" target="_blank" style="color:var(--gold)">
+        Teljes adatkezelési tájékoztató – Biometrikus adatok fejezet →
+      </a>
+    </p>
+
+    <div style="display:flex;gap:.75rem;justify-content:center">
+      <button class="btn btn-gold" id="consent-accept-btn" style="min-width:160px">
+        ✦ Elfogadom
+      </button>
+      <button class="btn btn-outline" id="consent-decline-btn">
+        ✕ Vissza
+      </button>
+    </div>
+
+    <p style="margin-top:1rem;font-size:.72rem;
+              color:var(--muted2);text-align:center;line-height:1.6">
+      A beleegyezés visszavonása a
+      <a href="/profile.html#consents" style="color:var(--gold)">profiloldalon</a>
+      bármikor lehetséges. Visszavonás esetén a hitelesítési funkció
+      nem lesz elérhető.
+    </p>
+
+  </div>
+</div>
+  
 <nav id="nav">
   <div class="nav-logo gt" onclick="showPage('landing')">
     <div class="nav-logo-emblem">✦</div>
@@ -609,6 +681,21 @@
     </div>
 </div><!-- /cert-panel -->
 
+          <div style="margin-top:.5rem;padding:.5rem .75rem;
+            background:rgba(201,168,76,.02);
+            border:1px solid rgba(201,168,76,.08);
+            border-radius:var(--r-sm);
+            font-size:.68rem;color:var(--muted2);
+            display:flex;align-items:center;gap:.5rem">
+  <span>⚖️</span>
+  <span>
+    EU AI Act: A HUMANO statisztikai mérést végez – nem értékelést és nem döntéshozatalt.
+    A Humán Index a gépelési ritmus változatosságát mutatja, nem érzelem- vagy személyiségértékelés.
+    <a href="/transparency.html#ai-act" target="_blank"
+       style="color:var(--gold3)">Bővebben</a>
+  </span>
+</div>
+
         </div><!-- /editor-main -->
 
         <!-- JOBB: SIDEBAR -->
@@ -786,6 +873,59 @@
         <button class="btn btn-outline btn-sm" id="v-ots-dl-btn-unified" style="display:none" onclick="downloadOtsFile(document.getElementById('v-input-unified').value)">⬇️ .ots letöltés</button>
         <button class="btn btn-outline btn-sm" onclick="copyUnifiedLink()">🔗 Megosztási link</button>
       </div>
+      <div id="appeal-section"
+     style="display:none;margin-top:2rem;
+            border-top:1px solid var(--border);padding-top:1.5rem">
+
+  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+    <span style="font-size:1.4rem">⚖️</span>
+    <div>
+      <h3 style="font-family:var(--font-display);font-size:1.1rem;
+                 font-weight:700;color:var(--gold2);margin:0">
+        Vitás az eredmény?
+      </h3>
+      <div style="font-size:.75rem;color:var(--muted)">
+        Fellebbezést nyújthatsz be – 5 munkanapon belül kivizsgáljuk
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface2);border-radius:var(--r);padding:1.25rem">
+    <div class="form-group">
+      <label class="form-label">Mi a vitás?</label>
+      <select class="form-control" id="appeal-reason" style="margin-bottom:.75rem">
+        <option value="">Válassz kategóriát...</option>
+        <option value="Téves hitelesítési adatok">Téves hitelesítési adatok</option>
+        <option value="Nem én vagyok a dokumentum szerzője">Nem én vagyok a dokumentum szerzője</option>
+        <option value="Technikai hiba a rögzítés során">Technikai hiba a rögzítés során</option>
+        <option value="Adatvédelmi kérelem">Adatvédelmi kérelem</option>
+        <option value="Egyéb">Egyéb</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Részletes leírás</label>
+      <textarea id="appeal-description" class="form-control"
+                style="min-height:100px"
+                placeholder="Kérjük, részletesen írd le a problémát..."></textarea>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center">
+      <button class="btn btn-outline" id="appeal-submit-btn"
+              onclick="submitAppeal()">
+        📨 Fellebbezés benyújtása
+      </button>
+      <span style="font-size:.72rem;color:var(--muted2)">
+        Válasz az e-mail fiókodba érkezik
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('humano:verify-result', () => {
+  document.getElementById('appeal-section').style.display = 'block'
+})
+</script>
     </div>
 
   </div>
@@ -1178,6 +1318,37 @@
       <table class="admin-table"><thead><tr><th>DOC ID</th><th>Cím</th><th>Szerző</th><th>Létrehozva</th><th>Hash</th><th>OTS</th></tr></thead><tbody id="admin-docs-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Betöltés...</td></tr></tbody></table>
     </div>
 
+<div style="margin-top:2.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="font-size:1rem;font-weight:700;color:var(--gold2)">
+      ⚖️ Fellebbezések
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="loadAppeals()">⟳ Frissítés</button>
+  </div>
+  <div style="overflow-x:auto;background:var(--surface);
+              border:1px solid var(--border);border-radius:var(--r)">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Felhasználó</th>
+          <th>Dokumentum</th>
+          <th>Ok</th>
+          <th>Státusz</th>
+          <th>Művelet</th>
+        </tr>
+      </thead>
+      <tbody id="appeals-tbody">
+        <tr>
+          <td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">
+            Betöltés...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+    
     <!-- ═══ ÉLŐ ENTITÁS PANEL ═══ -->
     <div style="margin-top:2.5rem">
       <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
@@ -1653,6 +1824,36 @@ Az AI-generált tartalmak egyre inkább elárasztják az internetet, ezért egyr
 
     </div>
   </div>
+</div>
+
+  <div class="card" style="margin-top:1.25rem">
+  <div style="font-family:var(--font-display);font-size:1.1rem;
+              font-weight:700;color:var(--gold2);margin-bottom:1rem">
+    🧬 Biometrikus beleegyezések
+  </div>
+
+  <p style="font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">
+    Az alábbi mérésekhez adtál beleegyezést. Bármilyen beleegyezést visszavonhatsz –
+    de a <strong>billentyűleütés-dinamika</strong> visszavonása esetén
+    a hitelesítési funkció nem lesz elérhető.
+  </p>
+
+  <div id="consent-warning"
+       style="display:none;background:rgba(224,85,85,.08);
+              border:1px solid rgba(224,85,85,.25);border-radius:var(--r-sm);
+              padding:.85rem 1rem;font-size:.82rem;color:#e05555;
+              margin-bottom:1rem;line-height:1.7">
+    ⚠️ A billentyűleütés-dinamika beleegyezés visszavonva.
+    A hitelesítési funkció nem elérhető. Az újra elfogadáshoz
+    kattints a "Újra elfogadás" gombra.
+  </div>
+
+  <div id="consent-settings-container">
+    <div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">
+      ⏳ Betöltés...
+    </div>
+  </div>
+
 </div>
 
 <!-- ═══ FOOTER ═══ -->
