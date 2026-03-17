@@ -1314,18 +1314,147 @@ document.addEventListener('humano:verify-result', () => {
 <!-- ═══ ABOUT ═══ -->
 <div id="page-about" class="page">
   <div class="about-wrap">
-    <div style="text-align:center;margin-bottom:4rem">
-      <h1 style="font-family:var(--font-display);font-size:2.8rem;font-weight:600;margin-bottom:1.25rem">Az emberi alkotás <span class="gt">tanúja.</span></h1>
-      <p style="font-size:1.05rem;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.9">Nem a végeredményt, hanem a keletkezést dokumentáljuk. Nem AI-detektor vagyunk – alkotási napló.</p>
+
+    <!-- HERO -->
+    <div style="text-align:center;margin-bottom:5rem;max-width:720px;margin-left:auto;margin-right:auto">
+      <div style="font-size:.75rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem">A platform mögött</div>
+      <h1 style="font-family:var(--font-display);font-size:2.8rem;font-weight:600;margin-bottom:1.25rem;line-height:1.2">
+        Amikor mindenki AI-t használ, <br><span class="gt">az emberi kéz nyoma</span> válik a legritkább kincsé.
+      </h1>
+      <p style="font-size:1rem;color:var(--muted);line-height:1.9;max-width:600px;margin:0 auto">
+        A HUMANO 2025-ben született – egy egyszerű felismerésből: nem elég azt mondani, hogy "én írtam". 
+        Bizonyítani kell. Matematikailag, visszavonhatatlanul.
+      </p>
+    </div>
+
+    <div class="gold-line" style="margin:0 auto 5rem"></div>
+
+    <!-- EREDETTÖRTÉNET -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-bottom:5rem;align-items:center">
+      <div>
+        <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem">Hogyan született?</div>
+        <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:600;margin-bottom:1.25rem">Három probléma, egy válasz.</h2>
+        <div style="color:var(--muted);font-size:.9rem;line-height:1.9">
+          <p style="margin-bottom:1rem">
+            <strong style="color:var(--gold2)">Az AI tartalom elárasztja az internetet.</strong> 
+            Egyre nehezebb megkülönböztetni, mi emberi és mi gépi. A bizalom megrendül – 
+            nem a szöveg minősége, hanem az eredete kérdőjeleződik meg.
+          </p>
+          <p style="margin-bottom:1rem">
+            <strong style="color:var(--gold2)">Az írói jogvédelem elavult.</strong> 
+            Egy screenshot, egy dátumbélyeg – ezek hamisíthatók. Az alkotóknak olyan eszközre volt szükségük, 
+            amit matematikailag nem lehet megcáfolni.
+          </p>
+          <p>
+            <strong style="color:var(--gold2)">Az oktatás válságban van.</strong> 
+            Tanárok nem tudják eldönteni, diák írta-e a dolgozatot. 
+            Diákok nem tudják bizonyítani, hogy igen. Mindkét félnek igazságos megoldásra volt szüksége.
+          </p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="card" style="border-left:3px solid var(--gold);padding:1.25rem 1.5rem">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">🤖</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:.3rem">AI tartalom ellen</div>
+          <div style="font-size:.82rem;color:var(--muted);line-height:1.7">Bizonyítsd be, hogy te írtad – nem egy nyelvi modell.</div>
+        </div>
+        <div class="card" style="border-left:3px solid var(--gold);padding:1.25rem 1.5rem">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">⚖️</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:.3rem">Plágium ellen</div>
+          <div style="font-size:.82rem;color:var(--muted);line-height:1.7">A Bitcoin blokklánc időbélyege bizonyítja az elsőbbséget.</div>
+        </div>
+        <div class="card" style="border-left:3px solid var(--gold);padding:1.25rem 1.5rem">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">🎓</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:.3rem">Oktatásban</div>
+          <div style="font-size:.82rem;color:var(--muted);line-height:1.7">Diákok bizonyíthatják, tanárok ellenőrizhetik – igazságosan.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gold-line" style="margin:0 auto 5rem"></div>
+
+    <!-- HUMANO BETŰK -->
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem">A név mögött</div>
+      <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:600;margin-bottom:2.5rem">Minden betű egy alapelv.</h2>
     </div>
     <div class="grid-3" style="gap:1.5rem;margin-bottom:5rem">
-      <div class="letter-card"><span class="letter-char gt">H</span><div class="letter-word">Hiteles</div><div class="letter-desc">Hiteles – nem az eredményt, hanem a folyamatot garantálja. A tanú nem ítél.</div></div>
-      <div class="letter-card"><span class="letter-char gt">U</span><div class="letter-word">Unikális</div><div class="letter-desc">Minden alkotás és alkotó egyedi azonosítót kap.</div></div>
-      <div class="letter-card"><span class="letter-char gt">M</span><div class="letter-word">Megmásíthatatlan</div><div class="letter-desc">A blokkláncon rögzített időbélyeg visszavonhatatlan – senki nem módosíthatja.</div></div>
-      <div class="letter-card"><span class="letter-char gt">A</span><div class="letter-word">Átlátható</div><div class="letter-desc">A rendszer tényeket közöl, nem ítéletet. Beillesztés esetén az arány is megjelenik.</div></div>
+      <div class="letter-card"><span class="letter-char gt">H</span><div class="letter-word">Hiteles</div><div class="letter-desc">Nem az eredményt, hanem a folyamatot garantálja. A tanú nem ítél – csak dokumentál.</div></div>
+      <div class="letter-card"><span class="letter-char gt">U</span><div class="letter-word">Unikális</div><div class="letter-desc">Minden alkotás és alkotó egyedi azonosítót kap. Két egyforma gépelési ritmus nem létezik.</div></div>
+      <div class="letter-card"><span class="letter-char gt">M</span><div class="letter-word">Megmásíthatatlan</div><div class="letter-desc">A blokkláncon rögzített időbélyeg visszavonhatatlan – senki nem módosíthatja, még mi sem.</div></div>
+      <div class="letter-card"><span class="letter-char gt">A</span><div class="letter-word">Átlátható</div><div class="letter-desc">A rendszer tényeket közöl, nem ítéletet. Beillesztés esetén az arány is megjelenik – őszintén.</div></div>
       <div class="letter-card"><span class="letter-char gt">N</span><div class="letter-word">Napló</div><div class="letter-desc">Alkotási napló – a keletkezés folyamatát örökíti meg, nem csupán a végeredményt.</div></div>
-      <div class="letter-card"><span class="letter-char gt">O</span><div class="letter-word">Objektív</div><div class="letter-desc">A matematika nem hazudik. A billentyűleütések dinamikája az igazság.</div></div>
+      <div class="letter-card"><span class="letter-char gt">O</span><div class="letter-word">Objektív</div><div class="letter-desc">A matematika nem hazudik. A billentyűleütések dinamikája nem manipulálható.</div></div>
     </div>
+
+    <div class="gold-line" style="margin:0 auto 5rem"></div>
+
+    <!-- TECHNOLÓGIA -->
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem">Ami alatt működik</div>
+      <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:600">Három réteg, egy bizonyíték.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:5rem">
+      <div class="card" style="text-align:center;padding:2rem">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🧬</div>
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">Billentyűleütés-dinamika</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8">Milliszekundumos pontossággal méri a gépelési ritmust, szüneteket és javításokat. Ez a te digitális ujjlenyomatod – egyedi és hamisíthatatlan.</div>
+      </div>
+      <div class="card" style="text-align:center;padding:2rem">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🔒</div>
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">SHA-256 kriptográfia</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8">A szöveg matematikai ujjlenyomata. Ha egyetlen betű megváltozik, teljesen más hash keletkezik. Egyirányú – visszafejthetetlen.</div>
+      </div>
+      <div class="card" style="text-align:center;padding:2rem">
+        <div style="font-size:2.5rem;margin-bottom:1rem">⛓️</div>
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">Bitcoin blokklánc</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8">Az OpenTimestamps protokoll a hash-t a Bitcoin hálózatba égeti. Számítógépek ezrei őrzik – visszavonhatatlanul, örökre.</div>
+      </div>
+    </div>
+
+    <div class="gold-line" style="margin:0 auto 5rem"></div>
+
+    <!-- ALAPELVEK -->
+    <div style="max-width:680px;margin:0 auto 5rem">
+      <div style="text-align:center;margin-bottom:2.5rem">
+        <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem">Amit soha nem csinálunk</div>
+        <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:600">Határaink.</h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:var(--surface2);border-radius:var(--r)">
+          <span style="color:var(--success);font-size:1.1rem;flex-shrink:0">✗</span>
+          <div style="font-size:.88rem;color:var(--muted);line-height:1.7"><strong style="color:var(--text)">Nem olvasunk bele a szövegeidbe.</strong> A tartalom elemzése nem a dolgunk – csak a keletkezés folyamatát rögzítjük.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:var(--surface2);border-radius:var(--r)">
+          <span style="color:var(--success);font-size:1.1rem;flex-shrink:0">✗</span>
+          <div style="font-size:.88rem;color:var(--muted);line-height:1.7"><strong style="color:var(--text)">Nem naplózzuk a leütött billentyűket.</strong> Csak az időintervallumok – soha nem a karakterek.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:var(--surface2);border-radius:var(--r)">
+          <span style="color:var(--success);font-size:1.1rem;flex-shrink:0">✗</span>
+          <div style="font-size:.88rem;color:var(--muted);line-height:1.7"><strong style="color:var(--text)">Nem ítélkezünk.</strong> A tanúsítvány tényeket közöl – az ellenőrző fél dönti el, mi az elfogadható.</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:var(--surface2);border-radius:var(--r)">
+          <span style="color:var(--success);font-size:1.1rem;flex-shrink:0">✗</span>
+          <div style="font-size:.88rem;color:var(--muted);line-height:1.7"><strong style="color:var(--text)">Nem adunk el adatot.</strong> A biometrikus adataid kizárólag a te profilodon belül maradnak.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gold-line" style="margin:0 auto 5rem"></div>
+
+    <!-- SAJTÓ / KAPCSOLAT -->
+    <div style="text-align:center;margin-bottom:5rem">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem">Kapcsolat</div>
+      <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight:600;margin-bottom:1rem">Írj nekünk.</h2>
+      <p style="color:var(--muted);font-size:.9rem;line-height:1.8;max-width:480px;margin:0 auto 2rem">
+        Sajtómegkeresés, intézményi együttműködés, technikai kérdés – minden megkeresésre válaszolunk.
+      </p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <a href="mailto:info@humano.hu" class="btn btn-gold" style="text-decoration:none">✦ info@humano.hu</a>
+        <button class="btn btn-outline" onclick="showPage('supporters')">Előfizetési csomagok →</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
