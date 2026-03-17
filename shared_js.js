@@ -4140,84 +4140,97 @@ async function submitAppeal() {
 
 // ── PROFIL OLDAL – consent kezelés ────────────────────────
 
-async function loadConsentSettings() {
-  const container = document.getElementById('consent-settings-container')
-  if (!container || !currentUser) return
+// ─── PROFIL OLDAL – consent kezelés (JAVÍTVA) ────────────────────────
 
-  const consents = await ConsentManager.getAll()
+async function loadConsentSettings() {
+  const container = document.getElementById('consent-settings-container');
+  if (!container || !currentUser) return;
+
+  const consents = await ConsentManager.getAll();
 
   const labels = {
     keystroke_dynamics: 'Billentyűleütés-dinamika rögzítése',
     writing_profile:    'Kalibrációs profil',
     rhythm_analysis:    'Ritmus-variabilitás mérés',
+  };
+
+  if (consents.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Nincs rögzített beleegyezés.</p>';
+    return;
   }
 
-  container.innerHTML = consents.length === 0
-    ? '<p style="color:var(--muted);font-size:.85rem">Nincs rögzített beleegyezés.</p>'
-    : consents.map(c => `
-        <div style="display:flex;align-items:center;justify-content:space-between;
-                    padding:.75rem 1rem;background:var(--surface2);
-                    border-radius:var(--r-sm);margin-bottom:.5rem">
-          <div>
-            <div style="font-size:.85rem;font-weight:600;color:var(--text)">
-              ${labels[c.consent_type] || c.consent_type}
-            </div>
-            <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
-              ${c.revoked_at
-                ? '❌ Visszavonva: ' + new Date(c.revoked_at).toLocaleDateString('hu-HU')
-                : '✅ Aktív – ' + new Date(c.granted_at).toLocaleDateString('hu-HU') + ' óta'
-              }
-              &nbsp;·&nbsp; Verzió: ${c.consent_version}
-            </div>
-          </div>
-          ${!c.revoked_at ? `
-            <button class="btn btn-outline btn-sm"
-                    style="font-size:.72rem;border-color:rgba(224,85,85,.4);color:#e05555"
-                    onclick="revokeConsent('${c.consent_type}')">
-              Visszavonás
-            </button>` : `
-            <button class="btn btn-outline btn-sm" style="font-size:.72rem"
-                    onclick="reGrantConsent('${c.consent_type}')">
-              Újra elfogadás
-            </button>`
-          }
+  container.innerHTML = consents.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:.75rem 1rem;background:var(--surface2);
+                border-radius:var(--r-sm);margin-bottom:.5rem">
+      <div>
+        <div style="font-size:.85rem;font-weight:600;color:var(--text)">
+          ${labels[c.consent_type] || c.consent_type}
         </div>
-      `).join('')
+        <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
+          ${c.revoked_at
+            ? '❌ Visszavonva: ' + new Date(c.revoked_at).toLocaleDateString('hu-HU')
+            : '✅ Aktív – ' + new Date(c.granted_at).toLocaleDateString('hu-HU') + ' óta'
+          }
+          &nbsp;·&nbsp; Verzió: ${c.consent_version}
+        </div>
+      </div>
+      ${!c.revoked_at ? `
+        <!-- JAVÍTVA: A gomb most a revokeConsent függvényt hívja -->
+        <button class="btn btn-outline btn-sm"
+                style="font-size:.72rem;border-color:rgba(224,85,85,.4);color:#e05555"
+                onclick="revokeConsent('${c.consent_type}')">
+          Visszavonás
+        </button>` : `
+        <button class="btn btn-outline btn-sm" style="font-size:.72rem"
+                onclick="reGrantConsent('${c.consent_type}')">
+          Újra elfogadás
+        </button>`
+      }
+    </div>
+  `).join('');
+
+  // Figyelmeztetés megjelenítése, ha a keystroke_dynamics vissza van vonva
+  const hasActiveKeystroke = consents.some(c => 
+    c.consent_type === 'keystroke_dynamics' && !c.revoked_at
+  );
+  const warningEl = document.getElementById('consent-warning');
+  if (warningEl) {
+    warningEl.style.display = hasActiveKeystroke ? 'none' : 'block';
+  }
 }
 
+// Visszavonás függvény (már létezik, de biztos ami tuti)
 async function revokeConsent(consentType) {
-  const reason = prompt('Kérheted indoklást (opcionális):')
-  if (reason === null) return // ESC = mégse
+  const reason = prompt('Kérheted indoklást (opcionális):');
+  if (reason === null) return; // ESC = mégse
 
-  if (!confirm(`Biztosan visszavonod a beleegyezést?\n\nVisszavonás esetén a "${consentType}" mérés leáll. A meglévő hitelesítések megmaradnak.`)) return
+  if (!confirm(`Biztosan visszavonod a beleegyezést?\n\nVisszavonás esetén a "${consentType}" mérés leáll. A meglévő hitelesítések megmaradnak.`)) return;
 
   try {
-    await ConsentManager.revoke(consentType, reason || null)
-    showToast('✅ Beleegyezés visszavonva')
-    await loadConsentSettings()
+    await ConsentManager.revoke(consentType, reason || null);
+    showToast('✅ Beleegyezés visszavonva');
+    await loadConsentSettings(); // Újratöltés
 
-    // Ha keystroke_dynamics-t vontak vissza:
-    // figyelmeztető üzenet hogy a hitelesítés nem lesz elérhető
+    // Ha keystroke_dynamics-t vontak vissza, figyelmeztetés
     if (consentType === 'keystroke_dynamics') {
-      document.getElementById('consent-warning')?.style &&
-        (document.getElementById('consent-warning').style.display = 'block')
+      document.getElementById('consent-warning').style.display = 'block';
     }
   } catch (err) {
-    showToast('❌ Hiba: ' + err.message)
+    showToast('❌ Hiba: ' + err.message);
   }
 }
 
+// Újra elfogadás
 async function reGrantConsent(consentType) {
-  // Ugyanaz mint a modal accept – de a profiloldalról
   try {
-    await ConsentManager.record(consentType)
-    showToast('✅ Beleegyezés újra rögzítve')
-    await loadConsentSettings()
+    await ConsentManager.record(consentType);
+    showToast('✅ Beleegyezés újra rögzítve');
+    await loadConsentSettings(); // Újratöltés
   } catch (err) {
-    showToast('❌ Hiba: ' + err.message)
+    showToast('❌ Hiba: ' + err.message);
   }
 }
-
 
 // ── ADMIN – fellebbezések kezelése ────────────────────────
 
