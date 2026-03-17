@@ -3949,6 +3949,362 @@ async function downloadSeal(docId) {
 
 /* ─── INICIALIZÁLÁS ─────────────────────────────────────────── */
 
+
+// ══════════════════════════════════════════════════════════
+// HUMANO – 1. Jogi hitelesség – Frontend logika
+// Ezt a shared_js.js végéhez kell hozzáadni
+// ══════════════════════════════════════════════════════════
+
+
+// ── CONSENT MANAGER ───────────────────────────────────────
+
+const ConsentManager = {
+
+  // Aktív consent ellenőrzése Supabase-ből
+  async hasActive(consentType = 'keystroke_dynamics') {
+    if (!currentUser) return false
+    const { data, error } = await db
+      .from('biometric_consents')
+      .select('id, consent_version')
+      .eq('user_id', currentUser.id)
+      .eq('consent_type', consentType)
+      .is('revoked_at', null)
+      .limit(1)
+    return !error && data && data.length > 0
+  },
+
+  // Aktuális consent verzió lekérése
+  async getCurrentVersion() {
+    const { data } = await db
+      .from('consent_versions')
+      .select('version')
+      .eq('is_current', true)
+      .single()
+    return data?.version || '1.0'
+  },
+
+  // Consent rögzítése Edge Function-ön keresztül
+  async record(consentType = 'keystroke_dynamics') {
+    const { data, error } = await db.functions.invoke('record-consent', {
+      body: { consent_type: consentType }
+    })
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  // Consent visszavonása
+  async revoke(consentType = 'keystroke_dynamics', reason = null) {
+    const { data, error } = await db.functions.invoke('revoke-consent', {
+      body: { consent_type: consentType, reason }
+    })
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  // Összes aktív consent lekérése (profil oldalhoz)
+  async getAll() {
+    if (!currentUser) return []
+    const { data } = await db
+      .from('biometric_consents')
+      .select('consent_type, consent_version, granted_at, revoked_at')
+      .eq('user_id', currentUser.id)
+      .order('granted_at', { ascending: false })
+    return data || []
+  }
+}
+
+
+// ── EDITOR BETÖLTÉS – consent gate ────────────────────────
+
+// Ezt hívja az editor.html DOMContentLoaded-ben
+// a meglévő initEditor() helyett
+
+async function loadEditorWithConsentCheck() {
+  if (!currentUser) {
+    window.location.href = '/auth.html'
+    return
+  }
+
+  // Consent ellenőrzés
+  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics')
+
+  if (!hasConsent) {
+    showBiometricConsentModal()
+    return
+    // Az editor NEM indul el amíg nincs consent
+    // A modal accept gombja hívja az initEditor()-t
+  }
+
+  // Minden rendben – editor indítása
+  if (typeof initEditor === 'function') initEditor()
+}
+
+
+// ── BIOMETRIKUS CONSENT MODAL ─────────────────────────────
+
+function showBiometricConsentModal() {
+  const modal = document.getElementById('biometric-consent-modal')
+  if (modal) {
+    modal.style.display = 'flex'
+    modal.classList.add('open')
+  }
+}
+
+function hideBiometricConsentModal() {
+  const modal = document.getElementById('biometric-consent-modal')
+  if (modal) {
+    modal.style.display = 'none'
+    modal.classList.remove('open')
+  }
+}
+
+// Accept gomb
+async function handleConsentAccept() {
+  const btn = document.getElementById('consent-accept-btn')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Rögzítés...' }
+
+  try {
+    await ConsentManager.record('keystroke_dynamics')
+    hideBiometricConsentModal()
+    showToast('✅ Beleegyezés rögzítve')
+    // Editor most már elindulhat
+    if (typeof initEditor === 'function') initEditor()
+  } catch (err) {
+    showToast('❌ Hiba: ' + err.message)
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Elfogadom' }
+  }
+}
+
+// Decline gomb
+function handleConsentDecline() {
+  hideBiometricConsentModal()
+  showToast('A hitelesítés biometrikus beleegyezés nélkül nem elérhető.')
+  setTimeout(() => { window.location.href = '/' }, 2000)
+}
+
+// Event listenerek (editor.html-ben a DOMContentLoaded után)
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('consent-accept-btn')
+    ?.addEventListener('click', handleConsentAccept)
+  document.getElementById('consent-decline-btn')
+    ?.addEventListener('click', handleConsentDecline)
+})
+
+
+// ── FELLEBBEZÉSI RENDSZER ─────────────────────────────────
+
+async function submitAppeal() {
+  const reason = document.getElementById('appeal-reason')?.value?.trim()
+  const docId  = document.getElementById('v-input-unified')?.value?.trim()
+
+  if (!reason) {
+    showToast('❌ Kérjük, írd le a fellebbezés okát!')
+    return
+  }
+
+  const btn = document.getElementById('appeal-submit-btn')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Küldés...' }
+
+  try {
+    const { data, error } = await db
+      .from('appeals')
+      .insert({
+        doc_id:      docId || null,
+        reason:      reason,
+        user_id:     currentUser?.id || null,
+        description: document.getElementById('appeal-description')?.value?.trim() || null,
+      })
+      .select('id')
+      .single()
+
+    if (error) throw new Error(error.message)
+
+    // Admin értesítés
+    await db.functions.invoke('appeal-notify', {
+      body: { appeal_id: data.id }
+    })
+
+    showToast('✅ Fellebbezés benyújtva – 5 munkanapon belül válaszolunk!')
+    document.getElementById('appeal-reason').value = ''
+    if (document.getElementById('appeal-description'))
+      document.getElementById('appeal-description').value = ''
+
+  } catch (err) {
+    showToast('❌ Hiba a beküldéskor: ' + err.message)
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📨 Fellebbezés benyújtása' }
+  }
+}
+
+
+// ── PROFIL OLDAL – consent kezelés ────────────────────────
+
+async function loadConsentSettings() {
+  const container = document.getElementById('consent-settings-container')
+  if (!container || !currentUser) return
+
+  const consents = await ConsentManager.getAll()
+
+  const labels = {
+    keystroke_dynamics: 'Billentyűleütés-dinamika rögzítése',
+    writing_profile:    'Kalibrációs profil',
+    rhythm_analysis:    'Ritmus-variabilitás mérés',
+  }
+
+  container.innerHTML = consents.length === 0
+    ? '<p style="color:var(--muted);font-size:.85rem">Nincs rögzített beleegyezés.</p>'
+    : consents.map(c => `
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:.75rem 1rem;background:var(--surface2);
+                    border-radius:var(--r-sm);margin-bottom:.5rem">
+          <div>
+            <div style="font-size:.85rem;font-weight:600;color:var(--text)">
+              ${labels[c.consent_type] || c.consent_type}
+            </div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
+              ${c.revoked_at
+                ? '❌ Visszavonva: ' + new Date(c.revoked_at).toLocaleDateString('hu-HU')
+                : '✅ Aktív – ' + new Date(c.granted_at).toLocaleDateString('hu-HU') + ' óta'
+              }
+              &nbsp;·&nbsp; Verzió: ${c.consent_version}
+            </div>
+          </div>
+          ${!c.revoked_at ? `
+            <button class="btn btn-outline btn-sm"
+                    style="font-size:.72rem;border-color:rgba(224,85,85,.4);color:#e05555"
+                    onclick="revokeConsent('${c.consent_type}')">
+              Visszavonás
+            </button>` : `
+            <button class="btn btn-outline btn-sm" style="font-size:.72rem"
+                    onclick="reGrantConsent('${c.consent_type}')">
+              Újra elfogadás
+            </button>`
+          }
+        </div>
+      `).join('')
+}
+
+async function revokeConsent(consentType) {
+  const reason = prompt('Kérheted indoklást (opcionális):')
+  if (reason === null) return // ESC = mégse
+
+  if (!confirm(`Biztosan visszavonod a beleegyezést?\n\nVisszavonás esetén a "${consentType}" mérés leáll. A meglévő hitelesítések megmaradnak.`)) return
+
+  try {
+    await ConsentManager.revoke(consentType, reason || null)
+    showToast('✅ Beleegyezés visszavonva')
+    await loadConsentSettings()
+
+    // Ha keystroke_dynamics-t vontak vissza:
+    // figyelmeztető üzenet hogy a hitelesítés nem lesz elérhető
+    if (consentType === 'keystroke_dynamics') {
+      document.getElementById('consent-warning')?.style &&
+        (document.getElementById('consent-warning').style.display = 'block')
+    }
+  } catch (err) {
+    showToast('❌ Hiba: ' + err.message)
+  }
+}
+
+async function reGrantConsent(consentType) {
+  // Ugyanaz mint a modal accept – de a profiloldalról
+  try {
+    await ConsentManager.record(consentType)
+    showToast('✅ Beleegyezés újra rögzítve')
+    await loadConsentSettings()
+  } catch (err) {
+    showToast('❌ Hiba: ' + err.message)
+  }
+}
+
+
+// ── ADMIN – fellebbezések kezelése ────────────────────────
+
+async function loadAppeals() {
+  const tbody = document.getElementById('appeals-tbody')
+  if (!tbody) return
+
+  const { data, error } = await db
+    .from('appeals')
+    .select('*, profiles(username, humano_id), documents(title)')
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (error) { tbody.innerHTML = '<tr><td colspan="6">Hiba</td></tr>'; return }
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nincs fellebbezés</td></tr>'; return }
+
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-size:.75rem">${a.id.slice(0,8)}...</td>
+      <td>${a.profiles?.username || '–'}</td>
+      <td style="font-size:.8rem">${a.documents?.title || a.doc_id || '–'}</td>
+      <td style="font-size:.8rem">${a.reason.slice(0,60)}${a.reason.length > 60 ? '…' : ''}</td>
+      <td>
+        <span class="badge ${a.status === 'pending' ? 'badge-warn' : a.status === 'resolved' ? 'badge-success' : 'badge-muted'}">
+          ${a.status}
+        </span>
+      </td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openAppealDetail('${a.id}')">
+          Kezelés
+        </button>
+      </td>
+    </tr>
+  `).join('')
+}
+
+async function updateAppealStatus(appealId, status, notes) {
+  const { error } = await db
+    .from('appeals')
+    .update({
+      status,
+      admin_notes:  notes,
+      admin_id:     currentUser.id,
+      resolved_at:  ['resolved','rejected'].includes(status) ? new Date().toISOString() : null,
+    })
+    .eq('id', appealId)
+
+  if (error) { showToast('❌ Hiba: ' + error.message); return }
+  showToast('✅ Fellebbezés frissítve')
+  loadAppeals()
+}
+
+
+// ── EU AI ACT DISCLAIMER ──────────────────────────────────
+// Egyszer mutatja meg a hitelesítés előtt, aztán elmenti
+
+async function checkAndShowAiActDisclaimer(docId) {
+  const key = 'humano_aiact_shown'
+  if (localStorage.getItem(key)) return // már látta
+
+  // Modal megjelenítése
+  openInfoModal(
+    '⚖️ EU AI Act tájékoztató',
+    `<p style="line-height:1.8;margin-bottom:1rem">
+      A HUMANO <strong>statisztikai mérést</strong> végez, nem értékelést vagy döntéshozatalt.
+    </p>
+    <ul style="line-height:2;margin-left:1.25rem;color:var(--muted);font-size:.88rem">
+      <li>A "Humán Index" a gépelési ritmus <strong>változatosságát</strong> mutatja</li>
+      <li>Nem mér fáradtságot, érzelmet vagy személyiséget</li>
+      <li>A rendszer nem hoz döntést személyekről</li>
+      <li>Minden automatikus jelzés emberileg felülvizsgálható</li>
+    </ul>
+    <a href="/transparency.html#ai-act" target="_blank"
+       style="color:var(--gold);font-size:.82rem">
+      Teljes EU AI Act megfelelőségi dokumentáció →
+    </a>`
+  )
+
+  localStorage.setItem(key, '1')
+
+  // DB mentés is – hogy tudjuk megmutattuk-e
+  if (docId) {
+    await db.from('documents')
+      .update({ ai_act_disclaimer_shown: true })
+      .eq('doc_id', docId)
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     const { data: { session } } = await db.auth.getSession();
