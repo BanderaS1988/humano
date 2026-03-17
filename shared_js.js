@@ -2276,8 +2276,8 @@ async function downloadWhitePaperPdf() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const W = 210, H = 297;
-    const PL = 20, PR = 20;
-    const CW = W - PL - PR;
+    const PL = 25, PR = 25;
+    const CW = W - PL - PR - 5;
     let y = 20;
 
     // Háttér
@@ -2370,7 +2370,7 @@ async function downloadWhitePaperPdf() {
 
         // Szövegtörzs
         doc.setTextColor(180, 170, 150);
-        doc.setFontSize(8.5);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
 
         const lines = doc.splitTextToSize(section.body, CW);
