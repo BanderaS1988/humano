@@ -3948,163 +3948,181 @@ async function downloadSeal(docId) {
     showToast('✅ Pecsét letöltve!');
 }
 
-/* ─── INICIALIZÁLÁS ─────────────────────────────────────────── */
 
 
-// ══════════════════════════════════════════════════════════
-// HUMANO – 1. Jogi hitelesség – Frontend logika
-// Ezt a shared_js.js végéhez kell hozzáadni
-// ══════════════════════════════════════════════════════════
 
 
-// ── CONSENT MANAGER ───────────────────────────────────────
+
+
+// ═══════════════════════════════════════════════════════════════
+//  HUMANO – Consent & Appeals modul
+//  Szekciók:
+//    1. ConsentManager
+//    2. Editor betöltés – consent gate
+//    3. Biometrikus consent modal
+//    4. Fellebbezési rendszer
+//    5. Profil oldal – consent kezelés
+//    6. Admin – fellebbezések kezelése
+//    7. EU AI Act disclaimer
+//    8. DOMContentLoaded – event wireup
+// ═══════════════════════════════════════════════════════════════
+
+
+// ── 1. CONSENT MANAGER ──────────────────────────────────────
 
 const ConsentManager = {
 
-  // Aktív consent ellenőrzése Supabase-ből
+  /** Van-e aktív (nem visszavont) consent az adott típusra? */
   async hasActive(consentType = 'keystroke_dynamics') {
-    if (!currentUser) return false
+    if (!currentUser) return false;
     const { data, error } = await db
       .from('biometric_consents')
       .select('id, consent_version')
       .eq('user_id', currentUser.id)
       .eq('consent_type', consentType)
       .is('revoked_at', null)
-      .limit(1)
-    return !error && data && data.length > 0
+      .limit(1);
+    return !error && data && data.length > 0;
   },
 
-  // Aktuális consent verzió lekérése
+  /** Aktuális consent verzió lekérése a consent_versions táblából */
   async getCurrentVersion() {
-    const { data } = await db
-      .from('consent_versions')
-      .select('version')
-      .eq('is_current', true)
-      .single()
-    return data?.version || '1.0'
+    try {
+      const { data } = await db
+        .from('consent_versions')
+        .select('version')
+        .eq('is_current', true)
+        .single();
+      return data?.version || '1.0';
+    } catch {
+      return '1.0';
+    }
   },
 
-  // Consent rögzítése Edge Function-ön keresztül
+  /** Consent rögzítése (duplikátum-védelemmel) */
   async record(consentType = 'keystroke_dynamics') {
-    const { data, error } = await db.functions.invoke('record-consent', {
-      body: { consent_type: consentType }
-    })
-    if (error) throw new Error(error.message)
-    return data
+    if (!currentUser) throw new Error('Nincs bejelentkezett felhasználó');
+    const version = await this.getCurrentVersion();
+    const already = await this.hasActive(consentType);
+    if (already) return { already: true };
+    const { data, error } = await db
+      .from('biometric_consents')
+      .insert({
+        user_id:         currentUser.id,
+        consent_type:    consentType,
+        consent_version: version,
+        granted_at:      new Date().toISOString(),
+        revoked_at:      null,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
   },
 
-  // Consent visszavonása
+  /** Consent visszavonása */
   async revoke(consentType = 'keystroke_dynamics', reason = null) {
-    const { data, error } = await db.functions.invoke('revoke-consent', {
-      body: { consent_type: consentType, reason }
-    })
-    if (error) throw new Error(error.message)
-    return data
+    if (!currentUser) throw new Error('Nincs bejelentkezett felhasználó');
+    const { error } = await db
+      .from('biometric_consents')
+      .update({
+        revoked_at:    new Date().toISOString(),
+        revoke_reason: reason,
+      })
+      .eq('user_id', currentUser.id)
+      .eq('consent_type', consentType)
+      .is('revoked_at', null);
+    if (error) throw new Error(error.message);
+    return { revoked: true };
   },
 
-  // Összes aktív consent lekérése (profil oldalhoz)
+  /** Az aktuális felhasználó összes consent-je (legújabb elöl) */
   async getAll() {
-    if (!currentUser) return []
+    if (!currentUser) return [];
     const { data } = await db
       .from('biometric_consents')
       .select('consent_type, consent_version, granted_at, revoked_at')
       .eq('user_id', currentUser.id)
-      .order('granted_at', { ascending: false })
-    return data || []
-  }
-}
+      .order('granted_at', { ascending: false });
+    return data || [];
+  },
+};
 
 
-// ── EDITOR BETÖLTÉS – consent gate ────────────────────────
+// ── 2. EDITOR BETÖLTÉS – CONSENT GATE ───────────────────────
 
-// Ezt hívja az editor.html DOMContentLoaded-ben
-// a meglévő initEditor() helyett
-
+/**
+ * Ezt hívja az editor oldal DOMContentLoaded-je
+ * az initEditor() / editorInit() helyett.
+ * Ha nincs consent → modal; ha van → indítja az editort.
+ */
 async function loadEditorWithConsentCheck() {
   if (!currentUser) {
-    window.location.href = '/auth.html'
-    return
+    showPage('auth');
+    return;
   }
-
-  // Consent ellenőrzés
-  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics')
-
+  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
   if (!hasConsent) {
-    showBiometricConsentModal()
-    return
-    // Az editor NEM indul el amíg nincs consent
-    // A modal accept gombja hívja az initEditor()-t
+    showBiometricConsentModal();
+    return;
   }
-
-  // Minden rendben – editor indítása
-  if (typeof initEditor === 'function') initEditor()
+  if (typeof editorInit === 'function') editorInit();
 }
 
 
-// ── BIOMETRIKUS CONSENT MODAL ─────────────────────────────
+// ── 3. BIOMETRIKUS CONSENT MODAL ────────────────────────────
 
 function showBiometricConsentModal() {
-  const modal = document.getElementById('biometric-consent-modal')
-  if (modal) {
-    modal.style.display = 'flex'
-    modal.classList.add('open')
-  }
+  const modal = document.getElementById('biometric-consent-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  // rAF: display:flex érvényes legyen az animáció előtt
+  requestAnimationFrame(() => modal.classList.add('open'));
 }
 
 function hideBiometricConsentModal() {
-  const modal = document.getElementById('biometric-consent-modal')
-  if (modal) {
-    modal.style.display = 'none'
-    modal.classList.remove('open')
-  }
+  const modal = document.getElementById('biometric-consent-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.style.display = 'none';
 }
 
-// Accept gomb
+/** „Elfogadom" gomb kezelője */
 async function handleConsentAccept() {
-  const btn = document.getElementById('consent-accept-btn')
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Rögzítés...' }
-
+  const btn = document.getElementById('consent-accept-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Rögzítés...'; }
   try {
-    await ConsentManager.record('keystroke_dynamics')
-    hideBiometricConsentModal()
-    showToast('✅ Beleegyezés rögzítve')
-    // Editor most már elindulhat
-    if (typeof initEditor === 'function') initEditor()
+    await ConsentManager.record('keystroke_dynamics');
+    hideBiometricConsentModal();
+    showToast('✅ Beleegyezés rögzítve');
+    if (typeof editorInit === 'function') editorInit();
   } catch (err) {
-    showToast('❌ Hiba: ' + err.message)
-    if (btn) { btn.disabled = false; btn.textContent = '✦ Elfogadom' }
+    showToast('❌ Hiba: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Elfogadom'; }
   }
 }
 
-// Decline gomb
+/** „Elutasítom" gomb kezelője */
 function handleConsentDecline() {
-  hideBiometricConsentModal()
-  showToast('A hitelesítés biometrikus beleegyezés nélkül nem elérhető.')
-  setTimeout(() => { window.location.href = '/' }, 2000)
+  hideBiometricConsentModal();
+  showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
+  showPage('landing');
 }
 
-// Event listenerek (editor.html-ben a DOMContentLoaded után)
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('consent-accept-btn')
-    ?.addEventListener('click', handleConsentAccept)
-  document.getElementById('consent-decline-btn')
-    ?.addEventListener('click', handleConsentDecline)
-})
 
-
-// ── FELLEBBEZÉSI RENDSZER ─────────────────────────────────
+// ── 4. FELLEBBEZÉSI RENDSZER ─────────────────────────────────
 
 async function submitAppeal() {
-  const reason = document.getElementById('appeal-reason')?.value?.trim()
-  const docId  = document.getElementById('v-input-unified')?.value?.trim()
+  const reason = document.getElementById('appeal-reason')?.value?.trim();
+  const docId  = document.getElementById('v-input-unified')?.value?.trim();
 
   if (!reason) {
-    showToast('❌ Kérjük, írd le a fellebbezés okát!')
-    return
+    showToast('❌ Kérjük, írd le a fellebbezés okát!');
+    return;
   }
 
-  const btn = document.getElementById('appeal-submit-btn')
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Küldés...' }
+  const btn = document.getElementById('appeal-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Küldés...'; }
 
   try {
     const { data, error } = await db
@@ -4116,46 +4134,44 @@ async function submitAppeal() {
         description: document.getElementById('appeal-description')?.value?.trim() || null,
       })
       .select('id')
-      .single()
+      .single();
 
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(error.message);
 
-    // Admin értesítés
-    await db.functions.invoke('appeal-notify', {
-      body: { appeal_id: data.id }
-    })
+    // Admin értesítés edge function-ön keresztül
+    await db.functions.invoke('appeal-notify', { body: { appeal_id: data.id } });
 
-    showToast('✅ Fellebbezés benyújtva – 5 munkanapon belül válaszolunk!')
-    document.getElementById('appeal-reason').value = ''
-    if (document.getElementById('appeal-description'))
-      document.getElementById('appeal-description').value = ''
+    showToast('✅ Fellebbezés benyújtva – 5 munkanapon belül válaszolunk!');
+    document.getElementById('appeal-reason').value = '';
+    const desc = document.getElementById('appeal-description');
+    if (desc) desc.value = '';
 
   } catch (err) {
-    showToast('❌ Hiba a beküldéskor: ' + err.message)
+    showToast('❌ Hiba a beküldéskor: ' + err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '📨 Fellebbezés benyújtása' }
+    if (btn) { btn.disabled = false; btn.textContent = '📨 Fellebbezés benyújtása'; }
   }
 }
 
 
-// ── PROFIL OLDAL – consent kezelés ────────────────────────
+// ── 5. PROFIL OLDAL – CONSENT KEZELÉS ───────────────────────
 
-// ─── PROFIL OLDAL – consent kezelés (JAVÍTVA) ────────────────────────
+const CONSENT_LABELS = {
+  keystroke_dynamics: 'Billentyűleütés-dinamika rögzítése',
+  writing_profile:    'Kalibrációs profil',
+  rhythm_analysis:    'Ritmus-variabilitás mérés',
+};
 
+/** Consent lista betöltése és kirajzolása a profil oldalon */
 async function loadConsentSettings() {
   const container = document.getElementById('consent-settings-container');
   if (!container || !currentUser) return;
 
   const consents = await ConsentManager.getAll();
 
-  const labels = {
-    keystroke_dynamics: 'Billentyűleütés-dinamika rögzítése',
-    writing_profile:    'Kalibrációs profil',
-    rhythm_analysis:    'Ritmus-variabilitás mérés',
-  };
-
   if (consents.length === 0) {
     container.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Nincs rögzített beleegyezés.</p>';
+    _updateConsentWarning(false);
     return;
   }
 
@@ -4165,96 +4181,106 @@ async function loadConsentSettings() {
                 border-radius:var(--r-sm);margin-bottom:.5rem">
       <div>
         <div style="font-size:.85rem;font-weight:600;color:var(--text)">
-          ${labels[c.consent_type] || c.consent_type}
+          ${CONSENT_LABELS[c.consent_type] || c.consent_type}
         </div>
         <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
           ${c.revoked_at
             ? '❌ Visszavonva: ' + new Date(c.revoked_at).toLocaleDateString('hu-HU')
-            : '✅ Aktív – ' + new Date(c.granted_at).toLocaleDateString('hu-HU') + ' óta'
+            : '✅ Aktív – '    + new Date(c.granted_at).toLocaleDateString('hu-HU') + ' óta'
           }
           &nbsp;·&nbsp; Verzió: ${c.consent_version}
         </div>
       </div>
-      ${!c.revoked_at ? `
-        <!-- JAVÍTVA: A gomb most a revokeConsent függvényt hívja -->
-        <button class="btn btn-outline btn-sm"
-                style="font-size:.72rem;border-color:rgba(224,85,85,.4);color:#e05555"
-                onclick="revokeConsent('${c.consent_type}')">
-          Visszavonás
-        </button>` : `
-        <button class="btn btn-outline btn-sm" style="font-size:.72rem"
-                onclick="reGrantConsent('${c.consent_type}')">
-          Újra elfogadás
-        </button>`
+      ${!c.revoked_at
+        ? `<button class="btn btn-outline btn-sm"
+                   style="font-size:.72rem;border-color:rgba(224,85,85,.4);color:#e05555"
+                   onclick="revokeConsent('${c.consent_type}')">
+             Visszavonás
+           </button>`
+        : `<button class="btn btn-outline btn-sm" style="font-size:.72rem"
+                   onclick="reGrantConsent('${c.consent_type}')">
+             Újra elfogadás
+           </button>`
       }
     </div>
   `).join('');
 
-  // Figyelmeztetés megjelenítése, ha a keystroke_dynamics vissza van vonva
-  const hasActiveKeystroke = consents.some(c => 
-    c.consent_type === 'keystroke_dynamics' && !c.revoked_at
+  const hasActiveKeystroke = consents.some(
+    c => c.consent_type === 'keystroke_dynamics' && !c.revoked_at
   );
-  const warningEl = document.getElementById('consent-warning');
-  if (warningEl) {
-    warningEl.style.display = hasActiveKeystroke ? 'none' : 'block';
-  }
+  _updateConsentWarning(!hasActiveKeystroke);
 }
 
-// Visszavonás függvény (már létezik, de biztos ami tuti)
+/** Visszavonás – megerősítéssel + okkal */
 async function revokeConsent(consentType) {
-  const reason = prompt('Kérheted indoklást (opcionális):');
+  const reason = prompt('Visszavonás oka (opcionális, Enter = kihagyás):');
   if (reason === null) return; // ESC = mégse
 
-  if (!confirm(`Biztosan visszavonod a beleegyezést?\n\nVisszavonás esetén a "${consentType}" mérés leáll. A meglévő hitelesítések megmaradnak.`)) return;
+  if (!confirm(
+    `Biztosan visszavonod a "${CONSENT_LABELS[consentType] || consentType}" beleegyezést?\n\n` +
+    `A hitelesítési funkció ezután nem lesz elérhető.`
+  )) return;
 
   try {
     await ConsentManager.revoke(consentType, reason || null);
     showToast('✅ Beleegyezés visszavonva');
-    await loadConsentSettings(); // Újratöltés
-
-    // Ha keystroke_dynamics-t vontak vissza, figyelmeztetés
-    if (consentType === 'keystroke_dynamics') {
-      document.getElementById('consent-warning').style.display = 'block';
-    }
+    await loadConsentSettings();
   } catch (err) {
     showToast('❌ Hiba: ' + err.message);
   }
 }
 
-// Újra elfogadás
+/** Újra elfogadás */
 async function reGrantConsent(consentType) {
   try {
     await ConsentManager.record(consentType);
     showToast('✅ Beleegyezés újra rögzítve');
-    await loadConsentSettings(); // Újratöltés
+    await loadConsentSettings();
   } catch (err) {
     showToast('❌ Hiba: ' + err.message);
   }
 }
 
-// ── ADMIN – fellebbezések kezelése ────────────────────────
+/** Belső segédfüggvény: consent-warning elem megjelenítése/elrejtése */
+function _updateConsentWarning(show) {
+  const w = document.getElementById('consent-warning');
+  if (w) w.style.display = show ? 'block' : 'none';
+}
 
+
+// ── 6. ADMIN – FELLEBBEZÉSEK KEZELÉSE ───────────────────────
+
+/** Fellebbezések listájának betöltése az admin felületre */
 async function loadAppeals() {
-  const tbody = document.getElementById('appeals-tbody')
-  if (!tbody) return
+  const tbody = document.getElementById('appeals-tbody');
+  if (!tbody) return;
 
   const { data, error } = await db
     .from('appeals')
     .select('*, profiles(username, humano_id), documents(title)')
     .order('created_at', { ascending: false })
-    .limit(100)
+    .limit(100);
 
-  if (error) { tbody.innerHTML = '<tr><td colspan="6">Hiba</td></tr>'; return }
-  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nincs fellebbezés</td></tr>'; return }
+  if (error) {
+    tbody.innerHTML = '<tr><td colspan="6">Hiba a betöltéskor</td></tr>';
+    return;
+  }
+  if (!data?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nincs fellebbezés</td></tr>';
+    return;
+  }
 
   tbody.innerHTML = data.map(a => `
     <tr>
-      <td style="font-family:var(--font-mono);font-size:.75rem">${a.id.slice(0,8)}...</td>
+      <td style="font-family:var(--font-mono);font-size:.75rem">${a.id.slice(0, 8)}…</td>
       <td>${a.profiles?.username || '–'}</td>
       <td style="font-size:.8rem">${a.documents?.title || a.doc_id || '–'}</td>
-      <td style="font-size:.8rem">${a.reason.slice(0,60)}${a.reason.length > 60 ? '…' : ''}</td>
+      <td style="font-size:.8rem">${a.reason.slice(0, 60)}${a.reason.length > 60 ? '…' : ''}</td>
       <td>
-        <span class="badge ${a.status === 'pending' ? 'badge-warn' : a.status === 'resolved' ? 'badge-success' : 'badge-muted'}">
+        <span class="badge ${
+          a.status === 'pending'  ? 'badge-warn'    :
+          a.status === 'resolved' ? 'badge-success' : 'badge-muted'
+        }">
           ${a.status}
         </span>
       </td>
@@ -4264,60 +4290,70 @@ async function loadAppeals() {
         </button>
       </td>
     </tr>
-  `).join('')
+  `).join('');
 }
 
+/** Fellebbezés státuszának frissítése adminként */
 async function updateAppealStatus(appealId, status, notes) {
   const { error } = await db
     .from('appeals')
     .update({
       status,
-      admin_notes:  notes,
-      admin_id:     currentUser.id,
-      resolved_at:  ['resolved','rejected'].includes(status) ? new Date().toISOString() : null,
+      admin_notes: notes,
+      admin_id:    currentUser.id,
+      resolved_at: ['resolved', 'rejected'].includes(status)
+        ? new Date().toISOString()
+        : null,
     })
-    .eq('id', appealId)
+    .eq('id', appealId);
 
-  if (error) { showToast('❌ Hiba: ' + error.message); return }
-  showToast('✅ Fellebbezés frissítve')
-  loadAppeals()
+  if (error) { showToast('❌ Hiba: ' + error.message); return; }
+  showToast('✅ Fellebbezés frissítve');
+  loadAppeals();
 }
 
 
-// ── EU AI ACT DISCLAIMER ──────────────────────────────────
-// Egyszer mutatja meg a hitelesítés előtt, aztán elmenti
+// ── 7. EU AI ACT DISCLAIMER ──────────────────────────────────
 
+/**
+ * Egyszer mutatja meg a hitelesítés előtt (localStorage flag),
+ * majd elmenti a documents táblába is.
+ */
 async function checkAndShowAiActDisclaimer(docId) {
-  const key = 'humano_aiact_shown'
-  if (localStorage.getItem(key)) return // már látta
+  const STORAGE_KEY = 'humano_aiact_shown';
+  if (localStorage.getItem(STORAGE_KEY)) return; // már látta
 
-  // Modal megjelenítése
   openInfoModal(
     '⚖️ EU AI Act tájékoztató',
     `<p style="line-height:1.8;margin-bottom:1rem">
-      A HUMANO <strong>statisztikai mérést</strong> végez, nem értékelést vagy döntéshozatalt.
-    </p>
-    <ul style="line-height:2;margin-left:1.25rem;color:var(--muted);font-size:.88rem">
-      <li>A "Humán Index" a gépelési ritmus <strong>változatosságát</strong> mutatja</li>
-      <li>Nem mér fáradtságot, érzelmet vagy személyiséget</li>
-      <li>A rendszer nem hoz döntést személyekről</li>
-      <li>Minden automatikus jelzés emberileg felülvizsgálható</li>
-    </ul>
-    <a href="/transparency.html#ai-act" target="_blank"
-       style="color:var(--gold);font-size:.82rem">
-      Teljes EU AI Act megfelelőségi dokumentáció →
-    </a>`
-  )
+       A HUMANO <strong>statisztikai mérést</strong> végez, nem értékelést vagy döntéshozatalt.
+     </p>
+     <ul style="line-height:2;margin-left:1.25rem;color:var(--muted);font-size:.88rem">
+       <li>A „Humán Index" a gépelési ritmus <strong>változatosságát</strong> mutatja</li>
+       <li>Nem mér fáradtságot, érzelmet vagy személyiséget</li>
+       <li>A rendszer nem hoz döntést személyekről</li>
+       <li>Minden automatikus jelzés emberileg felülvizsgálható</li>
+     </ul>
+     <a href="/transparency.html#ai-act" target="_blank"
+        style="color:var(--gold);font-size:.82rem">
+       Teljes EU AI Act megfelelőségi dokumentáció →
+     </a>`
+  );
 
-  localStorage.setItem(key, '1')
+  localStorage.setItem(STORAGE_KEY, '1');
 
-  // DB mentés is – hogy tudjuk megmutattuk-e
   if (docId) {
-    await db.from('documents')
+    await db
+      .from('documents')
       .update({ ai_act_disclaimer_shown: true })
-      .eq('doc_id', docId)
+      .eq('doc_id', docId);
   }
 }
+
+
+
+
+// ── 8. DOMCONTENTLOADED – EVENT WIREUP ──────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
 
