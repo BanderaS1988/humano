@@ -851,7 +851,7 @@ const manifestData = {
 };
 
 // 3. Küldés a Supabase Edge Function‑nak
-const { data, error } = await supabase.functions.invoke('c2pa-signer', {
+const { data, error } = await db.functions.invoke('c2pa-signer', {
   body: { pdfBase64: base64Pdf, manifestData }
 });
 
