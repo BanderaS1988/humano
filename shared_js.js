@@ -551,7 +551,7 @@ function generateQR(containerId, docId) {
 
 
 /* ─── 10. PDF TANÚSÍTVÁNY GENERÁLÁS ─────────────────────────── */
-async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData) {
+async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData, otsTxid = null, zkpProof = null) {
     if (!window.jspdf) { showToast('PDF betoltes...'); setTimeout(() => generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData), 2000); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
