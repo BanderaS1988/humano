@@ -215,6 +215,7 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
     <span class="nav-link" onclick="showPage('roadmap')">Roadmap</span>
     <span class="nav-link" onclick="showPage('supporters')">Előfizetés</span>
     <span class="nav-link" onclick="showPage('about')">Rólunk</span>
+    <span class="nav-link" onclick="showPage('whitepaper')">Módszertan</span>
     <div class="nav-divider"></div>
     <span class="nav-link" onclick="requireAuth('editor')">Írás</span>
     <span class="nav-link" onclick="requireAuth('dashboard')">Dashboard</span>
@@ -1872,6 +1873,202 @@ document.addEventListener('humano:verify-result', () => {
   </div>
 </div>
 
+
+  <!-- ═══ WHITE PAPER ═══ -->
+<div id="page-whitepaper" class="page">
+  <div style="max-width:800px;margin:0 auto;padding:4rem 2rem">
+
+    <!-- FEJLÉC -->
+    <div style="text-align:center;margin-bottom:3rem">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem">Tudományos dokumentum</div>
+      <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:600;margin-bottom:1rem;line-height:1.3">
+        A HUMANO Protokoll: <span class="gt">A keletkezés hitelesítése</span>
+      </h1>
+      <p style="color:var(--muted);font-size:.88rem;font-family:var(--font-mono)">Változat: 1.0 · 2026. március 17. · HUMANO Platform</p>
+      <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="downloadWhitePaperPdf()">📄 PDF letöltése</button>
+        <a href="https://www.researchgate.net" target="_blank" class="btn btn-outline">🔬 ResearchGate →</a>
+      </div>
+    </div>
+
+    <div class="gold-line" style="margin:0 auto 3rem"></div>
+
+    <!-- ABSZTRAKT -->
+    <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--gold);background:rgba(201,168,76,.03)">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">Absztrakt</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        A mesterséges intelligencia által generált szövegek robbanásszerű elterjedése alapjaiban kérdőjelezi meg a digitális tartalmak szerzőségének hitelességét. A hagyományos plágiumellenőrzők és az újabb AI-detektorok csak a végeredményt elemzik, és statisztikai valószínűségekre támaszkodnak, amelyek egyre könnyebben kijátszhatók. A HUMANO protokoll egy radikálisan új megközelítést vezet be: nem a kész szöveget, hanem annak <strong style="color:var(--gold)">keletkezési folyamatát</strong> hitelesíti. Három független technológiai réteg kombinálásával – (1) billentyűleütés-dinamika mint biometrikus azonosító, (2) SHA-256 kriptográfiai hash, és (3) Bitcoin blokklánc időbélyeg – olyan matematikailag igazolható bizonyítékot hoz létre, amely gyakorlatilag megcáfolhatatlan.
+      </div>
+    </div>
+
+    <!-- 1. BEVEZETÉS -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">1. Bevezetés</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--gold3)">1.1. A szerzőségi válság az AI-korszakban</strong><br>
+        Az olyan nagyméretű nyelvi modellek (LLM-ek), mint a ChatGPT, térnyerése lehetővé tette, hogy bárki pillanatok alatt, minimális erőfeszítéssel emberi szintű szövegeket generáljon. Ez a technológiai áttörés azonban válságot idézett elő számos területen: az oktatásban, az újságírásban és a szellemi tulajdon védelmében. A probléma nem a szöveg minősége, hanem az eredete.<br><br>
+        <strong style="color:var(--gold3)">1.2. A jelenlegi megoldások elégtelensége</strong><br>
+        Az AI-detektorok (pl. GPTZero) statisztikai modellekkel vizsgálják a szöveg perplexitását és burstiness-ét. Pontosságuk csökken az újabb modellekkel, és gyakoriak a téves pozitív eredmények. A plágiumellenőrzők (pl. Turnitin) teljesen új, de AI által generált tartalom esetén hatástalanok. Mindkét megközelítés közös hibája: a végeredményt elemzi utólag, és csupán valószínűségi becslést ad.<br><br>
+        <strong style="color:var(--gold3)">1.3. A HUMANO megközelítése</strong><br>
+        A HUMANO alapfeltevése, hogy míg egy AI azonnal és változatlan ritmussal írja ki a teljes szöveget, addig egy emberi alkotó gépelési ritmusa egyedi, változatos, és tele van a gondolkodás, a bizonytalanság és a javítás lenyomataival. Ez a folyamat olyan viselkedéses biometrikus azonosító, amelyet szinte lehetetlen utánozni.
+      </div>
+    </div>
+
+    <!-- 2. KAPCSOLÓDÓ KUTATÁSOK -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">2. Kapcsolódó kutatások</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--gold3)">2.1. Billentyűleütés-dinamika mint biometrikus azonosító</strong><br>
+        A billentyűleütés-dinamika több évtizedes múltra visszatekintő kutatási terület. A modern kutatások szerint neurális hálózatok segítségével akár 82%-os pontosság érhető el személyek közötti azonosítási feladatban [1]. A vizsgált jellemzők: billentyű lenyomva tartásának ideje (dwell time), leütések közötti idő (flight time), gépelési sebesség, hibák gyakorisága és javítási mintázatok.<br><br>
+        <strong style="color:var(--gold3)">2.2. SHA-256 kriptográfiai hash</strong><br>
+        Az SHA-256 az NSA által tervezett és a NIST által szabványosított algoritmus [6]. Legfontosabb tulajdonságai: egyirányúság (a kimenetből nem lehet visszakövetkeztetni a bemenetre), ütközésállóság, és lavina-effektus (egyetlen bit változása a kimenet ~50%-át megváltoztatja).<br><br>
+        <strong style="color:var(--gold3)">2.3. Blokklánc-alapú időbélyegzés</strong><br>
+        Az OpenTimestamps egy nyílt forráskódú protokoll amely lehetővé teszi bármilyen adat bizonyítható időbélyeggel való ellátását a Bitcoin blokklánc segítségével [8]. A bizonyíték a HUMANO platform megszűnése után is, teljesen függetlenül ellenőrizhető marad.
+      </div>
+    </div>
+
+    <!-- 3. MÓDSZERTAN -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">3. A HUMANO módszertana</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--gold3)">3.1. A hitelesítési folyamat lépései</strong><br>
+        1. <strong style="color:var(--text)">Valós idejű rögzítés</strong> – milliszekundumos pontossággal rögzíti a billentyűzeteseményeket. A leütött karaktereket NEM naplózza – csak az időbélyegeket és eseménytípusokat.<br>
+        2. <strong style="color:var(--text)">Biometrikus profilalkotás</strong> – kiszámítja a gépelési metrikákat és a Humán Indexet.<br>
+        3. <strong style="color:var(--text)">Beillesztés átlátható kezelése</strong> – a beillesztett szövegrészek arányát a tanúsítványon feltünteti, nem tiltja de dokumentálja.<br>
+        4. <strong style="color:var(--text)">Kalibrációs profil</strong> – opcionálisan megtanulja a felhasználó egyedi gépelési ritmusát, lehetővé téve a személyhez kötött szerzőség igazolását.<br>
+        5. <strong style="color:var(--text)">SHA-256 hash</strong> – a böngészőben számítódik, a szöveg tiszta verziója nem hagyja el a felhasználó gépét.<br>
+        6. <strong style="color:var(--text)">Bitcoin blokklánc időbélyeg</strong> – OpenTimestamps protokollon keresztül, visszavonhatatlanul rögzítve.<br><br>
+
+        <strong style="color:var(--gold3)">3.2. A Humán Index számítása</strong><br>
+        A Humán Index (HI) a gépelési intervallumok relatív szórásán (CV = σ/μ) alapul:<br><br>
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;font-family:var(--font-mono);font-size:.8rem;margin-bottom:.75rem">
+          CV &lt; 0.25 → Gépies ritmus (HI: 0–25%)<br>
+          0.25 ≤ CV &lt; 0.6 → Vegyes ritmus (HI: 25–60%)<br>
+          0.6 ≤ CV &lt; 0.9 → Emberi ritmus (HI: 60–85%)<br>
+          CV ≥ 0.9 + javítások + szünetek → Intenzív alkotás (HI: 85–100%)
+        </div>
+        Ez az érték független a gépelés abszolút sebességétől, kizárólag a ritmus változatosságát méri.
+      </div>
+    </div>
+
+    <!-- 4. ADATVÉDELEM -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">4. Adatvédelem és etika</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        · <strong style="color:var(--text)">GDPR-megfelelőség</strong> – EU-s szervereken (Supabase, Frankfurt), kifejezett hozzájárulással, visszavonási lehetőséggel<br>
+        · <strong style="color:var(--text)">Adatminimalizálás</strong> – leütött karaktereket soha nem naplóz, csak időbélyegeket<br>
+        · <strong style="color:var(--text)">EU AI Act</strong> – nem minősül magas kockázatú AI-rendszernek, statisztikai mérőszámot közöl, nem hoz döntést<br>
+        · <strong style="color:var(--text)">Átláthatóság</strong> – minden számítás nyomon követhető, nincs fekete doboz algoritmus
+      </div>
+    </div>
+
+    <!-- 5. KORLÁTOK -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">5. A módszer korlátai</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        · <strong style="color:var(--text)">Profi gépelők</strong> – rendkívül egyenletes vakírással gépelők alacsonyabb Humán Indexet kaphatnak<br>
+        · <strong style="color:var(--text)">Személyazonosság</strong> – a rendszer azt bizonyítja hogy ember írta, nem azt hogy pontosan ki (kalibrációs profil nélkül)<br>
+        · <strong style="color:var(--text)">Speciális AI-támadások</strong> – elméletileg emberi ritmusra tanított AI utánozhatná a mintát, bár ez jelenleg nem fenyegető vektor
+      </div>
+    </div>
+
+    <!-- 6. ÖSSZEHASONLÍTÁS -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">6. Összehasonlítás más megoldásokkal</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:.6rem .75rem;color:var(--gold2);font-family:var(--font-mono);font-size:.72rem">Jellemző</th>
+              <th style="text-align:center;padding:.6rem .75rem;color:var(--gold);font-family:var(--font-mono);font-size:.72rem">HUMANO</th>
+              <th style="text-align:center;padding:.6rem .75rem;color:var(--muted);font-family:var(--font-mono);font-size:.72rem">Turnitin</th>
+              <th style="text-align:center;padding:.6rem .75rem;color:var(--muted);font-family:var(--font-mono);font-size:.72rem">GPTZero</th>
+              <th style="text-align:center;padding:.6rem .75rem;color:var(--muted);font-family:var(--font-mono);font-size:.72rem">OriginStamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:.6rem .75rem;color:var(--muted)">Elemzés tárgya</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">Keletkezés</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Végeredmény</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Végeredmény</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Végeredmény</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:.6rem .75rem;color:var(--muted)">Bizonyíték típusa</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">Biometrikus + Kriptográfiai</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Valószínűségi</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Valószínűségi</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">Kriptográfiai</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:.6rem .75rem;color:var(--muted)">Emberi vs. AI</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">✓</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">✗</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--gold)">Korlátozott</td>
+              <td style="padding:.6rem .75rpm;text-align:center;color:var(--muted)">✗</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:.6rem .75rem;color:var(--muted)">Blokklánc időbélyeg</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">✓</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">✗</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">✗</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">✓</td>
+            </tr>
+            <tr>
+              <td style="padding:.6rem .75rem;color:var(--muted)">Ingyenes alap</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--success)">✓</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--muted)">✗</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--gold)">Korlátozott</td>
+              <td style="padding:.6rem .75rem;text-align:center;color:var(--gold)">Korlátozott</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 7. KÖVETKEZTETÉSEK -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">7. Következtetések</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.9">
+        A HUMANO platform paradigmaváltást képvisel a digitális tartalmak hitelesítésében. A viselkedéses biometria, a kriptográfia és a blokklánc technológia kombinációja olyan többrétegű védelmet nyújt, amely a jelenlegi megoldásoknál lényegesen robusztusabb. A módszer tudományos alapjait több évtizedes kutatások támasztják alá, míg technológiai implementációja a legkorszerűbb, széles körben elfogadott szabványokra épül.<br><br>
+        <strong style="color:var(--gold3)">További kutatási irányok:</strong><br>
+        · C2PA-szabvány integráció – globális tartalom-hitelesítési ökoszisztémába való beépülés<br>
+        · Valós idejű oktatási platform integráció<br>
+        · Multilinguális és nemzetközi terjesztés
+      </div>
+    </div>
+
+    <!-- 8. IRODALOMJEGYZÉK -->
+    <div class="card" style="margin-bottom:2rem">
+      <div style="font-weight:700;color:var(--gold2);margin-bottom:.75rem;font-family:var(--font-display);font-size:1.05rem">8. Irodalomjegyzék</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:2;font-family:var(--font-mono)">
+        [1] P. Panasiuk et al., "Biometric Identification Based on Keystroke Dynamics," Sensors, 22(9), 3158. PMC, 2022.<br>
+        [2] SSL.com, "Mi a kriptográfiai hash funkció?," SSL.com Resource Center, 2023.<br>
+        [3] NIST, "FIPS 180-4: Secure Hash Standard (SHS)," U.S. Department of Commerce, 2015.<br>
+        [4] S. Nakamoto, "Bitcoin: A Peer-to-Peer Electronic Cash System," 2008.<br>
+        [5] P. Wuille et al., "OpenTimestamps: A Protocol for Provably Timestamping Data," GitHub, 2016.<br>
+        [6] R. Joyce et al., "Deep Learning for Keystroke Dynamics," IEEE Trans. on Biometrics, 2020.<br>
+        [7] E. Killourhy & R. Maxion, "Comparing Anomaly Detectors for Keystroke Dynamics," DSN, 2009.<br>
+        [8] M. Ali et al., "Blockchain for Document Authentication," IEEE Access, 2019.
+      </div>
+    </div>
+
+    <!-- ÖSSZEFOGLALÓ -->
+    <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);border-radius:var(--r);padding:1.5rem;margin-bottom:2rem;text-align:center">
+      <div style="font-size:.7rem;font-family:var(--font-mono);color:var(--gold3);text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem">Summary (English)</div>
+      <p style="font-size:.85rem;color:var(--muted);line-height:1.8;max-width:600px;margin:0 auto">
+        HUMANO is a scientifically grounded platform that combines keystroke dynamics, SHA-256 cryptography, and the Bitcoin blockchain to mathematically prove the human origin and prior existence of a text, thereby offering a solution to the authorship crisis caused by AI-generated content.
+      </p>
+    </div>
+
+    <div style="text-align:center">
+      <button class="btn btn-gold btn-xl" onclick="downloadWhitePaperPdf()">📄 White Paper letöltése (PDF)</button>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══ PUBLIC VERIFY ═══ -->
 <div id="page-pub-verify" class="page">
   <div class="pub-verify-wrap">
@@ -2066,7 +2263,9 @@ Az AI-generált tartalmak egyre inkább elárasztják az internetet, ezért egyr
     <span onclick="showPage('supporters')" style="cursor:pointer;margin:0 .5rem">Előfizetés</span> ·
     <span onclick="showPage('about')" style="cursor:pointer;margin:0 .5rem">Rólunk</span> ·
     <span onclick="showPage('faq')" style="cursor:pointer;margin:0 .5rem">FAQ</span> ·
+    <span onclick="showPage('whitepaper')" style="cursor:pointer;margin:0 .5rem">Módszertan</span> ·
     <span onclick="showPage('privacy')" style="cursor:pointer;margin:0 .5rem">Adatvédelem</span>
+  
   </p>
   <p style="font-size:.7rem;color:var(--muted2);font-family:var(--font-mono)">© 2026 HUMANO · Supabase EU · OpenTimestamps · Bitcoin blokklánc</p>
 </footer>
