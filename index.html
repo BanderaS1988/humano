@@ -2375,11 +2375,13 @@ async function editorSave() {
         const hash = await sha256(plainText);
         const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
         if (!profile) throw new Error('Profil nem található');
-        const plan  = profile.plan || 'free';
-        const used  = profile.used_credits || 0;
-        const limit = profile.monthly_credits || 10;
-        const trialActive = profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
-        if (!trialActive && plan === 'free' && used >= limit) {
+        // ÚJ:
+const plan        = profile.plan || 'free';
+const used        = profile.used_credits || 0;
+const limit       = profile.monthly_credits ?? getPlanMonthlyLimit(plan);
+const trialActive = profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+const unlimited   = isPlanUnlimited(plan);
+if (!trialActive && !unlimited && used >= limit) {
             showToast('❌ Havi keret elérve!');
             openPricingContact('free_limit');
             if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
