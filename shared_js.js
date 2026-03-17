@@ -280,6 +280,7 @@ async function doRegister() {
     if (data.user) {
         const ts = Date.now().toString(36).toUpperCase();
         const humanoId = `HMN-${username.substring(0, 4).toUpperCase()}-${ts}`;
+        const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         await db.from('profiles').upsert({
             id: data.user.id,
             username,
@@ -287,12 +288,15 @@ async function doRegister() {
             plan: 'free',
             monthly_credits: 10,
             used_credits: 0,
+            trial_ends_at: trialEndsAt,
             created_at: new Date().toISOString()
         });
     }
     authAlert('✅ Sikeres regisztráció! Átirányítás...', 'success');
     setTimeout(() => showPage('dashboard'), 1500);
 }
+
+
 async function doLogin() {
     const email = document.getElementById('l-email')?.value.trim();
     const pass = document.getElementById('l-pass')?.value;
