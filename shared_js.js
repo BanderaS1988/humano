@@ -367,7 +367,7 @@ async function deleteAccount() {
     if (!currentUser) return showToast('❌ Be kell jelentkezni!');
     const confirm1 = confirm('Biztosan törölni szeretnéd a fiókodat? Ez visszafordíthatatlan – minden adat törlődik (a blokkláncon rögzített hash-ek kivételével).');
     if (!confirm1) return;
-    const confirm2 = confirm('Utolsó megerősítés: a fiók és az összes adat véglegesen törlődik. Folytatod?');
+   const confirm2 = confirm('Utolsó megerősítés: a fiók és az összes adat véglegesen törlődik.\n\n⚠️ FONTOS: A Bitcoin blokkláncra már rögzített hash-ek törlése technikailag lehetetlen – ezek örökre megmaradnak a blokkláncon, még fiók törlés után is. Folytatod?');
     if (!confirm2) return;
 
     try {
@@ -4475,9 +4475,14 @@ async function submitAppeal() {
 
     if (error) throw new Error(error.message);
 
-    await db.functions.invoke('appeal-notify', {
-      body: { appeal_id: data.id }
-    });
+    try {
+  await db.functions.invoke('appeal-notify', {
+    body: { appeal_id: data.id }
+  });
+} catch (notifyErr) {
+  console.warn('Appeal értesítés sikertelen:', notifyErr);
+  // Nem dobunk hibát – a fellebbezés mentve van, csak az értesítés nem ment ki
+}
 
     showToast('✅ Fellebbezés benyújtva – 5 munkanapon belül válaszolunk!');
     document.getElementById('appeal-reason').value = '';
