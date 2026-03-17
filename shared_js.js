@@ -550,330 +550,451 @@ function generateQR(containerId, docId) {
 }
 
 
-/* ─── 10. PDF TANÚSÍTVÁNY GENERÁLÁS ─────────────────────────── */
+/* ─── 10. PDF TANÚSÍTVÁNY + C2PA JPG GENERÁLÁS ───────────────── */
 async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData, otsTxid = null, zkpProof = null) {
-    if (!window.jspdf) { showToast('PDF betoltes...'); setTimeout(() => generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData), 2000); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const W = 210, H = 297;
-    const PL = 14, PR = 14;
-    const CW = W - PL - PR;
+  if (!window.jspdf) {
+    showToast('PDF betöltés...');
+    setTimeout(() => generatePdfCert(docId, title, author, hash, createdAt, otsStatus, processData), 2000);
+    return;
+  }
 
-    const humanLabel = processData?.humanCategory || ((processData?.humanIndex ?? '-') + '%');
-    const entropyPct = processData?.entropyPct ?? 0;
-    const entropyCV = processData?.entropyCV ?? 0;
-    const typedPct = processData?.typedPct ?? 100;
-    const pastedPct = processData?.pastedPct ?? 0;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  const PL = 14, PR = 14;
+  const CW = W - PL - PR;
 
-    // ── Háttér + keret ──
-    doc.setFillColor(6, 6, 8); doc.rect(0, 0, W, H, 'F');
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3); doc.rect(5, 5, W - 10, H - 10);
-    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.6); doc.rect(8, 8, W - 16, H - 16);
+  const humanLabel = processData?.humanCategory || ((processData?.humanIndex ?? '-') + '%');
+  const entropyPct = processData?.entropyPct ?? 0;
+  const entropyCV = processData?.entropyCV ?? 0;
+  const typedPct = processData?.typedPct ?? 100;
+  const pastedPct = processData?.pastedPct ?? 0;
 
-    // ── Fejléc ──
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(22); doc.setFont('helvetica', 'bold');
-    doc.text('HUMANO', W / 2, 21, { align: 'center' });
-    doc.setFontSize(6); doc.setFont('helvetica', 'normal'); doc.setTextColor(138, 106, 26);
-    doc.text('AZ EMBERI ALKOTAS DIGITALIS HITELESITOJE', W / 2, 27, { align: 'center' });
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(240, 208, 112);
-    doc.text('KELETKEZÉSI NAPLÓ – TANÚSÍTVÁNY', W / 2, 33, { align: 'center' });
-    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
-    doc.line(PL, 37, W - PR, 37);
+  // ====== PDF generálás (teljesen változatlan) ======
+  doc.setFillColor(6, 6, 8); doc.rect(0, 0, W, H, 'F');
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3); doc.rect(5, 5, W - 10, H - 10);
+  doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.6); doc.rect(8, 8, W - 16, H - 16);
 
-    // ── DOC ID box ──
-    let y = 40;
-    doc.setFillColor(22, 22, 42); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.5);
-    doc.roundedRect(PL, y, CW, 14, 2, 2, 'FD');
-    doc.setTextColor(138, 106, 26); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-    doc.text('DOKUMENTUM AZONOSITO', W / 2, y + 4, { align: 'center' });
-    doc.setTextColor(201, 168, 76); doc.setFontSize(11); doc.setFont('courier', 'bold');
-    doc.text(docId || '-', W / 2, y + 11, { align: 'center' });
-    y += 17;
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+  doc.text('HUMANO', W / 2, 21, { align: 'center' });
+  doc.setFontSize(6); doc.setFont('helvetica', 'normal'); doc.setTextColor(138, 106, 26);
+  doc.text('AZ EMBERI ALKOTAS DIGITALIS HITELESITOJE', W / 2, 27, { align: 'center' });
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(240, 208, 112);
+  doc.text('KELETKEZÉSI NAPLÓ – TANÚSÍTVÁNY', W / 2, 33, { align: 'center' });
+  doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
+  doc.line(PL, 37, W - PR, 37);
 
-    // ── Ellenőrzési URL ──
-    doc.setTextColor(100, 80, 30); doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
-    doc.text('Ellenorzesi URL: https://humano-hu.vercel.app/verify/' + (docId || ''), W / 2, y, { align: 'center' });
-    y += 5;
+  let y = 40;
+  doc.setFillColor(22, 22, 42); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.5);
+  doc.roundedRect(PL, y, CW, 14, 2, 2, 'FD');
+  doc.setTextColor(138, 106, 26); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+  doc.text('DOKUMENTUM AZONOSITO', W / 2, y + 4, { align: 'center' });
+  doc.setTextColor(201, 168, 76); doc.setFontSize(11); doc.setFont('courier', 'bold');
+  doc.text(docId || '-', W / 2, y + 11, { align: 'center' });
+  y += 17;
 
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
-    doc.line(PL, y, W - PR, y);
-    y += 4;
+  doc.setTextColor(100, 80, 30); doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
+  doc.text('Ellenorzesi URL: https://humano-hu.vercel.app/verify/' + (docId || ''), W / 2, y, { align: 'center' });
+  y += 5;
 
-    // ── Metaadatok 2 oszlopban ──
-    const meta = [
-        ['SZOVEG CIME', title || '-'],
-        ['SZERZO', author || '-'],
-        ['HITELESITES DATUMA', fmtDate(createdAt) || createdAt || '-'],
-        ['OTS STATUSZ', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : otsStatus === 'pending' ? 'Feldolgozas folyamatban' : '-'],
-    ];
-    meta.forEach(([label, value], i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const x = col === 0 ? PL : W / 2 + 1;
-        const bw = CW / 2 - 1;
-        const by = y + row * 17;
-        doc.setFillColor(16, 16, 26); doc.rect(x, by, bw, 15, 'F');
-        doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-        doc.text(label, x + 3, by + 4);
-        doc.setTextColor(232, 217, 160); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
-        doc.text(String(value).substring(0, 36), x + 3, by + 11);
-    });
-    y += 37;
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
+  doc.line(PL, y, W - PR, y);
+  y += 4;
 
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
-    doc.line(PL, y, W - PR, y);
-    y += 4;
+  const meta = [
+    ['SZOVEG CIME', title || '-'],
+    ['SZERZO', author || '-'],
+    ['HITELESITES DATUMA', fmtDate(createdAt) || createdAt || '-'],
+    ['OTS STATUSZ', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : otsStatus === 'pending' ? 'Feldolgozas folyamatban' : '-'],
+  ];
+  meta.forEach(([label, value], i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = col === 0 ? PL : W / 2 + 1;
+    const bw = CW / 2 - 1;
+    const by = y + row * 17;
+    doc.setFillColor(16, 16, 26); doc.rect(x, by, bw, 15, 'F');
+    doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+    doc.text(label, x + 3, by + 4);
+    doc.setTextColor(232, 217, 160); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+    doc.text(String(value).substring(0, 36), x + 3, by + 11);
+  });
+  y += 37;
 
-    // ── Biometrikus adatok ──
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
+  doc.line(PL, y, W - PR, y);
+  y += 4;
+
+  doc.setFillColor(16, 16, 26); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
+  doc.roundedRect(PL, y, CW, 22, 2, 2, 'FD');
+  doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
+  doc.text('BIOMETRIKUS ADATOK', PL + 4, y + 5);
+
+  const bio = [
+    ['Leutes', processData?.keystrokeCount ?? '-'],
+    ['Torles', processData?.deletionCount ?? '-'],
+    ['Szunet', processData?.pauseCount ?? '-'],
+    ['Ablakvaltas', processData?.focusSwitches ?? '-'],
+    ['Ritmus', humanLabel],
+    ['Iras ideje', processData?.sessionDurationMs ? Math.round(processData.sessionDurationMs / 60000) + ' perc' : '-'],
+  ];
+  const bColW = CW / bio.length;
+  bio.forEach(([lbl, val], i) => {
+    const bx = PL + i * bColW + bColW / 2;
+    const fontSize = String(val).length > 6 ? 5.5 : 7;
+    doc.setTextColor(240, 208, 112); doc.setFontSize(fontSize); doc.setFont('helvetica', 'bold');
+    doc.text(String(val), bx, y + 13, { align: 'center' });
+    doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+    doc.text(lbl, bx, y + 19, { align: 'center' });
+  });
+  y += 26;
+
+  doc.setFillColor(16, 16, 26); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
+  doc.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
+  doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
+  doc.text('SZOVEG OSSZETETELE & RITMUS-ENTROPIA', PL + 4, y + 5);
+
+  const compose = [
+    ['Kezzel gepelt', typedPct + '%'],
+    ['Beillesztett', pastedPct + '%'],
+    ['Entropia', entropyPct + '%'],
+    ['Entropia CV', entropyCV.toFixed(2)],
+  ];
+  const cColW = CW / compose.length;
+  compose.forEach(([lbl, val], i) => {
+    const cx = PL + i * cColW + cColW / 2;
+    doc.setTextColor(240, 208, 112); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.text(String(val), cx, y + 11, { align: 'center' });
+    doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+    doc.text(lbl, cx, y + 16, { align: 'center' });
+  });
+
+  const barX = PL + 4, barY = y + 13, barW = CW / 2 - 8, barH = 2;
+  doc.setFillColor(30, 30, 50); doc.rect(barX, barY, barW, barH, 'F');
+  doc.setFillColor(74, 184, 112); doc.rect(barX, barY, barW * (typedPct / 100), barH, 'F');
+  y += 22;
+
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
+  doc.line(PL, y, W - PR, y);
+  y += 4;
+
+  doc.setTextColor(100, 80, 30); doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
+  doc.text('SHA-256 KRIPTOGRAFIAI LENYOMAT', PL, y + 3);
+  y += 5;
+  doc.setFillColor(13, 17, 23); doc.rect(PL, y, CW, 10, 'F');
+  doc.setTextColor(166, 214, 255); doc.setFontSize(5.5); doc.setFont('courier', 'normal');
+  const h = hash || '-';
+  doc.text(h.substring(0, 64), PL + 3, y + 4);
+  if (h.length > 64) doc.text(h.substring(64), PL + 3, y + 8.5);
+  y += 14;
+
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
+  doc.line(PL, y, W - PR, y);
+  y += 4;
+
+  const pulseData = (processData?.pulseDataPoints?.length > 1) ? processData.pulseDataPoints : (E?.pulseHistory?.length > 1 ? E.pulseHistory : null);
+
+  if (pulseData && pulseData.length > 1) {
     doc.setFillColor(16, 16, 26); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
-    doc.roundedRect(PL, y, CW, 22, 2, 2, 'FD');
+    doc.roundedRect(PL, y, CW, 36, 2, 2, 'FD');
     doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
-    doc.text('BIOMETRIKUS ADATOK', PL + 4, y + 5);
+    doc.text('GEPELESI SPEKTRUM – GONDOLKODASI GORBE', W / 2, y + 6, { align: 'center' });
 
-    const bio = [
-        ['Leutes', processData?.keystrokeCount ?? '-'],
-        ['Torles', processData?.deletionCount ?? '-'],
-        ['Szunet', processData?.pauseCount ?? '-'],
-        ['Ablakvaltas', processData?.focusSwitches ?? '-'],
-        ['Ritmus', humanLabel],
-        ['Iras ideje', processData?.sessionDurationMs ? Math.round(processData.sessionDurationMs / 60000) + ' perc' : '-'],
+    const pCvs = document.createElement('canvas');
+    pCvs.width = 600; pCvs.height = 60;
+    const pCtx = pCvs.getContext('2d');
+    pCtx.fillStyle = '#101018'; pCtx.fillRect(0, 0, 600, 60);
+    const pMax = Math.max(...pulseData, 10);
+    pCtx.strokeStyle = 'rgba(201,168,76,0.1)'; pCtx.lineWidth = 1;
+    [15, 30, 45].forEach(g => { pCtx.beginPath(); pCtx.moveTo(0, g); pCtx.lineTo(600, g); pCtx.stroke(); });
+    pCtx.beginPath(); pCtx.moveTo(0, 60);
+    pulseData.forEach((v, i) => { const x = (i / (pulseData.length - 1)) * 600; const py = 60 - (v / pMax) * 52; pCtx.lineTo(x, py); });
+    pCtx.lineTo(600, 60); pCtx.closePath();
+    const fg = pCtx.createLinearGradient(0, 0, 0, 60);
+    fg.addColorStop(0, 'rgba(201,168,76,0.3)'); fg.addColorStop(1, 'rgba(201,168,76,0)');
+    pCtx.fillStyle = fg; pCtx.fill();
+    pCtx.beginPath();
+    pulseData.forEach((v, i) => { const x = (i / (pulseData.length - 1)) * 600; const py = 60 - (v / pMax) * 52; i === 0 ? pCtx.moveTo(x, py) : pCtx.lineTo(x, py); });
+    pCtx.strokeStyle = '#c9a84c'; pCtx.lineWidth = 2; pCtx.stroke();
+    doc.addImage(pCvs.toDataURL('image/png'), 'PNG', PL + 2, y + 8, CW - 4, 17);
+    y += 28;
+
+    const longestPauseSec = (() => {
+      const pev = (processData?.events || E?.events || []).filter(e => e.type === 'pause');
+      return pev.length ? Math.round(Math.max(...pev.map(p => p.duration || 0)) / 1000) : 0;
+    })();
+    const pStats = [
+      ['Leütések', String(processData?.keystrokeCount ?? E?.keys ?? '-')],
+      ['Javítások', String(processData?.deletionCount ?? E?.dels ?? '-')],
+      ['Szünetek', String(processData?.pauseCount ?? E?.pauses ?? '-')],
+      ['Legh. szünet', longestPauseSec > 0 ? longestPauseSec + 'mp' : '-'],
+      ['Ritmus', humanLabel],
+      ['Entropia', entropyPct + '%'],
     ];
-    const bColW = CW / bio.length;
-    bio.forEach(([lbl, val], i) => {
-        const bx = PL + i * bColW + bColW / 2;
-        const fontSize = String(val).length > 6 ? 5.5 : 7;
-        doc.setTextColor(240, 208, 112); doc.setFontSize(fontSize); doc.setFont('helvetica', 'bold');
-        doc.text(String(val), bx, y + 13, { align: 'center' });
-        doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-        doc.text(lbl, bx, y + 19, { align: 'center' });
+    const psW = CW / pStats.length;
+    pStats.forEach(([lbl, val], i) => {
+      const px = PL + i * psW + psW / 2;
+      const fs = String(val).length > 6 ? 5 : 7;
+      doc.setTextColor(240, 208, 112); doc.setFontSize(fs); doc.setFont('helvetica', 'bold');
+      doc.text(val, px, y + 5, { align: 'center' });
+      doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+      doc.text(lbl, px, y + 10, { align: 'center' });
     });
-    y += 26;
-
-    // ── Entrópia + Paste arány szekció ──
-    doc.setFillColor(16, 16, 26); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
-    doc.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
-    doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
-    doc.text('SZOVEG OSSZETETELE & RITMUS-ENTROPIA', PL + 4, y + 5);
-
-    const compose = [
-        ['Kezzel gepelt', typedPct + '%'],
-        ['Beillesztett', pastedPct + '%'],
-        ['Entropia', entropyPct + '%'],
-        ['Entropia CV', entropyCV.toFixed(2)],
-    ];
-    const cColW = CW / compose.length;
-    compose.forEach(([lbl, val], i) => {
-        const cx = PL + i * cColW + cColW / 2;
-        doc.setTextColor(240, 208, 112); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-        doc.text(String(val), cx, y + 11, { align: 'center' });
-        doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-        doc.text(lbl, cx, y + 16, { align: 'center' });
-    });
-
-    // Vizuális sáv a paste arányhoz
-    const barX = PL + 4, barY = y + 13, barW = CW / 2 - 8, barH = 2;
-    doc.setFillColor(30, 30, 50); doc.rect(barX, barY, barW, barH, 'F');
-    doc.setFillColor(74, 184, 112); doc.rect(barX, barY, barW * (typedPct / 100), barH, 'F');
-    y += 22;
-
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
-    doc.line(PL, y, W - PR, y);
-    y += 4;
-
-    // ── SHA-256 hash ──
-    doc.setTextColor(100, 80, 30); doc.setFontSize(5.5); doc.setFont('helvetica', 'normal');
-    doc.text('SHA-256 KRIPTOGRAFIAI LENYOMAT', PL, y + 3);
-    y += 5;
-    doc.setFillColor(13, 17, 23); doc.rect(PL, y, CW, 10, 'F');
-    doc.setTextColor(166, 214, 255); doc.setFontSize(5.5); doc.setFont('courier', 'normal');
-    const h = hash || '-';
-    doc.text(h.substring(0, 64), PL + 3, y + 4);
-    if (h.length > 64) doc.text(h.substring(64), PL + 3, y + 8.5);
     y += 14;
+  }
 
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
-    doc.line(PL, y, W - PR, y);
-    y += 4;
+  doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
+  doc.line(PL, y, W - PR, y);
+  y += 4;
 
-    // ── Pulzusgrafikon ──
-    const pulseData = (processData?.pulseDataPoints?.length > 1) ? processData.pulseDataPoints : (E?.pulseHistory?.length > 1 ? E.pulseHistory : null);
+  const verifyUrl = 'https://humano-hu.vercel.app/verify/' + (docId || '');
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(verifyUrl) + '&color=C9A84C&bgcolor=1a1a2e&margin=4&format=png';
+  const blockH = H - 20 - y;
 
-    if (pulseData && pulseData.length > 1) {
-        doc.setFillColor(16, 16, 26); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
-        doc.roundedRect(PL, y, CW, 36, 2, 2, 'FD');
-        doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
-        doc.text('GEPELESI SPEKTRUM – GONDOLKODASI GORBE', W / 2, y + 6, { align: 'center' });
+  await new Promise(resolve => {
+    const qrImg = new Image(); qrImg.crossOrigin = 'anonymous';
+    qrImg.onload = () => {
+      const cvs = document.createElement('canvas'); cvs.width = 120; cvs.height = 120;
+      cvs.getContext('2d').drawImage(qrImg, 0, 0, 120, 120);
 
-        const pCvs = document.createElement('canvas');
-        pCvs.width = 600; pCvs.height = 60;
-        const pCtx = pCvs.getContext('2d');
-        pCtx.fillStyle = '#101018'; pCtx.fillRect(0, 0, 600, 60);
-        const pMax = Math.max(...pulseData, 10);
-        pCtx.strokeStyle = 'rgba(201,168,76,0.1)'; pCtx.lineWidth = 1;
-        [15, 30, 45].forEach(g => { pCtx.beginPath(); pCtx.moveTo(0, g); pCtx.lineTo(600, g); pCtx.stroke(); });
-        pCtx.beginPath(); pCtx.moveTo(0, 60);
-        pulseData.forEach((v, i) => { const x = (i / (pulseData.length - 1)) * 600; const py = 60 - (v / pMax) * 52; pCtx.lineTo(x, py); });
-        pCtx.lineTo(600, 60); pCtx.closePath();
-        const fg = pCtx.createLinearGradient(0, 0, 0, 60);
-        fg.addColorStop(0, 'rgba(201,168,76,0.3)'); fg.addColorStop(1, 'rgba(201,168,76,0)');
-        pCtx.fillStyle = fg; pCtx.fill();
-        pCtx.beginPath();
-        pulseData.forEach((v, i) => { const x = (i / (pulseData.length - 1)) * 600; const py = 60 - (v / pMax) * 52; i === 0 ? pCtx.moveTo(x, py) : pCtx.lineTo(x, py); });
-        pCtx.strokeStyle = '#c9a84c'; pCtx.lineWidth = 2; pCtx.stroke();
-        doc.addImage(pCvs.toDataURL('image/png'), 'PNG', PL + 2, y + 8, CW - 4, 17);
-        y += 28;
+      const qrColW = CW * 0.38;
+      doc.setFillColor(22, 22, 42); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
+      doc.roundedRect(PL, y, qrColW, blockH, 2, 2, 'FD');
+      doc.setTextColor(201, 168, 76); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
+      doc.text('QR KOD – MOBIL ELLENORZES', PL + qrColW / 2, y + 5, { align: 'center' });
+      const qrSize = Math.min(blockH - 14, 28);
+      const qrX = PL + qrColW / 2 - qrSize / 2;
+      doc.addImage(cvs.toDataURL('image/png'), 'PNG', qrX, y + 7, qrSize, qrSize);
+      doc.setTextColor(100, 80, 30); doc.setFontSize(4.5); doc.setFont('helvetica', 'normal');
+      doc.text('Szkeneld be az azonnali ellenorzeshez', PL + qrColW / 2, y + blockH - 3, { align: 'center' });
 
-        const longestPauseSec = (() => {
-            const pev = (processData?.events || E?.events || []).filter(e => e.type === 'pause');
-            return pev.length ? Math.round(Math.max(...pev.map(p => p.duration || 0)) / 1000) : 0;
-        })();
-        const pStats = [
-            ['Leütések', String(processData?.keystrokeCount ?? E?.keys ?? '-')],
-            ['Javítások', String(processData?.deletionCount ?? E?.dels ?? '-')],
-            ['Szünetek', String(processData?.pauseCount ?? E?.pauses ?? '-')],
-            ['Legh. szünet', longestPauseSec > 0 ? longestPauseSec + 'mp' : '-'],
-            ['Ritmus', humanLabel],
-            ['Entropia', entropyPct + '%'],
-        ];
-        const psW = CW / pStats.length;
-        pStats.forEach(([lbl, val], i) => {
-            const px = PL + i * psW + psW / 2;
-            const fs = String(val).length > 6 ? 5 : 7;
-            doc.setTextColor(240, 208, 112); doc.setFontSize(fs); doc.setFont('helvetica', 'bold');
-            doc.text(val, px, y + 5, { align: 'center' });
-            doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-            doc.text(lbl, px, y + 10, { align: 'center' });
-        });
-        y += 14;
-    }
+      const rx = PL + qrColW + 3;
+      const rw = CW - qrColW - 3;
+      doc.setFillColor(16, 16, 26); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
+      doc.roundedRect(rx, y, rw, blockH, 2, 2, 'FD');
+      doc.setTextColor(201, 168, 76); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
+      doc.text('ELLENORZESI ADATOK', rx + rw / 2, y + 5, { align: 'center' });
+      const lines = [
+        ['DOC ID', (docId || '-').substring(0, 26)],
+        ['Szerzo', (author || '-').substring(0, 26)],
+        ['Datum', fmtDate(createdAt) || '-'],
+        ['OTS', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : 'Feldolgozas folyamatban'],
+        ['Ritmus', humanLabel],
+        ['Kezzel gepelt', typedPct + '%'],
+        ['Entropia', entropyPct + '%'],
+      ];
+      lines.forEach(([lbl, val], i) => {
+        const ly = y + 13 + i * 5.5;
+        doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+        doc.text(lbl + ':', rx + 3, ly);
+        doc.setTextColor(200, 190, 160); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
+        doc.text(String(val), rx + 24, ly);
+      });
+      resolve();
+    };
+    qrImg.onerror = () => {
+      doc.setFillColor(22, 22, 42); doc.roundedRect(PL, y, CW, blockH, 2, 2, 'FD');
+      doc.setTextColor(100, 80, 30); doc.setFontSize(6);
+      doc.text('QR: ' + verifyUrl, W / 2, y + blockH / 2, { align: 'center' });
+      resolve();
+    };
+    qrImg.src = qrUrl;
+  });
 
-    doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.2);
-    doc.line(PL, y, W - PR, y);
-    y += 4;
+  doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
+  doc.line(PL, H - 16, W - PR, H - 16);
+  doc.setTextColor(100, 80, 30); doc.setFontSize(6); doc.setFont('helvetica', 'normal');
+  doc.text('Ellenorzes: humano-hu.vercel.app · opentimestamps.org · SHA-256 · Bitcoin blokklánc', W / 2, H - 11, { align: 'center' });
+  doc.setFontSize(5.5);
+  doc.text('Generalva: ' + new Date().toLocaleString('hu-HU'), W / 2, H - 6, { align: 'center' });
 
-    // ── QR kód bal + összefoglaló adatok jobb ──
-    const verifyUrl = 'https://humano-hu.vercel.app/verify/' + (docId || '');
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(verifyUrl) + '&color=C9A84C&bgcolor=1a1a2e&margin=4&format=png';
-    const blockH = H - 20 - y;
+  // ====== 1. PDF letöltése (C2PA NÉLKÜL) ======
+  doc.save('HUMANO-Tanusitvany-' + (docId || 'cert') + '.pdf');
+  showToast('📄 PDF tanúsítvány letöltve!');
 
-    await new Promise(resolve => {
-        const qrImg = new Image(); qrImg.crossOrigin = 'anonymous';
-        qrImg.onload = () => {
-            const cvs = document.createElement('canvas'); cvs.width = 120; cvs.height = 120;
-            cvs.getContext('2d').drawImage(qrImg, 0, 0, 120, 120);
+  // ====== 2. JPG készítése CANVAS segítségével ======
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 1000;
+  const ctx = canvas.getContext('2d');
 
-            const qrColW = CW * 0.38;
-            doc.setFillColor(22, 22, 42); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
-            doc.roundedRect(PL, y, qrColW, blockH, 2, 2, 'FD');
-            doc.setTextColor(201, 168, 76); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
-            doc.text('QR KOD – MOBIL ELLENORZES', PL + qrColW / 2, y + 5, { align: 'center' });
-            const qrSize = Math.min(blockH - 14, 28);
-            const qrX = PL + qrColW / 2 - qrSize / 2;
-            doc.addImage(cvs.toDataURL('image/png'), 'PNG', qrX, y + 7, qrSize, qrSize);
-            doc.setTextColor(100, 80, 30); doc.setFontSize(4.5); doc.setFont('helvetica', 'normal');
-            doc.text('Szkeneld be az azonnali ellenorzeshez', PL + qrColW / 2, y + blockH - 3, { align: 'center' });
+  // Háttér
+  ctx.fillStyle = '#060608';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const rx = PL + qrColW + 3;
-            const rw = CW - qrColW - 3;
-            doc.setFillColor(16, 16, 26); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
-            doc.roundedRect(rx, y, rw, blockH, 2, 2, 'FD');
-            doc.setTextColor(201, 168, 76); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
-            doc.text('ELLENORZESI ADATOK', rx + rw / 2, y + 5, { align: 'center' });
-            const lines = [
-                ['DOC ID', (docId || '-').substring(0, 26)],
-                ['Szerzo', (author || '-').substring(0, 26)],
-                ['Datum', fmtDate(createdAt) || '-'],
-                ['OTS', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : 'Feldolgozas folyamatban'],
-                ['Ritmus', humanLabel],
-                ['Kezzel gepelt', typedPct + '%'],
-                ['Entropia', entropyPct + '%'],
-            ];
-            lines.forEach(([lbl, val], i) => {
-                const ly = y + 13 + i * 5.5;
-                doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
-                doc.text(lbl + ':', rx + 3, ly);
-                doc.setTextColor(200, 190, 160); doc.setFontSize(5.5); doc.setFont('helvetica', 'bold');
-                doc.text(String(val), rx + 24, ly);
-            });
-            resolve();
-        };
-        qrImg.onerror = () => {
-            doc.setFillColor(22, 22, 42); doc.roundedRect(PL, y, CW, blockH, 2, 2, 'FD');
-            doc.setTextColor(100, 80, 30); doc.setFontSize(6);
-            doc.text('QR: ' + verifyUrl, W / 2, y + blockH / 2, { align: 'center' });
-            resolve();
-        };
-        qrImg.src = qrUrl;
-    });
+  // Arany keret
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-    // ── Lábléc ──
-    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4);
-    doc.line(PL, H - 16, W - PR, H - 16);
-    doc.setTextColor(100, 80, 30); doc.setFontSize(6); doc.setFont('helvetica', 'normal');
-    doc.text('Ellenorzes: humano-hu.vercel.app · opentimestamps.org · SHA-256 · Bitcoin blokklánc', W / 2, H - 11, { align: 'center' });
-    doc.setFontSize(5.5);
-    doc.text('Generalva: ' + new Date().toLocaleString('hu-HU'), W / 2, H - 6, { align: 'center' });
+  // HUMANO fejléc
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 42px "Cormorant Garamond", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('✦ HUMANO ✦', canvas.width / 2, 80);
 
-    // 1. PDF → base64
-const pdfOutput = doc.output('datauristring');  // data:application/pdf;base64,...
-const base64Pdf = pdfOutput.split(',')[1];
+  ctx.font = 'bold 20px "Outfit", sans-serif';
+  ctx.fillStyle = '#f0d070';
+  ctx.fillText('HITELESÍTÉSI TANÚSÍTVÁNY', canvas.width / 2, 120);
 
-// 2. Manifest adatok összeszedése
-const manifestData = {
-  claim_generator: "HUMANO/1.0",
-  claim_generator_info: [{ name: "HUMANO Platform", version: "1.0" }],
-  format: "application/pdf",
-  assertions: [
-    {
-      label: "c2pa.actions",
-      data: { actions: [{ action: "c2pa.created", softwareAgent: "HUMANO Platform v1.0" }] }
-    },
-    {
-      label: "humano.certification",
-      data: {
-        doc_id: docId,
-        human_index: processData.humanIndex || 0,
-        human_category: processData.humanCategory || "ismeretlen",
-        timestamp: new Date().toISOString(),
-        integrity: {
-          document_hash: `sha256:${hash}`,
-          ots_txid: otsTxid || null,
-          zkp_proof: zkpProof || null
-        },
-        verification_metrics: {
-          typed_percent: processData.typedPct || 100,
-          pasted_percent: processData.pastedPct || 0
+  // DOC ID
+  ctx.font = 'bold 14px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('DOC ID:', 60, 180);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(docId || '-', 200, 180);
+
+  // Szerző
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Szerző:', 60, 220);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(author || '-', 200, 220);
+
+  // Dátum
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Dátum:', 60, 260);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(fmtDate(createdAt) || '-', 200, 260);
+
+  // Humán Index
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 16px "Outfit", sans-serif';
+  ctx.fillText('Humán Index', 60, 320);
+  ctx.font = 'bold 32px "Cormorant Garamond", serif';
+  ctx.fillStyle = processData?.humanIndex > 70 ? '#4ab870' : (processData?.humanIndex > 40 ? '#c9a84c' : '#e05555');
+  ctx.fillText((processData?.humanIndex || '–') + '%', 60, 370);
+
+  // Ritmus kategória
+  ctx.font = 'bold 18px "Outfit", sans-serif';
+  ctx.fillStyle = '#f0d070';
+  ctx.fillText(processData?.humanCategory || '–', 60, 420);
+
+  // Összefoglaló adatok
+  ctx.font = 'bold 14px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Leütések:', 60, 500);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(processData?.keystrokeCount ?? '–'), 200, 500);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Javítások:', 60, 540);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(processData?.deletionCount ?? '–'), 200, 540);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Szünetek:', 60, 580);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(processData?.pauseCount ?? '–'), 200, 580);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Kézzel gépelt:', 60, 620);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText((processData?.typedPct ?? 100) + '%', 200, 620);
+
+  // OTS státusz
+  ctx.fillStyle = otsStatus === 'confirmed' ? '#4ab870' : '#c9a84c';
+  ctx.font = 'bold 16px "Outfit", sans-serif';
+  ctx.fillText(otsStatus === 'confirmed' ? '⛓️ Bitcoin blokkláncon' : '⏳ Bitcoin blokklánc folyamatban', canvas.width / 2, 700);
+
+  // Ellenőrzési link
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = '12px "JetBrains Mono", monospace';
+  ctx.fillText('🔗 humano-hu.vercel.app/verify/' + (docId || ''), canvas.width / 2, 760);
+
+  // Lábléc
+  ctx.fillStyle = '#6a5020';
+  ctx.font = '12px "Outfit", sans-serif';
+  ctx.fillText('HUMANO · Az emberi alkotás digitális hitelesítője', canvas.width / 2, 920);
+
+  // ====== 3. JPG → base64 ======
+  const jpgBase64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+
+  // ====== 4. Manifest adatok (ugyanaz, mint PDF-nél) ======
+  const manifestData = {
+    claim_generator: "HUMANO/1.0",
+    claim_generator_info: [{ name: "HUMANO Platform", version: "1.0" }],
+    format: "image/jpeg",
+    assertions: [
+      {
+        label: "c2pa.actions",
+        data: { actions: [{ action: "c2pa.created", softwareAgent: "HUMANO Platform v1.0" }] }
+      },
+      {
+        label: "humano.certification",
+        data: {
+          doc_id: docId,
+          human_index: processData.humanIndex || 0,
+          human_category: processData.humanCategory || "ismeretlen",
+          timestamp: new Date().toISOString(),
+          integrity: {
+            document_hash: `sha256:${hash}`,
+            ots_txid: otsTxid || null,
+            zkp_proof: zkpProof || null
+          },
+          verification_metrics: {
+            typed_percent: processData.typedPct || 100,
+            pasted_percent: processData.pastedPct || 0
+          }
         }
       }
+    ]
+  };
+
+  // ====== 5. Küldés a C2PA szerverre ======
+  try {
+    const response = await fetch('http://localhost:3001/sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pdfBase64: jpgBase64,      // ideiglenesen ugyanaz a mezőnév, de JPG-t küldünk
+        manifestData: manifestData
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      console.error('C2PA hiba (JPG):', data.error);
+      // Ha nem sikerül, letöltjük az aláíratlan JPG-t
+      const blob = await (await fetch(canvas.toDataURL('image/jpeg', 0.9))).blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HUMANO-C2PA-${docId}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('⚠️ C2PA aláírás nélküli JPG letöltve');
+    } else {
+      // Aláírt JPG letöltése
+      const blob = base64ToBlob(data.signedPdf, 'image/jpeg');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HUMANO-C2PA-${docId}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ C2PA‑val hitelesített JPG letöltve!');
     }
-  ]
-};
-
-// 3. Küldés a Supabase Edge Function‑nak
-const { data, error } = await db.functions.invoke('c2pa-signer', {
-  body: { pdfBase64: base64Pdf, manifestData }
-});
-
-if (error) {
-  console.error('C2PA hiba:', error);
-  // Ha nem sikerül, letöltjük az aláíratlant
-  doc.save('HUMANO-Tanusitvany-' + (docId || 'cert') + '.pdf');
-} else {
-  // 4. Aláírt PDF letöltése
-  const blob = base64ToBlob(data.signedPdf, 'application/pdf');
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `HUMANO-Tanusitvany-${docId}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Hálózati hiba (JPG):', err);
+    // Fallback: aláíratlan JPG
+    const blob = await (await fetch(canvas.toDataURL('image/jpeg', 0.9))).blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `HUMANO-C2PA-${docId}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('⚠️ Hálózati hiba – C2PA nélküli JPG letöltve');
+  }
 }
-
-showToast('PDF tanúsítvány letöltve!');
-}   
 
 /* ─── 11. MEGOSZTÁS ─────────────────────────────────────────── */
 function openSocialModal() {
