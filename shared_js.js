@@ -1384,6 +1384,7 @@ function setEl(id, val, prop = 'value') {
 async function loadProfile() {
     if (!currentUser) return;
     if (!document.getElementById('p-username')) return;
+   loadConsentSettings();
 
     const [{ data: p }, { count: dc }] = await Promise.all([
         db.from('profiles').select('*').eq('id', currentUser.id).single(),
