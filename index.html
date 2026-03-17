@@ -2363,7 +2363,6 @@ async function editorSave() {
     const category  = document.getElementById('doc-category')?.value || null;
     const content   = document.getElementById('doc-content-area')?.innerHTML || '';
     const plainText = document.getElementById('doc-content-area')?.innerText || '';
-
     if (!title) { showToast('❌ Add meg a szöveg címét!'); return; }
     if (plainText.trim().split(/\s+/).filter(Boolean).length < 100) {
         showToast('❌ Minimum 100 szó szükséges!'); return;
@@ -2374,20 +2373,18 @@ async function editorSave() {
         const hash = await sha256(plainText);
         const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
         if (!profile) throw new Error('Profil nem található');
-
         const plan  = profile.plan || 'free';
         const used  = profile.used_credits || 0;
-        const limit = profile.monthly_credits || 1;
-        if (plan === 'free' && used >= limit) {
+        const limit = profile.monthly_credits || 10;
+        const trialActive = profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+        if (!trialActive && plan === 'free' && used >= limit) {
             showToast('❌ Havi keret elérve!');
             openPricingContact('free_limit');
             if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
             return;
         }
-
         const ts    = Date.now().toString(36).toUpperCase();
         const docId = `DOC-${profile.humano_id?.split('-')[1] || 'HMN'}-${ts}`;
-
         const intervals = E.events
             .filter(e => e.type === 'key')
             .map(e => e.interval)
