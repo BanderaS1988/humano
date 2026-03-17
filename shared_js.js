@@ -815,8 +815,64 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     doc.setFontSize(5.5);
     doc.text('Generalva: ' + new Date().toLocaleString('hu-HU'), W / 2, H - 6, { align: 'center' });
 
-    doc.save('HUMANO-Tanusitvany-' + (docId || 'cert') + '.pdf');
-    showToast('PDF tanusitvany letoltve!');
+    // 1. PDF → base64
+const pdfOutput = doc.output('datauristring');  // data:application/pdf;base64,...
+const base64Pdf = pdfOutput.split(',')[1];
+
+// 2. Manifest adatok összeszedése
+const manifestData = {
+  claim_generator: "HUMANO/1.0",
+  claim_generator_info: [{ name: "HUMANO Platform", version: "1.0" }],
+  format: "application/pdf",
+  assertions: [
+    {
+      label: "c2pa.actions",
+      data: { actions: [{ action: "c2pa.created", softwareAgent: "HUMANO Platform v1.0" }] }
+    },
+    {
+      label: "humano.certification",
+      data: {
+        doc_id: docId,
+        human_index: processData.humanIndex || 0,
+        human_category: processData.humanCategory || "ismeretlen",
+        timestamp: new Date().toISOString(),
+        integrity: {
+          document_hash: `sha256:${hash}`,
+          ots_txid: otsTxid || null,
+          zkp_proof: zkpProof || null
+        },
+        verification_metrics: {
+          typed_percent: processData.typedPct || 100,
+          pasted_percent: processData.pastedPct || 0
+        }
+      }
+    }
+  ]
+};
+
+// 3. Küldés a Supabase Edge Function‑nak
+const { data, error } = await supabase.functions.invoke('c2pa-signer', {
+  body: { pdfBase64: base64Pdf, manifestData }
+});
+
+if (error) {
+  console.error('C2PA hiba:', error);
+  // Ha nem sikerül, letöltjük az aláíratlant
+  doc.save('HUMANO-Tanusitvany-' + (docId || 'cert') + '.pdf');
+} else {
+  // 4. Aláírt PDF letöltése
+  const blob = base64ToBlob(data.signedPdf, 'application/pdf');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `HUMANO-Tanusitvany-${docId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+showToast('PDF tanúsítvány letöltve!');
 }   
 
 /* ─── 11. MEGOSZTÁS ─────────────────────────────────────────── */
