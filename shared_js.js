@@ -4657,10 +4657,6 @@ async function updateAppealStatus(appealId, status, notes) {
   loadAppeals();
 }
 
-// ─────────────────────────────────────────────────────────────
-// EU AI ACT DISCLAIMER
-// ─────────────────────────────────────────────────────────────
-
 async function checkAndShowAiActDisclaimer(docId) {
   const key = 'humano_aiact_shown';
   if (localStorage.getItem(key)) return;
@@ -4677,10 +4673,10 @@ async function checkAndShowAiActDisclaimer(docId) {
       <li>Minden automatikus jelzés emberileg felülvizsgálható</li>
     </ul>
     <a href="javascript:void(0)"
-   onclick="closeInfoModal();showPage('about')"
-   style="color:var(--gold);font-size:.82rem">
-  Teljes EU AI Act megfelelőségi dokumentáció →
-</a>
+       onclick="closeInfoModal();showPage('about')"
+       style="color:var(--gold);font-size:.82rem">
+      Teljes EU AI Act megfelelőségi dokumentáció →
+    </a>`
   );
 
   localStorage.setItem(key, '1');
