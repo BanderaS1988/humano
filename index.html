@@ -166,8 +166,8 @@
                 border-radius:var(--r-sm);padding:.85rem 1rem;
                 margin-bottom:1.25rem;font-size:.8rem;color:var(--muted);line-height:1.8">
       <strong style="color:var(--gold2)">A jogaid:</strong><br>
-      Bármikor visszavonhatod a beleegyezést a profiloldalon.
-      Visszavonás esetén az adatokat 30 napon belül töröljük.
+      Visszavonás a profiloldalon → 'Biometrikus beleegyezések' szekcióban, 
+a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül törlődnek.
       A blokkláncon lévő hash-ek nem tartalmaznak biometrikus adatot,
       ezért azok megmaradnak.
     </div>
@@ -1529,7 +1529,8 @@ document.addEventListener('humano:verify-result', () => {
         Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya, szöveg kategóriája (opcionális, felhasználó által megadott – aggregált statisztikai elemzéshez használható). Jogalap: szerződés teljesítése.<br><br>
         <strong style="color:var(--gold3)">Fontos:</strong> A billentyűleütés-dinamika kizárólag statisztikai formában kerül tárolásra. A leütött billentyűk karakterei nem kerülnek naplózásra – kivéve a szöveg tartalmát, amelyet a felhasználó maga ment el.<br><br>
         <strong style="color:var(--gold3)">2.3 Kalibrációs profil (opcionális)</strong><br>
-        Ha a felhasználó elvégzi az Írói Azonosság Kalibrációt, a rendszer eltárolja az egyedi gépelési mintázat statisztikai jellemzőit: átlagos gépelési burst hossza, gondolkodási szünetek szórása, javítási arány, ritmus-entrópia. Ezek kizárólag a felhasználó saját profiljához való összehasonlításra szolgálnak, harmadik félnek nem kerülnek átadásra, és a fiók törlésekor véglegesen törlődnek. Jogalap: hozzájárulás (GDPR 6. cikk a) pont).<br><br>
+        Ha a felhasználó elvégzi az Írói Azonosság Kalibrációt, a rendszer eltárolja az egyedi gépelési mintázat statisztikai jellemzőit: átlagos gépelési burst hossza, gondolkodási szünetek szórása, javítási arány, ritmus-entrópia. Ezek kizárólag a felhasználó saját profiljához való összehasonlításra szolgálnak, harmadik félnek nem kerülnek átadásra, és A kalibrációs profilodat a profiloldalon külön is törölheted, 
+a beleegyezés visszavonásával együtt vagy attól függetlenül.. Jogalap: hozzájárulás (GDPR 6. cikk a) pont).<br><br>
         <strong style="color:var(--gold3)">2.4 Profiladatok (opcionális)</strong><br>
         Teljes név, weboldal, foglalkozás, bio, település – hozzájárulás alapján, fiók törléséig.<br><br>
         <strong style="color:var(--gold3)">2.5 Technikai adatok</strong><br>
