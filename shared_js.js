@@ -91,6 +91,24 @@ const FAQS = [
 ];
 
 
+function getPlanLabel(plan) {
+    const labels = {
+        free: 'Ingyenes', lite: 'Lite',
+        pro: 'Alkotó / Pro', institution: 'Intézményi',
+        premium: 'Alkotó / Pro', student: 'Lite',
+    };
+    return labels[plan] || 'Ingyenes';
+}
+
+function getPlanMonthlyLimit(plan) {
+    const limits = { free: 5, lite: 15, pro: 50, institution: Infinity, premium: 50, student: 15 };
+    return limits[plan] ?? 5;
+}
+
+function isPlanUnlimited(plan) {
+    return plan === 'pro' || plan === 'institution' || plan === 'premium';
+}
+
 /* ─── 3. SUPABASE INIT ──────────────────────────────────────── */
 const { createClient } = supabase;
 const db = createClient(SUPA_URL, SUPA_ANON);
@@ -324,14 +342,18 @@ async function doLogout() {
 
 async function cancelSubscription() {
     if (!currentUser) return showToast('❌ Be kell jelentkezni!');
-    if (!confirm('Biztosan le szeretnéd mondani az előfizetésedet? A hitelesítési előzmények és HUMANO ID megmaradnak.')) return;
+    if (!confirm(
+        'Biztosan le szeretnéd mondani az előfizetésedet?\n' +
+        'A hitelesítési előzmények és HUMANO ID megmaradnak.\n' +
+        'Ingyenes csomag: havi 5 hitelesítés.'
+    )) return;
     try {
         const { error } = await db.from('profiles').update({
             plan: 'free',
-            monthly_credits: 1
+            monthly_credits: getPlanMonthlyLimit('free'),
         }).eq('id', currentUser.id);
         if (error) throw error;
-        showToast('✅ Előfizetés lemondva – ingyenes csomagra visszaállítva.');
+        showToast('✅ Előfizetés lemondva – ingyenes csomagra visszaállítva (5/hó).');
         loadProfile();
     } catch (err) {
         showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
@@ -1276,16 +1298,18 @@ function openPricingContact(plan) {
     const box = document.getElementById('pricing-contact-box');
     if (!box) return;
     const titles = {
-        student: '🎓 Tanuló csomag – előfizetési érdeklődés',
-        pro: '⭐ Alkotó / Pro csomag – előfizetési érdeklődés',
-        institution: '🏢 Intézményi csomag – ajánlatkérés',
-        oneshot: '💎 Egyszeri hitelesítés – érdeklődés',
-        free_limit: '⬆️ Csomag frissítés – keret elérve',
+        lite:        '⚡ Lite csomag – előfizetési érdeklődés',
+        pro:         '⭐ Alkotó / Pro csomag – előfizetési érdeklődés',
+        institution: '🏛️ Intézményi csomag – egyedi ajánlatkérés',
+        free_limit:  '⬆️ Csomag frissítés – havi keret elérve',
+        student:     '⚡ Lite csomag – előfizetési érdeklődés',
+        premium:     '⭐ Alkotó / Pro csomag – előfizetési érdeklődés',
+        oneshot:     '⭐ Alkotó / Pro csomag – érdeklődés',
     };
     const titleEl = document.getElementById('pricing-contact-title');
-    const planEl = document.getElementById('pricing-plan-hidden');
+    const planEl  = document.getElementById('pricing-plan-hidden');
     if (titleEl) titleEl.textContent = titles[plan] || 'Előfizetési érdeklődés';
-    if (planEl) planEl.value = plan;
+    if (planEl)  planEl.value = plan;
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth' });
 }
@@ -1295,15 +1319,18 @@ async function submitPricingForm(e) {
     const al = document.getElementById('pricing-contact-alert');
     if (al) al.innerHTML = '<div class="alert alert-info">⏳ Küldés...</div>';
     const data = new FormData(e.target);
+    data.set('csomag_megjeloles', getPlanLabel(data.get('csomag') || ''));
     try {
-        const resp = await fetch(FORMSPREE_URL, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        const resp = await fetch(FORMSPREE_URL, {
+            method: 'POST', body: data, headers: { Accept: 'application/json' },
+        });
         if (resp.ok) {
             if (al) al.innerHTML = '<div class="alert alert-success">✅ Üzenet elküldve! Hamarosan visszajelzünk.</div>';
             e.target.reset();
         } else {
             if (al) al.innerHTML = '<div class="alert alert-error">❌ Hiba küldéskor. Próbáld újra!</div>';
         }
-    } catch (err) {
+    } catch {
         if (al) al.innerHTML = '<div class="alert alert-error">❌ Hálózati hiba.</div>';
     }
 }
@@ -1616,15 +1643,12 @@ function setEl(id, val, prop = 'value') {
 async function loadProfile() {
     if (!currentUser) return;
     if (!document.getElementById('p-username')) return;
-   loadConsentSettings();
-
+    loadConsentSettings();
     const [{ data: p }, { count: dc }] = await Promise.all([
         db.from('profiles').select('*').eq('id', currentUser.id).single(),
-        db.from('documents').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id)
+        db.from('documents').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id),
     ]);
-
     if (!p) return;
-
     setEl('p-username',   p.username);
     setEl('p-humano-id',  p.humano_id);
     setEl('p-email',      currentUser.email);
@@ -1633,18 +1657,15 @@ async function loadProfile() {
     setEl('p-location',   p.location);
     setEl('p-occupation', p.occupation);
     setEl('p-bio',        p.bio);
-
     setEl('p-stat-docs',  dc ?? '–', 'textContent');
-    setEl('p-stat-plan',  { premium: 'Pro', student: 'Tanuló', institution: 'Intézményi' }[p.plan] || 'Ingyenes', 'textContent');
-
+    setEl('p-stat-plan',  getPlanLabel(p.plan), 'textContent');
     window._originalProfile = {
         fullname:   p.fullname   || '',
         website:    p.website    || '',
         location:   p.location   || '',
         occupation: p.occupation || '',
-        bio:        p.bio        || ''
+        bio:        p.bio        || '',
     };
-
     initProfileListeners();
 }
 
@@ -1718,32 +1739,42 @@ async function saveProfile() {
 async function loadDashboard() {
     if (!currentUser) return;
     const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-    const { data: docs } = await db.from('documents').select('*').eq('author_id', currentUser.id).order('saved_at', { ascending: false });
+    const { data: docs }    = await db.from('documents').select('*').eq('author_id', currentUser.id).order('saved_at', { ascending: false });
     allUserDocs = docs || [];
 
-    document.getElementById('d-username').textContent = profile?.username || currentUser.email;
+    document.getElementById('d-username').textContent  = profile?.username || currentUser.email;
     document.getElementById('d-humano-id').textContent = `HUMANO ID: ${profile?.humano_id || '–'}`;
 
-    const used = profile?.used_credits || 0;
-    const limit = profile?.monthly_credits || 1;
-    const plan = profile?.plan || 'free';
-    const pct = plan === 'premium' ? 0 : Math.min(100, (used / limit) * 100);
+    const plan       = profile?.plan           || 'free';
+    const used       = profile?.used_credits   || 0;
+    const limit      = profile?.monthly_credits ?? getPlanMonthlyLimit(plan);
+    const unlimited  = isPlanUnlimited(plan);
+    const pct        = unlimited ? 0 : Math.min(100, (used / Math.max(limit, 1)) * 100);
+    const trialActive    = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+    const trialDaysLeft  = trialActive
+        ? Math.ceil((new Date(profile.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24))
+        : 0;
 
     document.getElementById('d-stats').innerHTML = [
         { label: 'Hitelesített szövegek', val: allUserDocs.length, sub: 'összesen' },
-        { label: 'Felhasznált kredit', val: used, sub: `/ ${plan === 'premium' ? '∞' : limit}` },
-        { label: 'Csomag', val: plan === 'premium' ? 'Pro' : 'Free', sub: '' },
+        { label: 'Felhasznált kredit',    val: used, sub: `/ ${unlimited ? '∞' : limit}` },
+        { label: 'Csomag', val: getPlanLabel(plan), sub: trialActive ? `🎁 Próba: még ${trialDaysLeft} nap` : '' },
         { label: 'Regisztrált', val: (fmtDate(profile?.created_at || '') || '–').split(' ')[0] || '–', sub: '' },
-    ].map(s => `<div class="card stat-card"><div class="s-label">${s.label}</div><div class="s-val gt">${s.val}</div>${s.sub ? `<div class="s-sub">${s.sub}</div>` : ''}</div>`).join('');
+    ].map(s =>
+        `<div class="card stat-card"><div class="s-label">${s.label}</div><div class="s-val gt">${s.val}</div>${s.sub ? `<div class="s-sub">${s.sub}</div>` : ''}</div>`
+    ).join('');
 
-    document.getElementById('d-credit-bar').style.width = `${pct}%`;
-    document.getElementById('d-credit-label').textContent = plan === 'premium' ? 'Korlátlan (Pro)' : `${used} / ${limit} felhasználva`;
+    document.getElementById('d-credit-bar').style.width   = `${pct}%`;
+    document.getElementById('d-credit-label').textContent = unlimited
+        ? `${getPlanLabel(plan)} – Korlátlan`
+        : `${used} / ${limit} felhasználva`;
 
     const psnip = document.getElementById('d-profile-snippet');
     if (psnip && profile) {
-        psnip.innerHTML = `<div style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">${esc(profile.humano_id || '–')}</div><div style="font-size:.85rem;color:var(--text);margin-top:4px">${esc(profile.bio || 'Még nincs bio.')}</div>`;
+        psnip.innerHTML = `
+            <div style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">${esc(profile.humano_id || '–')}</div>
+            <div style="font-size:.85rem;color:var(--text);margin-top:4px">${esc(profile.bio || 'Még nincs bio.')}</div>`;
     }
-
     renderDocs(allUserDocs);
     loadApiKeys();
 }
