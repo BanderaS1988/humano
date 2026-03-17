@@ -813,7 +813,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
   doc.save('HUMANO-Tanusitvany-' + (docId || 'cert') + '.pdf');
   showToast('📄 PDF tanúsítvány letöltve!');
 
-  // ====== 2. JPG készítése CANVAS segítségével ======
+ // ====== 2. JPG készítése CANVAS segítségével ======
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 1000;
@@ -828,89 +828,137 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
   ctx.lineWidth = 4;
   ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
+  // Belső keret
+  ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(35, 35, canvas.width - 70, canvas.height - 70);
+
   // HUMANO fejléc
-  ctx.fillStyle = '#c9a84c';
-  ctx.font = 'bold 42px "Cormorant Garamond", serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✦ HUMANO ✦', canvas.width / 2, 80);
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 42px serif';
+  ctx.fillText('* HUMANO *', canvas.width / 2, 85);
 
-  ctx.font = 'bold 20px "Outfit", sans-serif';
+  ctx.font = 'bold 17px monospace';
   ctx.fillStyle = '#f0d070';
-  ctx.fillText('HITELESÍTÉSI TANÚSÍTVÁNY', canvas.width / 2, 120);
+  ctx.fillText('HITELESITESI TANUSITVANY', canvas.width / 2, 118);
 
-  // DOC ID
-  ctx.font = 'bold 14px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#c9a84c';
-  ctx.fillText('DOC ID:', 60, 180);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(docId || '-', 200, 180);
+  // Elválasztó vonal
+  ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(60, 135);
+  ctx.lineTo(740, 135);
+  ctx.stroke();
 
-  // Szerző
-  ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Szerző:', 60, 220);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(author || '-', 200, 220);
+  // Meta adatok - bal igazítás, beljebb
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 14px monospace';
 
-  // Dátum
   ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Dátum:', 60, 260);
+  ctx.fillText('DOC ID:', 80, 175);
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(fmtDate(createdAt) || '-', 200, 260);
+  ctx.fillText(docId || '-', 240, 175);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Szerzo:', 80, 210);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(author || '-', 240, 210);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Datum:', 80, 245);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(fmtDate(createdAt) || '-', 240, 245);
+
+  // Elválasztó vonal
+  ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(60, 265);
+  ctx.lineTo(740, 265);
+  ctx.stroke();
 
   // Humán Index
   ctx.fillStyle = '#c9a84c';
-  ctx.font = 'bold 16px "Outfit", sans-serif';
-  ctx.fillText('Humán Index', 60, 320);
-  ctx.font = 'bold 32px "Cormorant Garamond", serif';
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText('Human Index', 80, 300);
+
+  ctx.font = 'bold 52px serif';
   ctx.fillStyle = processData?.humanIndex > 70 ? '#4ab870' : (processData?.humanIndex > 40 ? '#c9a84c' : '#e05555');
-  ctx.fillText((processData?.humanIndex || '–') + '%', 60, 370);
+  ctx.fillText((processData?.humanIndex || '-') + '%', 80, 360);
 
-  // Ritmus kategória
-  ctx.font = 'bold 18px "Outfit", sans-serif';
+  ctx.font = 'bold 16px monospace';
   ctx.fillStyle = '#f0d070';
-  ctx.fillText(processData?.humanCategory || '–', 60, 420);
+  const cat = (processData?.humanCategory || '-')
+    .replace(/é/g,'e').replace(/í/g,'i').replace(/ő/g,'o')
+    .replace(/ó/g,'o').replace(/ü/g,'u').replace(/ú/g,'u')
+    .replace(/á/g,'a').replace(/ö/g,'o').replace(/ű/g,'u');
+  ctx.fillText(cat, 80, 395);
 
-  // Összefoglaló adatok
-  ctx.font = 'bold 14px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Leütések:', 60, 500);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(String(processData?.keystrokeCount ?? '–'), 200, 500);
+  // Elválasztó vonal
+  ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(60, 415);
+  ctx.lineTo(740, 415);
+  ctx.stroke();
 
-  ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Javítások:', 60, 540);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(String(processData?.deletionCount ?? '–'), 200, 540);
-
-  ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Szünetek:', 60, 580);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(String(processData?.pauseCount ?? '–'), 200, 580);
+  // Statisztikák
+  ctx.font = 'bold 14px monospace';
 
   ctx.fillStyle = '#c9a84c';
-  ctx.fillText('Kézzel gépelt:', 60, 620);
+  ctx.fillText('Lutesek:', 80, 455);
   ctx.fillStyle = '#ffffff';
-  ctx.fillText((processData?.typedPct ?? 100) + '%', 200, 620);
+  ctx.fillText(String(processData?.keystrokeCount ?? '-'), 280, 455);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Javitasok:', 80, 490);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(processData?.deletionCount ?? '-'), 280, 490);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Szunetek:', 80, 525);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(String(processData?.pauseCount ?? '-'), 280, 525);
+
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillText('Kezzel gepelt:', 80, 560);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText((processData?.typedPct ?? 100) + '%', 280, 560);
+
+  // Elválasztó vonal
+  ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(60, 580);
+  ctx.lineTo(740, 580);
+  ctx.stroke();
 
   // OTS státusz
+  ctx.textAlign = 'center';
   ctx.fillStyle = otsStatus === 'confirmed' ? '#4ab870' : '#c9a84c';
-  ctx.font = 'bold 16px "Outfit", sans-serif';
-  ctx.fillText(otsStatus === 'confirmed' ? '⛓️ Bitcoin blokkláncon' : '⏳ Bitcoin blokklánc folyamatban', canvas.width / 2, 700);
+  ctx.font = 'bold 15px monospace';
+  ctx.fillText(otsStatus === 'confirmed' ? 'Bitcoin blokkláncon rogzitve ✓' : 'Bitcoin blokklánc folyamatban...', canvas.width / 2, 630);
 
   // Ellenőrzési link
-  ctx.fillStyle = '#c9a84c';
-  ctx.font = '12px "JetBrains Mono", monospace';
-  ctx.fillText('🔗 humano-hu.vercel.app/verify/' + (docId || ''), canvas.width / 2, 760);
+  ctx.fillStyle = 'rgba(201,168,76,0.7)';
+  ctx.font = '12px monospace';
+  ctx.fillText('humano-hu.vercel.app/verify/' + (docId || ''), canvas.width / 2, 670);
+
+  // Lábléc vonal
+  ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(60, 920);
+  ctx.lineTo(740, 920);
+  ctx.stroke();
 
   // Lábléc
   ctx.fillStyle = '#6a5020';
-  ctx.font = '12px "Outfit", sans-serif';
-  ctx.fillText('HUMANO · Az emberi alkotás digitális hitelesítője', canvas.width / 2, 920);
+  ctx.font = '12px monospace';
+  ctx.fillText('HUMANO · Az emberi alkotas digitalis hitelesitoje', canvas.width / 2, 950);
 
   // ====== 3. JPG → base64 ======
   const jpgBase64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
 
-  // ====== 4. Manifest adatok (ugyanaz, mint PDF-nél) ======
+  // ====== 4. Manifest adatok ======
   const manifestData = {
     claim_generator: "HUMANO/1.0",
     claim_generator_info: [{ name: "HUMANO Platform", version: "1.0" }],
@@ -930,7 +978,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
           integrity: {
             document_hash: `sha256:${hash}`,
             ots_txid: otsTxid || null,
-            zkp_proof: zkpProof || null
+            zkp_proof: null
           },
           verification_metrics: {
             typed_percent: processData.typedPct || 100,
@@ -940,7 +988,6 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
       }
     ]
   };
-
   // ====== 5. Küldés a C2PA szerverre ======
   try {
     const response = await fetch('http://localhost:3001/sign', {
