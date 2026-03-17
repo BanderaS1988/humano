@@ -173,7 +173,7 @@
     </div>
 
     <p style="font-size:.75rem;text-align:center;margin-bottom:1.25rem">
-      <a href="#" onclick="showPage('privacy')" target="_blank" style="color:var(--gold)">
+      <a href="javascript:void(0)" onclick="event.preventDefault();showPage('privacy')" target="_blank" style="color:var(--gold)">
         Teljes adatkezelési tájékoztató – Biometrikus adatok fejezet →
       </a>
     </p>
@@ -190,7 +190,7 @@
     <p style="margin-top:1rem;font-size:.72rem;
               color:var(--muted2);text-align:center;line-height:1.6">
       A beleegyezés visszavonása a
-      <a href="#" onclick="showPage('profile')" style="color:var(--gold)">profiloldalon</a>
+      <a href="javascript:void(0)" onclick="event.preventDefault();showPage('profile')" style="color:var(--gold)">profiloldalon</a>
       bármikor lehetséges. Visszavonás esetén a hitelesítési funkció
       nem lesz elérhető.
     </p>
@@ -1270,11 +1270,8 @@ document.addEventListener('humano:verify-result', () => {
 </div>
 
 <!-- ═══ PROFILE ═══ -->
-
 <div id="page-profile" class="page">
   <div style="max-width:700px;margin:3rem auto;padding:0 2rem">
-    
-    <!-- Profil adatok -->
     <div class="card" style="margin-bottom:1.25rem">
       <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1.25rem">👤 Profil adatok</div>
       <div id="profile-alert"></div>
@@ -1289,8 +1286,6 @@ document.addEventListener('humano:verify-result', () => {
       <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" id="p-bio" style="min-height:100px" placeholder="Néhány szó magadról..."></textarea></div>
       <button class="btn btn-gold" style="width:100%;padding:.8rem" onclick="saveProfile()">✦ Profil mentése</button>
     </div>
-
-    <!-- Fiók kezelése (JAVÍTVA: függvények hozzáadva) -->
     <div class="card" style="margin-top:1.25rem;border-color:rgba(201,168,76,.18)">
       <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">⚙️ Fiók kezelése</div>
       <div style="font-size:.85rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
@@ -1298,13 +1293,10 @@ document.addEventListener('humano:verify-result', () => {
       </div>
       <div style="display:flex;gap:.75rem;flex-wrap:wrap">
         <button class="btn btn-outline btn-sm" onclick="exportMyData()">📦 Adataim exportálása (JSON)</button>
-        <!-- JAVÍTVA: az onclick függvények most már léteznek a shared_js.js-ben -->
         <button class="btn btn-outline btn-sm" onclick="cancelSubscription()">⚠️ Előfizetés lemondása</button>
         <button class="btn btn-outline btn-sm" style="border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteAccount()">🗑 Fiók törlése</button>
       </div>
     </div>
-
-    <!-- Biometrikus beleegyezések -->
     <div class="card" style="margin-top:1.25rem">
       <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">
         🧬 Biometrikus beleegyezések
@@ -2532,4 +2524,4 @@ async function submitAddSignal() {
 }
 </script>
 </body>
-</html>
+</html>  
