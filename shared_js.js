@@ -10,7 +10,7 @@ const SUPA_ANON = 'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so';
 const FORMSPREE_URL = 'https://formspree.io/f/xjgeqvnp';
 
 // Stripe – kikommentelve, aktiváláshoz töltsd ki
-// const STRIPE_PK = 'pk_live_XXXXXXXXXXXXXXXXXXXX';
+// const STRIPE_PK = 'pk_live_51T7IZtQTawA03pKbix0qSdaZlqZe3Qv6OHaLPzDhb1mOCFLzXBw3nOmFZE25BK2gPJIxosVa5gVQdDDhMQ5ZEzIW00KukLGF5R';
 // const STRIPE_PRICES = { student: 'price_XXXX', pro: 'price_XXXX', oneshot: 'price_XXXX' };
 
 
