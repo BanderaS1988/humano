@@ -2264,6 +2264,151 @@ async function downloadMyDocPdf(docId) {
 }
 
 
+async function downloadWhitePaperPdf() {
+    if (!window.jspdf) {
+        showToast('⏳ PDF betöltés...');
+        setTimeout(downloadWhitePaperPdf, 2000);
+        return;
+    }
+
+    showToast('⏳ PDF generálása...');
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, H = 297;
+    const PL = 20, PR = 20;
+    const CW = W - PL - PR;
+    let y = 20;
+
+    // Háttér
+    doc.setFillColor(6, 6, 8);
+    doc.rect(0, 0, W, H, 'F');
+
+    // Keret
+    doc.setDrawColor(201, 168, 76);
+    doc.setLineWidth(0.5);
+    doc.rect(8, 8, W - 16, H - 16);
+
+    // Fejléc
+    doc.setTextColor(201, 168, 76);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('HUMANO White Paper', W / 2, y, { align: 'center' });
+    y += 8;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(138, 106, 26);
+    doc.text('A keletkezés hitelesítése – Változat 1.0 · 2026. március 17.', W / 2, y, { align: 'center' });
+    y += 6;
+
+    doc.setDrawColor(201, 168, 76);
+    doc.setLineWidth(0.3);
+    doc.line(PL, y, W - PR, y);
+    y += 8;
+
+    // Szöveg bekezdések
+    const sections = [
+        {
+            title: 'Absztrakt',
+            body: 'A mesterséges intelligencia által generált szövegek elterjedése alapjaiban kérdőjelezi meg a digitális tartalmak szerzőségét. A HUMANO protokoll nem a kész szöveget, hanem annak keletkezési folyamatát hitelesíti. Három réteg kombinálásával – billentyűleütés-dinamika, SHA-256 hash és Bitcoin blokklánc időbélyeg – olyan matematikailag igazolható bizonyítékot hoz létre, amely gyakorlatilag megcáfolhatatlan.'
+        },
+        {
+            title: '1. Bevezetés',
+            body: 'Az LLM-ek (pl. ChatGPT) elterjedése válságot idézett elő az oktatásban, az újságírásban és a szellemi tulajdon védelmében. A hagyományos AI-detektorok csak valószínűségi becslést adnak, és könnyen kijátszhatók. A HUMANO megközelítése: a keletkezés folyamatát rögzíti, determinisztikus bizonyítékot szolgáltatva.'
+        },
+        {
+            title: '2. Kapcsolódó kutatások',
+            body: 'A billentyűleütés-dinamika több évtizedes múltra visszatekintő biometrikus kutatási terület. Neurális hálózatok segítségével akár 82%-os pontosság érhető el személyek azonosításában [1]. Az SHA-256 az NSA által tervezett, NIST által szabványosított kriptográfiai algoritmus [3]. Az OpenTimestamps protokoll a Bitcoin blokkláncot használja visszavonhatatlan időbélyegzésre [5].'
+        },
+        {
+            title: '3. A HUMANO módszertana',
+            body: 'A hitelesítési folyamat lépései: (1) Valós idejű billentyűleütés-rögzítés – csak időbélyegek, karakterek nem. (2) Humán Index számítás a relatív szórás (CV = sigma/mu) alapján. (3) Beillesztett szövegrészek átlátható dokumentálása. (4) Kalibrációs profil – személyhez kötött szerzőség igazolása. (5) SHA-256 hash – böngészőben számítódik. (6) Bitcoin blokklánc időbélyeg – OpenTimestamps protokollon keresztül.\n\nA Humán Index kategóriái:\nCV < 0.25 → Gepies ritmus (HI: 0-25%)\n0.25-0.6 → Vegyes ritmus (HI: 25-60%)\n0.6-0.9 → Emberi ritmus (HI: 60-85%)\nCV >= 0.9 + javitasok → Intenziv alkotas (HI: 85-100%)'
+        },
+        {
+            title: '4. Adatvédelem és etika',
+            body: 'GDPR-megfelelőség: EU-s szervereken (Supabase, Frankfurt), kifejezett hozzájárulással. Adatminimalizálás: leütött karaktereket soha nem naplóz. EU AI Act: nem minősül magas kockázatú AI-rendszernek, statisztikai mérőszámot közöl, nem hoz döntést személyekről. Átláthatóság: minden számítás nyomon követhető.'
+        },
+        {
+            title: '5. A módszer korlátai',
+            body: 'Profi gépelők alacsonyabb Humán Indexet kaphatnak. Kalibrációs profil nélkül a rendszer azt bizonyítja hogy ember írta, nem hogy pontosan ki. Elméletileg emberi ritmusra tanított AI utánozhatná a mintát, bár ez jelenleg nem fenyegető vektor.'
+        },
+        {
+            title: '6. Következtetések',
+            body: 'A HUMANO paradigmaváltást képvisel a digitális tartalmak hitelesítésében. A viselkedéses biometria, a kriptográfia és a blokklánc kombinációja olyan többrétegű védelmet nyújt, amely a jelenlegi megoldásoknál lényegesen robusztusabb. További kutatási irányok: C2PA-szabvány integráció, valós idejű oktatási platform integráció, multilinguális terjesztés.'
+        },
+        {
+            title: '7. Irodalomjegyzék',
+            body: '[1] P. Panasiuk et al., "Biometric Identification Based on Keystroke Dynamics," Sensors, 22(9), PMC, 2022.\n[2] NIST, "FIPS 180-4: Secure Hash Standard," U.S. Dept. of Commerce, 2015.\n[3] S. Nakamoto, "Bitcoin: A Peer-to-Peer Electronic Cash System," 2008.\n[4] P. Wuille et al., "OpenTimestamps," GitHub, 2016.\n[5] R. Joyce et al., "Deep Learning for Keystroke Dynamics," IEEE Trans. on Biometrics, 2020.\n[6] E. Killourhy & R. Maxion, "Comparing Anomaly Detectors for Keystroke Dynamics," DSN, 2009.'
+        },
+    ];
+
+    for (const section of sections) {
+        // Új oldal ha szükséges
+        if (y > H - 40) {
+            doc.addPage();
+            doc.setFillColor(6, 6, 8);
+            doc.rect(0, 0, W, H, 'F');
+            doc.setDrawColor(201, 168, 76);
+            doc.setLineWidth(0.5);
+            doc.rect(8, 8, W - 16, H - 16);
+            y = 20;
+        }
+
+        // Fejezet cím
+        doc.setTextColor(201, 168, 76);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title, PL, y);
+        y += 6;
+
+        // Elválasztó
+        doc.setDrawColor(100, 80, 30);
+        doc.setLineWidth(0.2);
+        doc.line(PL, y, W - PR, y);
+        y += 5;
+
+        // Szövegtörzs
+        doc.setTextColor(180, 170, 150);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+
+        const lines = doc.splitTextToSize(section.body, CW);
+        for (const line of lines) {
+            if (y > H - 20) {
+                doc.addPage();
+                doc.setFillColor(6, 6, 8);
+                doc.rect(0, 0, W, H, 'F');
+                doc.setDrawColor(201, 168, 76);
+                doc.setLineWidth(0.5);
+                doc.rect(8, 8, W - 16, H - 16);
+                y = 20;
+            }
+            doc.text(line, PL, y);
+            y += 5;
+        }
+        y += 6;
+    }
+
+    // Lábléc
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(100, 80, 30);
+        doc.setLineWidth(0.2);
+        doc.line(PL, H - 14, W - PR, H - 14);
+        doc.setTextColor(100, 80, 30);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('HUMANO Platform · humano-hu.vercel.app · White Paper v1.0', W / 2, H - 9, { align: 'center' });
+        doc.text(`${i} / ${pageCount}`, W - PR, H - 9, { align: 'right' });
+    }
+
+    doc.save('HUMANO-White-Paper-v1.0.pdf');
+    showToast('✅ White Paper letöltve!');
+}
+
+
 /* ─── 22. PUBLIKUS VERIFY ───────────────────────────────────── */
 async function openPubVerify(docId) {
     const { data: doc } = await db.from('documents').select('*').eq('doc_id', docId).single();
