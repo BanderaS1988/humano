@@ -285,7 +285,7 @@ async function doRegister() {
             username,
             humano_id: humanoId,
             plan: 'free',
-            monthly_credits: 1,
+            monthly_credits: 10,
             used_credits: 0,
             created_at: new Date().toISOString()
         });
