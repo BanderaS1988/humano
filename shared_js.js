@@ -3972,14 +3972,16 @@ const ConsentManager = {
     return !error && data && data.length > 0;
   },
 
-  // Aktuális verzió lekérése
+  // Aktuális verzió lekérése - JAVÍTVA: .maybeSingle() a 406 hiba elkerülésére
   async getCurrentVersion() {
     try {
-      const { data } = await db
+      const { data, error } = await db
         .from('consent_versions')
         .select('version')
         .eq('is_current', true)
-        .single();
+        .maybeSingle(); // .single() helyett .maybeSingle() - nem dob 406-ot ha nincs találat
+  
+      if (error) throw error;
       return data?.version || '1.0';
     } catch { 
       return '1.0'; 
@@ -4009,15 +4011,22 @@ const ConsentManager = {
     return data;
   },
 
-  // Beleegyezés visszavonása (Edge Function nélkül)
+  // Beleegyezés visszavonása (Edge Function nélkül) - JAVÍTVA: csak akkor adja hozzá a revoke_reason-t ha létezik
   async revoke(consentType = 'keystroke_dynamics', reason = null) {
     if (!currentUser) throw new Error('Nincs bejelentkezett felhasználó');
+    
+    const updateData = {
+      revoked_at: new Date().toISOString()
+    };
+    
+    // Csak akkor adjuk hozzá, ha van reason és nem null
+    if (reason !== null && reason !== undefined) {
+      updateData.revoke_reason = reason;
+    }
+    
     const { error } = await db
       .from('biometric_consents')
-      .update({
-        revoked_at: new Date().toISOString(),
-        revoke_reason: reason,
-      })
+      .update(updateData)
       .eq('user_id', currentUser.id)
       .eq('consent_type', consentType)
       .is('revoked_at', null);
