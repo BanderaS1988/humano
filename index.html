@@ -1297,29 +1297,30 @@ document.addEventListener('humano:verify-result', () => {
         <button class="btn btn-outline btn-sm" style="border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteAccount()">🗑 Fiók törlése</button>
       </div>
     </div>
-    <div class="card" style="margin-top:1.25rem">
-      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">
-        🧬 Biometrikus beleegyezések
-      </div>
-      <p style="font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">
-        Az alábbi mérésekhez adtál beleegyezést. Bármilyen beleegyezést visszavonhatsz –
-        de a <strong>billentyűleütés-dinamika</strong> visszavonása esetén
-        a hitelesítési funkció nem lesz elérhető.
-      </p>
-      <div id="consent-warning"
-           style="display:none;background:rgba(224,85,85,.08);
-                  border:1px solid rgba(224,85,85,.25);border-radius:var(--r-sm);
-                  padding:.85rem 1rem;font-size:.82rem;color:#e05555;
-                  margin-bottom:1rem;line-height:1.7">
-        ⚠️ A billentyűleütés-dinamika beleegyezés visszavonva.
-        A hitelesítési funkció nem elérhető. Az újra elfogadáshoz
-        kattints a "Újra elfogadás" gombra.
-      </div>
-      <div id="consent-settings-container">
-        <div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">
-          ⏳ Betöltés...
-        </div>
-      </div>
+    <!-- ═══ Biometrikus beleegyezések (JAVÍTVA) ═══ -->
+<div class="card" style="margin-top:1.25rem">
+  <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">
+    🧬 Biometrikus beleegyezések
+  </div>
+  <p style="font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">
+    Az alábbi mérésekhez adtál beleegyezést. A <strong>billentyűleütés-dinamika</strong> visszavonása esetén a hitelesítési funkció nem lesz elérhető, de a már meglévő hitelesítéseid megmaradnak.
+  </p>
+  
+  <!-- Figyelmeztetés, ha a keystroke_dynamics vissza van vonva -->
+  <div id="consent-warning"
+       style="display:none;background:rgba(224,85,85,.08);
+              border:1px solid rgba(224,85,85,.25);border-radius:var(--r-sm);
+              padding:.85rem 1rem;font-size:.82rem;color:#e05555;
+              margin-bottom:1rem;line-height:1.7">
+    ⚠️ A billentyűleütés-dinamika beleegyezés visszavonva.
+    A hitelesítési funkció nem elérhető. Az újra elfogadáshoz
+    kattints a "Újra elfogadás" gombra.
+  </div>
+  
+  <!-- Ide töltődik be a consent lista -->
+  <div id="consent-settings-container">
+    <div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">
+      ⏳ Betöltés...
     </div>
   </div>
 </div>
