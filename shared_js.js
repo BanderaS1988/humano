@@ -531,6 +531,10 @@ function base64ToUint8Array(b64) {
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     return arr;
 }
+function base64ToBlob(b64, mimeType) {
+    const bytes = base64ToUint8Array(b64);
+    return new Blob([bytes], { type: mimeType });
+}
 
 
 /* ─── 9. QR GENERÁLÁS ───────────────────────────────────────── */
@@ -1968,6 +1972,7 @@ if (tlBtn) {
     tlBtn.dataset.docId = doc.doc_id;
 }
     document.getElementById('v-result-unified').style.display = 'block';
+   document.dispatchEvent(new Event('humano:verify-result'));
     document.getElementById('v-result-unified').scrollIntoView({ behavior: 'smooth' });
 }
 
