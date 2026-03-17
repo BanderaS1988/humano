@@ -173,9 +173,11 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
     </div>
 
     <p style="font-size:.75rem;text-align:center;margin-bottom:1.25rem">
-      <a href="javascript:void(0)" onclick="event.preventDefault();showPage('privacy')" target="_blank" style="color:var(--gold)">
-        Teljes adatkezelési tájékoztató – Biometrikus adatok fejezet →
-      </a>
+      <a href="javascript:void(0)"
+   onclick="event.preventDefault();showPage('privacy');setTimeout(()=>{const el=document.getElementById('biometric-data-section');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},300)"
+   style="color:var(--gold)">
+    Teljes adatkezelési tájékoztató – Biometrikus adatok fejezet →
+</a>
     </p>
 
     <div style="display:flex;gap:.75rem;justify-content:center">
@@ -1585,7 +1587,7 @@ document.addEventListener('humano:verify-result', () => {
     <strong style="color:var(--gold3)">2.1 Regisztrációkor</strong><br>
     E-mail cím, felhasználónév, jelszó (titkosítva), regisztráció időpontja – bejelentkezés, azonosítás, biztonsági napló céljából. Jogalap: szerződés teljesítése (GDPR 6. cikk b) pont), jogos érdek (f) pont).<br><br>
     
-    <strong style="color:var(--gold3)">2.2 Szöveg hitelesítésekor</strong><br>
+    <strong id="biometric-data-section" style="color:var(--gold3)">2.2 Szöveg hitelesítésekor</strong><br>
     Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya, szöveg kategóriája (opcionális, felhasználó által megadott – aggregált statisztikai elemzéshez használható). Jogalap: szerződés teljesítése.<br><br>
     
     <strong style="color:var(--gold3)">Fontos:</strong> A billentyűleütés-dinamika kizárólag statisztikai formában kerül tárolásra. A leütött billentyűk karakterei nem kerülnek naplózásra – kivéve a szöveg tartalmát, amelyet a felhasználó maga ment el.<br><br>
