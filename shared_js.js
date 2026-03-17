@@ -9,10 +9,13 @@ const SUPA_URL = 'https://vidlijysdhbfvvytuzcg.supabase.co';
 const SUPA_ANON = 'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so';
 const FORMSPREE_URL = 'https://formspree.io/f/xjgeqvnp';
 
-// Stripe – kikommentelve, aktiváláshoz töltsd ki
-// const STRIPE_PK = 'pk_live_51T7IZtQTawA03pKbix0qSdaZlqZe3Qv6OHaLPzDhb1mOCFLzXBw3nOmFZE25BK2gPJIxosVa5gVQdDDhMQ5ZEzIW00KukLGF5R';
-// const STRIPE_PRICES = { student: 'price_XXXX', pro: 'price_XXXX', oneshot: 'price_XXXX' };
-
+// Stripe – aktiválva
+const STRIPE_PK = 'pk_live_51T7IZtQTawA03pKbix0qSdaZlqZe3Qv6OHaLPzDhb1mOCFLzXBw3nOmFZE25BK2gPJIxosVa5gVQdDDhMQ5ZEzIW00KukLGF5R';
+const STRIPE_PRICES = {
+    lite:        'price_1TBzrUQTawA03pKbwUvQ2LMR',
+    pro:         'price_1TBzs6QTawA03pKbCcdLuyBR',
+    institution: 'price_1TBzsfQTawA03pKbf0lJQuYk'
+};
 
 /* ─── 2. GLOBÁLIS ÁLLAPOT ───────────────────────────────────── */
 let currentUser = null;
