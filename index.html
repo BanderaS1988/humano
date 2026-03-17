@@ -1184,17 +1184,26 @@ document.addEventListener('humano:verify-result', () => {
         <h2><span class="gt">Csomagok</span></h2>
         <p>Minden csomag tartalmazza az örökérvényű HUMANO hitelesítést és Bitcoin blokklánc időbélyeget.</p>
       </div>
+
+      <!-- Első 30 nap banner -->
+      <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25);border-radius:var(--r);padding:1.1rem 1.5rem;text-align:center;margin-bottom:2.5rem">
+        <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.3rem">🎁 Első 30 nap – korlátlan hitelesítés</div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Regisztráció után 30 napig korlátlanul használhatod a platformot – hogy tényleg megértsd az értékét, mielőtt döntesz.</div>
+      </div>
+
       <div class="grid-4" style="align-items:start">
 
         <div class="card pricing-card">
           <div style="font-size:1.8rem;margin-bottom:.6rem">🆓</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Ingyenes</div>
           <div class="price-val gt">0 Ft</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">30 nap után</div>
           <ul class="feature-list">
-            <li class="active">Havi 3 hitelesítés</li>
+            <li class="active">Havi 10 hitelesítés</li>
             <li class="active">HUMANO ID + Badge</li>
             <li class="active">SHA-256 + OTS időbélyeg</li>
             <li class="active">Nyilvános Registry</li>
+            <li class="active">PDF tanúsítvány</li>
           </ul>
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="showPage('auth')">Regisztrálok</button>
         </div>
@@ -1203,6 +1212,7 @@ document.addEventListener('humano:verify-result', () => {
           <div style="font-size:1.8rem;margin-bottom:.6rem">⚡</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Egyszeri</div>
           <div class="price-val gt">490 Ft<span class="price-period">/alkalom</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Ha csak egyszer kell</div>
           <ul class="feature-list">
             <li class="active">1 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
@@ -1216,11 +1226,13 @@ document.addEventListener('humano:verify-result', () => {
           <div style="font-size:1.8rem;margin-bottom:.6rem">🎓</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Tanuló</div>
           <div class="price-val gt">1 490 Ft<span class="price-period">/hó</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Diákoknak, napi használatra</div>
           <ul class="feature-list">
-            <li class="active">Havi 20 hitelesítés</li>
+            <li class="active">Havi 50 hitelesítés</li>
             <li class="active">PDF tanúsítvány</li>
             <li class="active">QR kód + Badge</li>
             <li class="active">Timelapse visszajátszás</li>
+            <li class="active">Prioritás support</li>
           </ul>
           <button class="btn btn-outline" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_dRm4gAdao7F44lRd3DdEs00','_blank')">Előfizetés</button>
         </div>
@@ -1230,11 +1242,13 @@ document.addEventListener('humano:verify-result', () => {
           <div style="font-size:1.8rem;margin-bottom:.6rem">⭐</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Alkotó / Pro</div>
           <div class="price-val gt">3 900 Ft<span class="price-period">/hó</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Íróknak, újságíróknak, alkotóknak</div>
           <ul class="feature-list">
             <li class="active">Korlátlan hitelesítés</li>
             <li class="active">Teljes API-hozzáférés</li>
             <li class="active">Egyedi badge design</li>
             <li class="active">Prioritás support</li>
+            <li class="active">Timelapse visszajátszás</li>
           </ul>
           <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="window.open('https://buy.stripe.com/test_fZuaEYdao4sS9Gb4x7dEs01','_blank')">✦ Előfizetés</button>
         </div>
@@ -1243,6 +1257,7 @@ document.addEventListener('humano:verify-result', () => {
           <div style="font-size:1.8rem;margin-bottom:.6rem">🏢</div>
           <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin:.4rem 0">Intézményi</div>
           <div class="price-val gt">19 900 Ft<span class="price-period">/hó</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">Egyetemeknek, kiadóknak, szerkesztőségeknek</div>
           <ul class="feature-list">
             <li class="active">Korlátlan felhasználó</li>
             <li class="active">Admin felület</li>
@@ -1254,6 +1269,26 @@ document.addEventListener('humano:verify-result', () => {
         </div>
 
       </div>
+
+      <!-- Use case magyarázat -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:3rem">
+        <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
+          <div style="font-size:1.3rem;margin-bottom:.5rem">🎓</div>
+          <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Diák / hallgató</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd be a tanárodnak hogy te írtad a dolgozatot – nem AI.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
+          <div style="font-size:1.3rem;margin-bottom:.5rem">✍️</div>
+          <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Újságíró / szerző</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Bizonyítsd az elsőbbséget – te írtad, te publikáltad, Bitcoin blokklánc tanúsítja.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r);padding:1.1rem 1.25rem">
+          <div style="font-size:1.3rem;margin-bottom:.5rem">🏢</div>
+          <div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:.3rem">Intézmény</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">Hallgatói beadványok, dolgozatok, pályázatok hitelességének rendszerszintű ellenőrzése.</div>
+        </div>
+      </div>
+
       <div id="pricing-contact-box" style="display:none;margin-top:3rem" class="card">
         <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem" id="pricing-contact-title">Előfizetési érdeklődés</div>
         <div id="pricing-contact-alert"></div>
@@ -1267,6 +1302,7 @@ document.addEventListener('humano:verify-result', () => {
           <div style="display:flex;gap:.75rem"><button type="submit" class="btn btn-gold">✦ Küldés</button><button type="button" class="btn btn-outline" onclick="document.getElementById('pricing-contact-box').style.display='none'">Mégse</button></div>
         </form>
       </div>
+
     </div>
   </section>
 </div>
