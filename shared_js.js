@@ -4117,7 +4117,11 @@ async function checkCalibration() {
     .eq('user_id', currentUser.id)
     .limit(1);
   if (!data || !data.length) {
-    setTimeout(() => showPage('calibration'), 800);
+    const currentHash = window.location.hash.replace('#', '');
+    const skipPages = ['calibration', 'auth', 'privacy', 'faq'];
+    if (!skipPages.includes(currentHash)) {
+      setTimeout(() => showPage('calibration'), 1200);
+    }
   }
 }
 
