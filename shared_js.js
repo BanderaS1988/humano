@@ -148,14 +148,14 @@ function _onSectionActivated(hash) {
     if (hash === 'verify-unified') loadLatestRegistryUnified();
     if (hash === 'supporters') trackEvent('Subscription_Click', {});
     if (hash === 'roadmap') loadFeatureVotes();
-    if (hash === 'editor') {
-        setTimeout(() => {
-            document.getElementById('doc-title-input')?.focus();
-            initPulseCanvas();
-            checkDraftsOnEditorOpen();
-            if (typeof editorInit === 'function') editorInit();
-        }, 200);
-    }
+if (hash === 'editor') {
+    setTimeout(async () => {
+        document.getElementById('doc-title-input')?.focus();
+        initPulseCanvas();
+        checkDraftsOnEditorOpen();
+        await loadEditorWithConsentCheck();
+    }, 200);
+}
 }
 
 function _loadPageFromHash() {
