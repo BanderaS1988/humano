@@ -3993,40 +3993,29 @@ function fmt(cmd) {
 }
 
 function updateToolbarState() {
-    const btns = document.querySelectorAll('.toolbar button');
-    if (!btns.length) return;
+    const boldBtn   = document.getElementById('btn-bold');
+    const italicBtn = document.getElementById('btn-italic');
+    const underlineBtn = document.getElementById('btn-underline');
 
-    // Töröljük az összes aktív állapotot
-    btns.forEach(btn => btn.classList.remove('active'));
+    if (!boldBtn || !italicBtn || !underlineBtn) return;
 
-    // Ellenőrizzük a kijelölt szöveg stílusát
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
+    // Aktuális stílus ellenőrzése
+    const isBold      = document.queryCommandState('bold');
+    const isItalic    = document.queryCommandState('italic');
+    const isUnderline = document.queryCommandState('underline');
 
-    const node = selection.getRangeAt(0).commonAncestorContainer;
-    let parent = node.nodeType === 3 ? node.parentElement : node;
+    // Aktív állapot vizuálisan
+    boldBtn.style.background      = isBold      ? 'rgba(201,168,76,.25)' : '';
+    boldBtn.style.color           = isBold      ? 'var(--gold)'          : '';
+    boldBtn.style.borderColor     = isBold      ? 'var(--gold)'          : '';
 
-    // Végigmegyünk a szülőkön, hogy megtaláljuk a stílusokat
-    while (parent && parent !== document.getElementById('doc-content-area')) {
-        const styles = window.getComputedStyle(parent);
+    italicBtn.style.background    = isItalic    ? 'rgba(201,168,76,.25)' : '';
+    italicBtn.style.color         = isItalic    ? 'var(--gold)'          : '';
+    italicBtn.style.borderColor   = isItalic    ? 'var(--gold)'          : '';
 
-        // Bold (félkövér)
-        if (styles.fontWeight === 'bold' || parseInt(styles.fontWeight) >= 600) {
-            btns[0]?.classList.add('active'); // B gomb
-        }
-
-        // Italic (dőlt)
-        if (styles.fontStyle === 'italic') {
-            btns[1]?.classList.add('active'); // I gomb
-        }
-
-        // Underline (aláhúzott)
-        if (styles.textDecoration.includes('underline')) {
-            btns[2]?.classList.add('active'); // U gomb
-        }
-
-        parent = parent.parentElement;
-    }
+    underlineBtn.style.background = isUnderline ? 'rgba(201,168,76,.25)' : '';
+    underlineBtn.style.color      = isUnderline ? 'var(--gold)'          : '';
+    underlineBtn.style.borderColor= isUnderline ? 'var(--gold)'          : '';
 }
 
 function insertLink() {
