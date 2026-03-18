@@ -1698,6 +1698,17 @@ async function generateApiKey() {
         return;
     }
 
+    const arr = crypto.getRandomValues(new Uint8Array(16));
+    const key = 'HMN_KEY_' + Array.from(arr).map(b => b.toString(36).padStart(2, '0')).join('').toUpperCase().substring(0, 24);
+    const expires_at = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await db.from('api_keys').insert({ user_id: currentUser.id, key, name: 'Default', expires_at });
+    if (error) { showToast('❌ Hiba: ' + error.message); return; }
+    showToast('✦ API kulcs létrehozva!');
+    loadApiKeys();
+} 
+
+
+
 async function loadApiKeys() {
     if (!currentUser) return;
     const { data } = await db.from('api_keys').select('*').eq('user_id', currentUser.id);
