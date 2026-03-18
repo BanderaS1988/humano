@@ -183,23 +183,21 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
       ezért azok megmaradnak.
     </div>
 
-    <p style="font-size:.75rem;text-align:center;margin-bottom:1.25rem">
+<p style="font-size:.75rem;text-align:center;margin-bottom:1.25rem">
       <a href="javascript:void(0)"
    onclick="event.preventDefault();showPage('privacy');setTimeout(()=>{const el=document.getElementById('biometric-data-section');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},300)"
    style="color:var(--gold)">
     Teljes adatkezelési tájékoztató – Biometrikus adatok fejezet →
 </a>
     </p>
-
     <div style="display:flex;gap:.75rem;justify-content:center">
-      <button class="btn btn-gold" id="consent-accept-btn" style="min-width:160px">
+      <button class="btn btn-gold" id="consent-accept-btn" style="min-width:160px" onclick="handleConsentAccept()">
         ✦ Elfogadom
       </button>
-      <button class="btn btn-outline" id="consent-decline-btn">
+      <button class="btn btn-outline" id="consent-decline-btn" onclick="handleConsentDecline()">
         ✕ Vissza
       </button>
     </div>
-
     <p style="margin-top:1rem;font-size:.72rem;
               color:var(--muted2);text-align:center;line-height:1.6">
       A beleegyezés visszavonása a
@@ -207,7 +205,6 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
       bármikor lehetséges. Visszavonás esetén a hitelesítési funkció
       nem lesz elérhető.
     </p>
-
   </div>
 </div>
   
