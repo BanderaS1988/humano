@@ -5116,19 +5116,7 @@ async function openPublikacio(docId) {
 /* ─── 27. INICIALIZÁLÁS ─────────────────────────────────────── */
 
 async function checkCalibration() {
-  if (!currentUser) return;
-  const { data } = await db
-    .from('typing_profiles')
-    .select('id')
-    .eq('user_id', currentUser.id)
-    .limit(1);
-  if (!data || !data.length) {
-    const currentHash = window.location.hash.replace('#', '');
-    const skipPages = ['calibration', 'auth', 'privacy', 'faq'];
-    if (!skipPages.includes(currentHash)) {
-      setTimeout(() => showPage('calibration'), 1200);
-    }
-  }
+  return;
 }
 
 async function checkCalibrationAge() {
