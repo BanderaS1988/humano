@@ -3097,7 +3097,7 @@ function editorCalcHumanIndex() {
     const intervals = recent
         .slice(1)
         .map((ev, i) => ev.ts - recent[i].ts)
-        .filter(v => v >= 30 && v < 5000); // paste utáni ugrás kiszűrve
+        .filter(v => v >= 30 && v < 5000);
 
     if (intervals.length < 8) return;
 
@@ -3107,11 +3107,6 @@ function editorCalcHumanIndex() {
     );
     const cv = stddev / (mean || 1);
 
-    // ── Kategória meghatározás ──
-    // cv < 0.25              → gépies
-    // cv 0.25–0.6            → közepes
-    // cv 0.6–0.9             → emberi
-    // cv > 0.9 + szünetek    → intenzív alkotás
     const delRatio = E.dels / Math.max(1, E.keys);
     const hasNaturalEdits = delRatio > 0.02 && delRatio < 0.6;
     const hasThinkingPauses = E.pauses >= 3;
@@ -3123,32 +3118,30 @@ function editorCalcHumanIndex() {
         category = 'gépies';
         color = '#e05555';
         label = '🔴 Gépies ritmus';
-        pct = Math.round((cv / 0.25) * 25); // 0–25%
+        pct = Math.round((cv / 0.25) * 25);
     } else if (cv < 0.6) {
         category = 'közepes';
         color = 'var(--gold)';
         label = '🟡 Vegyes ritmus';
-        pct = Math.round(25 + ((cv - 0.25) / 0.35) * 35); // 25–60%
+        pct = Math.round(25 + ((cv - 0.25) / 0.35) * 35);
     } else if (!isIntense) {
         category = 'emberi';
         color = 'var(--success)';
         label = '🟢 Emberi ritmus';
-        pct = Math.round(60 + ((cv - 0.6) / 0.3) * 25); // 60–85%
+        pct = Math.round(60 + ((cv - 0.6) / 0.3) * 25);
     } else {
         category = 'intenzív';
         color = 'var(--gold2)';
         label = '⭐ Intenzív alkotás';
-        pct = Math.min(100, Math.round(85 + ((cv - 0.9) / 0.5) * 15)); // 85–100%
+        pct = Math.min(100, Math.round(85 + ((cv - 0.9) / 0.5) * 15));
     }
 
     pct = Math.max(0, Math.min(100, pct));
 
-    // ── UI frissítés ──
     const idx = document.getElementById('human-index');
     const fill = document.getElementById('human-pct-fill');
     const stat = document.getElementById('s-human');
 
-    // A szám helyett kategória-label – nem félrevezető %
     if (idx) {
         idx.textContent = label;
         idx.style.fontSize = '.85rem';
@@ -3160,13 +3153,113 @@ function editorCalcHumanIndex() {
     }
     if (stat) stat.textContent = pct + '%';
 
-    // processData-ba mehet a cv és kategória
     E.humanCategory = category;
     E.humanCV = parseFloat(cv.toFixed(3));
     E.humanPct = pct;
 
+    // ── CF-DNA: Szünetek pozíciója mondathatárokon ───────────
+    const cfText = document.getElementById('doc-content-area')?.innerText || '';
+    const cfPauses = E.events.filter(e => e.type === 'pause');
+    let boundaryPauses = 0, midWordPauses = 0;
+    cfPauses.forEach(pause => {
+        const charsAtPause = E.events
+            .filter(e => e.type === 'key' && e.ts < pause.ts).length;
+        const charBefore = cfText[charsAtPause - 1] || '';
+        if (/[.!?,;:\n]/.test(charBefore)) boundaryPauses++;
+        else midWordPauses++;
+    });
+    const totalCfPauses = boundaryPauses + midWordPauses;
+    const boundaryRatio = totalCfPauses > 0 ? boundaryPauses / totalCfPauses : 0;
+    const cfDnaScore = Math.min(100, Math.round(
+        (boundaryRatio * 60) +
+        (Math.min(cfPauses.length, 10) / 10 * 40)
+    ));
+    E.cfDnaScore = cfDnaScore;
+    E.boundaryPauses = boundaryPauses;
+    E.midWordPauses = midWordPauses;
+
+    // ── NLS: Szókomplexitás és gépelési sebesség korreláció ──
+    const nlsWords = cfText.trim().split(/\s+/).filter(Boolean);
+    const nlsKeyEvents = E.events.filter(e => e.type === 'key');
+    let nlsCorrelation = 0, flowPulseScore = 0;
+    if (nlsWords.length >= 10 && nlsKeyEvents.length >= 20) {
+        const chunkSize = Math.max(1, Math.floor(nlsKeyEvents.length / nlsWords.length));
+        const complexities = nlsWords.map(w => w.length);
+        const speeds = nlsWords.map((_, i) => {
+            const chunk = nlsKeyEvents.slice(i * chunkSize, (i + 1) * chunkSize);
+            if (!chunk.length) return 200;
+            const ivs = chunk.map(e => e.interval || 200).filter(v => v > 0);
+            return ivs.reduce((a, b) => a + b, 0) / ivs.length;
+        });
+        const cMean = complexities.reduce((a, b) => a + b, 0) / complexities.length;
+        const sMean = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+        let num = 0, dc = 0, ds = 0;
+        complexities.forEach((c, i) => {
+            num += (c - cMean) * (speeds[i] - sMean);
+            dc += Math.pow(c - cMean, 2);
+            ds += Math.pow(speeds[i] - sMean, 2);
+        });
+        nlsCorrelation = (dc && ds) ? num / Math.sqrt(dc * ds) : 0;
+        flowPulseScore = Math.min(100, Math.round(50 + (nlsCorrelation * 50)));
+    }
+    E.nlsCorrelation = parseFloat(nlsCorrelation.toFixed(3));
+    E.flowPulseScore = flowPulseScore;
+
+    // ── SMD: Biológiai entrópia – ritmusingadozások ──────────
+    const smdIntervals = E.events
+        .filter(e => e.type === 'key' && e.interval > 30 && e.interval < 2000)
+        .map(e => e.interval)
+        .slice(-100);
+    let microDriftIndex = 0, biologicalEntropy = 0, smdScore = 0;
+    if (smdIntervals.length >= 20) {
+        const diffs = smdIntervals.slice(1).map((v, i) => Math.abs(v - smdIntervals[i]));
+        microDriftIndex = parseFloat(
+            (diffs.reduce((a, b) => a + b, 0) / diffs.length / 1000).toFixed(3)
+        );
+        const buckets = {};
+        smdIntervals.forEach(v => {
+            const b = Math.floor(v / 50) * 50;
+            buckets[b] = (buckets[b] || 0) + 1;
+        });
+        const total = smdIntervals.length;
+        biologicalEntropy = parseFloat(
+            (-Object.values(buckets).reduce((s, count) => {
+                const p = count / total;
+                return s + (p > 0 ? p * Math.log2(p) : 0);
+            }, 0)).toFixed(3)
+        );
+        smdScore = Math.min(100, Math.round(
+            (Math.min(microDriftIndex, 1) * 40) +
+            (Math.min(biologicalEntropy / 5, 1) * 60)
+        ));
+    }
+    E.microDriftIndex = microDriftIndex;
+    E.biologicalEntropy = biologicalEntropy;
+    E.smdScore = smdScore;
+
+    // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
+    const tripleLockScore = Math.round(
+        (cfDnaScore * 0.35) +
+        (flowPulseScore * 0.35) +
+        (smdScore * 0.30)
+    );
+    E.tripleLockScore = tripleLockScore;
+
+    // Triple-Lock UI frissítés
+    const tlScore = document.getElementById('triple-lock-score');
+    const tlCfdna = document.getElementById('tl-cfdna');
+    const tlNls   = document.getElementById('tl-nls');
+    const tlSmd   = document.getElementById('tl-smd');
+    if (tlScore) tlScore.textContent = tripleLockScore ? tripleLockScore + '/100' : '–';
+    if (tlCfdna) tlCfdna.textContent = cfDnaScore ? cfDnaScore + '/100' : '–';
+    if (tlNls)   tlNls.textContent   = flowPulseScore ? flowPulseScore + '/100' : '–';
+    if (tlSmd)   tlSmd.textContent   = smdScore ? smdScore + '/100' : '–';
+
     updateEntropyBar();
 }
+
+
+
 function editorRhythm() {
     const recent = E.events.filter(ev => ev.type === 'key').slice(-30);
     if (recent.length < 20) return;
