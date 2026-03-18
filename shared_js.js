@@ -3602,9 +3602,22 @@ function savePulseImage() {
 /* ─── 27. ÚJ EDITOR FUNKCIÓK (AZ ÚJ ÍRÓFELÜLETBŐL) ─────────── */
 
 // TIMELAPSE BATCH KEZELÉS
-function tlRecord(type, char) {
+async function tlRecord(type, char) {
+    if (!currentUser) return;
+
+    const { data: profile } = await db
+        .from('profiles')
+        .select('plan, trial_ends_at')
+        .eq('id', currentUser.id)
+        .single();
+
+    const plan = profile?.plan || 'free';
+    const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+    const isPro = plan === 'pro' || plan === 'institution' || plan === 'premium' || trialActive;
+
+    if (!isPro) return;
+
     E.tlBatch.push({ type, char: char || null, ts_ms: Date.now() });
-    console.log('tlRecord:', type, '| batch méret:', E.tlBatch.length, '| tempDocId:', E.tempDocId);
 }
 
 function startTlFlushTimer() {
