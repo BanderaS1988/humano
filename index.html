@@ -3149,6 +3149,16 @@ try {
 }
       
         showToast('✅ Szöveg hitelesítve és mentve!');
+
+      // Megosztás gombok frissítése
+updateShareButtons(docId, title);
+
+// Ha publikálva van, megjelenik a megosztás szekció
+const isPublishedChecked = document.getElementById('doc-is-published')?.checked;
+if (isPublishedChecked) {
+    const shareSection = document.getElementById('share-published-section');
+    if (shareSection) shareSection.style.display = 'block';
+}
       const targetEmail = document.getElementById('target-email-input')?.value?.trim();
 if (targetEmail) {
     setTimeout(() => openSendEmailModal(), 1000);
