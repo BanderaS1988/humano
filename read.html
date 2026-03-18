@@ -36,6 +36,10 @@
                  margin-bottom:.75rem;line-height:1.3" id="r-title"></h1>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <span style="font-size:.85rem;color:var(--muted)" id="r-author"></span>
+<a id="r-published-url" href="#" target="_blank" 
+   style="display:none;font-size:.82rem;color:var(--gold);text-decoration:none">
+   🔗 Megjelent itt →
+</a>
         <span style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);
                      border-radius:20px;padding:.2rem .75rem;font-size:.78rem;
                      color:var(--gold)" id="r-human-score"></span>
@@ -193,6 +197,12 @@ document.getElementById('tw-desc').content    = pageDesc;
         .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('r-title').textContent   = doc.title || 'Névtelen';
     document.getElementById('r-author').textContent  = '✍️ ' + (doc.author_name || '–');
+  const pubUrlEl = document.getElementById('r-published-url');
+if (doc.published_url && pubUrlEl) {
+    pubUrlEl.href        = doc.published_url;
+    pubUrlEl.style.display = 'inline';
+    pubUrlEl.textContent = '🔗 Megjelent itt: ' + doc.published_url;
+}
     document.getElementById('r-human-score').textContent = `⚡ ${pd.humanIndex || 0}% Human Score`;
     document.getElementById('r-body').innerHTML      = doc.content || '';
     document.getElementById('r-hash').textContent    = doc.hash || '–';
