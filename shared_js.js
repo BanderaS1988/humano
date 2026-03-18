@@ -139,26 +139,36 @@ function _showSection(hash) {
         window.scrollTo(0, 0);
         history.replaceState(null, '', '#' + hash);
         
-        // EZT ADD HOZZÁ - KALIBRÁCIÓS MODAL ELLENŐRZÉS
+        // KALIBRÁCIÓS MODAL - EZ FOG MŰKÖDNI
         if (hash === 'editor' && currentUser) {
+            // Ne használj setTimeout-ot a Supabase híváson belül
             setTimeout(async () => {
-                // Ne mutasd, ha már kihagyta
-                if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-                
-                // Ellenőrizzük, van-e kalibráció
-                const { data } = await db
-                    .from('typing_profiles')
-                    .select('id')
-                    .eq('user_id', currentUser.id)
-                    .limit(1);
-                
-                // Ha nincs kalibráció, mutasd a modalt
-                if (!data || !data.length) {
-                    document.getElementById('cal-reminder-modal')?.classList.add('open');
+                try {
+                    // Ne mutasd, ha már kihagyta
+                    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+                    
+                    const { data, error } = await db
+                        .from('typing_profiles')
+                        .select('id')
+                        .eq('user_id', currentUser.id);
+                    
+                    if (error) {
+                        console.log('Adatbázis hiba:', error);
+                        return;
+                    }
+                    
+                    // Ha nincs kalibráció (üres a tömb), mutasd a modalt
+                    if (!data || data.length === 0) {
+                        const modal = document.getElementById('cal-reminder-modal');
+                        if (modal) {
+                            modal.classList.add('open');
+                        }
+                    }
+                } catch (e) {
+                    console.log('Hiba a kalibráció ellenőrzésekor:', e);
                 }
-            }, 1000); // 1 másodperc várakozás, hogy az editor betöltődjön
+            }, 800);
         }
-        // VÉGE
         
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active-page');
@@ -166,9 +176,16 @@ function _showSection(hash) {
                 link.classList.add('active-page');
             }
         });
+        
+        // Itt hívódnak meg az oldal-specifikus funkciók
+        if (hash === 'editor') {
+            // Ha van editorInit, hívd meg
+            if (typeof editorInit === 'function') {
+                editorInit();
+            }
+        }
+        
         _onSectionActivated(hash);
-    } else {
-        console.warn('Nem található szekció: page-' + hash);
     }
 }
 
