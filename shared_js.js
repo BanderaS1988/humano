@@ -2978,6 +2978,17 @@ function queueOrRun(fn) {
     showToast('📥 Offline – mentés sorba állítva.');
 }
 
+// Megakadályozza a böngésző bezárását ha offline queue-ban van adat
+window.addEventListener('beforeunload', (e) => {
+    if (offlineQueue.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'Van mentetlen hitelesítésed! Ha bezárod az oldalt, elveszhet. Biztosan bezárod?';
+        return e.returnValue;
+    }
+});
+
+
+
 function checkDraftsOnEditorOpen() {
     const idx = getDraftIndex();
     const myDrafts = idx.filter(d => d.id.includes(currentUser?.id || 'anon'));
