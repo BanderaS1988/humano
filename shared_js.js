@@ -3569,9 +3569,9 @@ async function editorCalcHumanIndex() {
             tlBaseline.style.display = 'none';
         }
     }
-}
-   
-   const tlCrossValid = document.getElementById('tl-crossvalid');
+
+    // ── KERESZT-VALIDÁCIÓ MEGJELENÍTÉS ──────────────────────
+    const tlCrossValid = document.getElementById('tl-crossvalid');
     const tlCrossValidText = document.getElementById('tl-crossvalid-text');
     if (tlCrossValid && tlCrossValidText) {
         if (crossValidFlag) {
