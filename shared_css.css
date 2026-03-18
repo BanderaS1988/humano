@@ -305,6 +305,16 @@ body {
     }
 
 
+@keyframes nav-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.nav-link.active-page {
+  color: var(--gold) !important;
+  animation: nav-pulse 2s ease-in-out infinite;
+}
+
 /* ─── GOMBOK ────────────────────────────────────────────────── */
 .btn {
     display: inline-flex;
