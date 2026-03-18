@@ -3192,7 +3192,37 @@ function updateEditorTimer() {
 }
 
 function editorCalcHumanIndex() {
-    if (E.keys < 20) return;
+   if (E.keys < 20) return;
+
+    // ── MINIMUM MINTAMÉRET ELLENŐRZÉS ────────────────────────
+    // Kevés adat esetén a score-ok nem megbízhatóak
+    const sampleSize = E.keys;
+    const minSample = 50;
+    const optimalSample = 200;
+    const sampleWeight = Math.min(1, sampleSize / optimalSample);
+
+    // Time-series: az utolsó 3 mérési periódus átlaga
+    if (!E.scoreHistory) E.scoreHistory = [];
+    if (!E.lastScoreTime) E.lastScoreTime = Date.now();
+
+    // Minden 30 másodpercben mentünk egy snapshot-ot
+    if (Date.now() - E.lastScoreTime > 30000 && E.tripleLockScore > 0) {
+        E.scoreHistory.push({
+            ts: Date.now(),
+            tripleLock: E.tripleLockScore,
+            cfDna: E.cfDnaScore,
+            nls: E.flowPulseScore,
+            smd: E.smdScore
+        });
+        if (E.scoreHistory.length > 10) E.scoreHistory.shift();
+        E.lastScoreTime = Date.now();
+    }
+
+    // Time-series alapú simítás – ha van előzmény, átlagoljuk
+    const historyWeight = E.scoreHistory.length >= 3 ? 0.3 : 0;
+    const historyAvg = E.scoreHistory.length >= 3
+        ? Math.round(E.scoreHistory.slice(-3).reduce((s, h) => s + h.tripleLock, 0) / 3)
+        : 0;
 
     const recent = E.events.filter(ev => ev.type === 'key').slice(-50);
     if (recent.length < 10) return;
@@ -3340,13 +3370,26 @@ function editorCalcHumanIndex() {
     E.biologicalEntropy = biologicalEntropy;
     E.smdScore = smdScore;
 
-    // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
-    const tripleLockScore = Math.round(
+   // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
+    // Mintaméret és time-series alapú súlyozás
+    const rawTripleLock = Math.round(
         (cfDnaScore * 0.35) +
         (flowPulseScore * 0.35) +
         (smdScore * 0.30)
     );
+
+    // Kis mintánál csökkentjük a score-t
+    const weightedTripleLock = sampleSize < minSample
+        ? Math.round(rawTripleLock * sampleWeight)
+        : rawTripleLock;
+
+    // Time-series simítás ha van elég előzmény
+    const tripleLockScore = historyWeight > 0
+        ? Math.round((weightedTripleLock * (1 - historyWeight)) + (historyAvg * historyWeight))
+        : weightedTripleLock;
+
     E.tripleLockScore = tripleLockScore;
+    E.sampleWeight = parseFloat(sampleWeight.toFixed(2));
 
 
 // ── KERESZT-VALIDÁCIÓ ────────────────────────────────────
