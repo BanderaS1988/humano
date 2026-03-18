@@ -38,32 +38,52 @@ async function eduRequireRole(role) {
 /* ─── 3. TANÁRI REGISZTRÁCIÓ ──────────────────────────────── */
 
 // Tanári kód ellenőrzése regisztrációkor
+/* ─── 3. TANÁRI REGISZTRÁCIÓ ──────────────────────────────── */
+
+// Tanári kód ellenőrzése regisztrációkor
 async function teacherCheckCode(code) {
   if (!code) return { valid: false, error: 'Add meg a tanári kódot.' };
-  const { data, error } = await db.from('teacher_codes')
+  
+  const { data, error } = await db
+    .from('teacher_codes')
     .select('id, used_by')
     .eq('code', code.trim().toUpperCase())
     .single();
+    
   if (error || !data) return { valid: false, error: 'Érvénytelen tanári kód.' };
   if (data.used_by) return { valid: false, error: 'Ez a kód már felhasználásra került.' };
+  
   return { valid: true, id: data.id };
 }
 
 // Tanári szerepkör beállítása regisztráció után
 async function teacherActivate(codeText) {
   if (!currentUser) return false;
+  
   const check = await teacherCheckCode(codeText);
-  if (!check.valid) { showToast('❌ ' + check.error); return false; }
+  if (!check.valid) {
+    showToast('❌ ' + check.error);
+    return false;
+  }
 
   // Profil frissítése
-  const { error: profileErr } = await db.from('profiles')
+  const { error: profileErr } = await db
+    .from('profiles')
     .update({ role: 'teacher' })
     .eq('id', currentUser.id);
-  if (profileErr) { showToast('❌ Hiba: ' + profileErr.message); return false; }
+    
+  if (profileErr) {
+    showToast('❌ Hiba: ' + profileErr.message);
+    return false;
+  }
 
   // Kód megjelölése felhasználtnak
-  await db.from('teacher_codes')
-    .update({ used_by: currentUser.id, used_at: new Date().toISOString() })
+  await db
+    .from('teacher_codes')
+    .update({ 
+      used_by: currentUser.id, 
+      used_at: new Date().toISOString() 
+    })
     .eq('code', codeText.trim().toUpperCase());
 
   showToast('✅ Tanári fiók aktiválva!');
@@ -715,6 +735,7 @@ window.Edu = {
 
   // Értesítési beállítások
   teacherUpdateNotifySettings,
+  teacherLoadNotifySettings,
 
   // UI
   statusBadge:           eduStatusBadge,
