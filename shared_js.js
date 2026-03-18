@@ -178,12 +178,11 @@ function _showSection(hash) {
         });
         
         // Itt hívódnak meg az oldal-specifikus funkciók
-        if (hash === 'editor') {
-            // Ha van editorInit, hívd meg
-            if (typeof editorInit === 'function') {
-                editorInit();
-            }
-        }
+if (hash === 'editor') {
+    if (typeof loadEditorWithConsentCheck === 'function') {
+        loadEditorWithConsentCheck();
+    }
+}
         
         _onSectionActivated(hash);
     }
