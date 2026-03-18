@@ -2823,7 +2823,7 @@ if (!trialActive && !unlimited && used >= limit) {
 
         const isPublic = document.getElementById('doc-is-public')?.checked || false;
 
-        const { error } = await db.from('documents').insert({
+        const { error } = await queueOrRun(() => db.from('documents').insert({
             doc_id:       docId,
             title,
             category,
@@ -2837,7 +2837,7 @@ if (!trialActive && !unlimited && used >= limit) {
             created_at:   new Date().toISOString(),
             ots_pending:  true,
             version:      1,
-        });
+         }));
         if (error) throw error;
 
         await db.from('profiles').update({ used_credits: used + 1 }).eq('id', currentUser.id);
