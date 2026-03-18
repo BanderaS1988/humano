@@ -1994,6 +1994,10 @@ async function loadAdmin() {
       <td style="font-family:var(--font-mono);font-size:.68rem">${(doc.hash || '').substring(0, 16)}…</td>
       <td>${doc.ots_receipt ? '<span class="badge badge-success">⛓️ ✓</span>' : doc.ots_pending ? '<span class="badge badge-muted">⏳</span>' : '–'}</td>
     </tr>`).join('') : '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Nincs adat</td></tr>';
+
+     // ÚJ: élő entitás dashboard + fellebbezések betöltése
+    if (typeof loadLivingEntityDashboard === 'function') loadLivingEntityDashboard();
+    loadAppeals();
 }
 
 
