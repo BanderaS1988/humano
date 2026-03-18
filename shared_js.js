@@ -5607,6 +5607,7 @@ const ConsentManager = {
 
 
 // EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
+// EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
 async function loadEditorWithConsentCheck() {
   if (!currentUser) {
     showPage('auth');
@@ -5620,11 +5621,40 @@ async function loadEditorWithConsentCheck() {
     return;
   }
 
-  // Ha van consent, akkor inicializáljuk az editort
+  // Ha van consent, inicializáljuk az editort
   if (typeof editorInit === 'function') editorInit();
   
-  // ÉS KÜLÖN ellenőrizzük a kalibrációt (függetlenül az editorInit-től)
-  setTimeout(checkCalibrationModal, 1500);
+  // ITT A HIBA: ezt a setTimeout-ot ki kell venni, mert:
+  // 1. Ha a consent megvolt, a checkCalibrationModal már lefutott az editorInit-ben
+  // 2. Ha a consent nem volt meg, akkor itt nem fut le
+}
+
+// Módosítsd a handleConsentAccept függvényt:
+async function handleConsentAccept() {
+  const btn = document.getElementById('consent-accept-btn');
+  if (btn) { 
+    btn.disabled = true; 
+    btn.textContent = '⏳ Rögzítés...'; 
+  }
+
+  try {
+    await ConsentManager.record('keystroke_dynamics');
+    hideBiometricConsentModal();
+    showToast('✅ Beleegyezés rögzítve');
+    
+    // Inicializáljuk az editort
+    if (typeof editorInit === 'function') editorInit();
+    
+    // ÉS KÜLÖN ellenőrizzük a kalibrációt
+    setTimeout(checkCalibrationModal, 1500);
+    
+  } catch (err) {
+    showToast('❌ Hiba: ' + err.message);
+    if (btn) { 
+      btn.disabled = false; 
+      btn.textContent = '✦ Elfogadom'; 
+    }
+  }
 }
 
 
