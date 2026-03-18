@@ -4544,28 +4544,27 @@ function editorKeyDown(e) {
             localStorage.setItem('humano_temp_doc_id', E.tempDocId);
         }
     }
- if (E.lastKey && (now - E.lastKey) > 3000) {
-    E.pauses++;
-    E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
-    document.getElementById('s-pauses').textContent = E.pauses;
-    document.getElementById('sidebar-pauses').textContent = E.pauses;
-    updatePauseInsight();
-
-    const pauseMs = now - E.lastKey;
-    if (pauseMs > 30 * 60 * 1000) {
-        showToast('⏸ Hosszú szünet – új munkamenetként rögzítve');
-        E.sessionBreaks = (E.sessionBreaks || 0) + 1;
-    } else if (pauseMs > 5 * 60 * 1000) {
-        showToast('💭 5 perces szünet – folytatod az írást?');
+    if (E.lastKey && (now - E.lastKey) > 3000) {
+        E.pauses++;
+        E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
+        document.getElementById('s-pauses').textContent = E.pauses;
+        document.getElementById('sidebar-pauses').textContent = E.pauses;
+        updatePauseInsight();
+        const pauseMs = now - E.lastKey;
+        if (pauseMs > 30 * 60 * 1000) {
+            showToast('⏸ Hosszú szünet – új munkamenetként rögzítve');
+            E.sessionBreaks = (E.sessionBreaks || 0) + 1;
+        } else if (pauseMs > 5 * 60 * 1000) {
+            showToast('💭 5 perces szünet – folytatod az írást?');
+        }
     }
-}
     if (e.key === 'Backspace' || e.key === 'Delete') {
         E.dels++;
         document.getElementById('s-dels').textContent = E.dels;
         document.getElementById('sidebar-dels').textContent = E.dels;
         typedChars = Math.max(0, typedChars - 1);
         updatePasteRatio();
-     tlRecord('delete').catch(() => {});
+        tlRecord('delete').catch(() => {});
         checkTlFlush();
     }
     else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -4573,7 +4572,6 @@ function editorKeyDown(e) {
             E.warns++;
             E.repeatKeys++;
             E.events.push({ type: 'repeat', ts: now, key: e.key });
-            // tlRecord NEM hívódik repeat-re – DB constraint tiltja
             if (E.warns >= 3) {
                 const warn = document.getElementById('e-rhythm-warn');
                 if (warn) {
@@ -4598,7 +4596,7 @@ function editorKeyDown(e) {
         drawPulse();
         editorRhythm();
         editorCalcHumanIndex();
-          tlRecord('insert', e.key).catch(() => {});
+        tlRecord('insert', e.key).catch(() => {});
         checkTlFlush();
     }
     const sel = window.getSelection();
@@ -4615,6 +4613,13 @@ function editorKeyDown(e) {
             sel.addRange(range);
         }
     }
+    resetInactivityTimer();
+    E.lastKey = now;
+    editorUpdateStats();
+    editorCheckSave();
+    checkTlFlush();
+}
+
 
 // ── ANTI-SPOOF ELLENŐRZÉS ─────────────────────────────────
     if (!E.antiSpoof) E.antiSpoof = {
