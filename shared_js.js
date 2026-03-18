@@ -4285,7 +4285,26 @@ function updateCertPanel(docId, hash, savedAt, otsReceipt, otsPending) {
     if (bc) bc.textContent = getBadgeHtml(docId);
 }
 
-function downloadPdfCert() {
+async function downloadPdfCert() {
+    if (!currentUser) { showToast('❌ Be kell jelentkezni!'); return; }
+
+    // PDF csak Lite+ csomagnak
+    const { data: profile } = await db
+        .from('profiles')
+        .select('plan, trial_ends_at')
+        .eq('id', currentUser.id)
+        .single();
+
+    const plan = profile?.plan || 'free';
+    const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+    const hasPdf = plan === 'lite' || plan === 'pro' || plan === 'institution' || plan === 'premium' || trialActive;
+
+    if (!hasPdf) {
+        showToast('❌ PDF tanúsítvány Lite csomagtól elérhető!');
+        showPage('supporters');
+        return;
+    }
+
     const id = E.certDocId || document.getElementById('cert-id-val')?.textContent;
     const hash = E.certHash || document.getElementById('cert-hash-val')?.textContent;
     const title = E.certTitle || document.getElementById('doc-title-input')?.value || '–';
