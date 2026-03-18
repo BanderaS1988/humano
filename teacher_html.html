@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HUMANO – Tanári Panel</title>
+  <link rel="icon" href="/favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/shared_css.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ── LAYOUT ── */
+    .teacher-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    .teacher-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+
+    /* ── TABOK ── */
+    .tab-bar {
+      display: flex; gap: .5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem; flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: none; border: none;
+      padding: .6rem 1.2rem; cursor: pointer;
+      font-family: var(--font-mono); font-size: .8rem;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      color: var(--gold); border-bottom-color: var(--gold);
+    }
+
+    /* ── OSZTÁLY KÁRTYÁK ── */
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .class-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r); padding: 1.25rem;
+      cursor: pointer; transition: border-color .2s;
+    }
+    .class-card:hover { border-color: var(--gold4); }
+    .class-card.active { border-color: var(--gold); }
+    .class-code {
+      font-family: var(--font-mono); font-size: .7rem;
+      color: var(--gold3); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: .4rem;
+    }
+    .class-name {
+      font-family: var(--font-display); font-size: 1.1rem;
+      font-weight: 700; color: var(--gold2); margin-bottom: .75rem;
+    }
+    .class-stats {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+    .class-stat { text-align: center; }
+    .class-stat-val {
+      font-family: var(--font-display); font-size: 1.3rem;
+      font-weight: 700; color: var(--gold);
+    }
+    .class-stat-lbl {
+      font-size: .62rem; color: var(--muted);
+      font-family: var(--font-mono); text-transform: uppercase;
+    }
+
+    /* ── BEADÁS TÁBLÁZAT ── */
+    .sub-table { width: 100%; border-collapse: collapse; }
+    .sub-table th {
+      font-family: var(--font-mono); font-size: .68rem;
+      color: var(--muted); text-transform: uppercase;
+      padding: .6rem .75rem; border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .sub-table td {
+      padding: .75rem; border-bottom: 1px solid var(--border);
+      font-size: .85rem; color: var(--text); vertical-align: middle;
+    }
+    .sub-table tr:hover td { background: var(--surface2); }
+
+    /* ── REVIEW PANEL ── */
+    .review-panel {
+      background: var(--surface2);
+      border: 1px solid var(--gold4);
+      border-radius: var(--r); padding: 1.5rem;
+      margin-top: 1.5rem; display: none;
+    }
+    .review-panel.open { display: block; }
+    .doc-content-preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 1.25rem;
+      max-height: 300px; overflow-y: auto;
+      font-size: .88rem; line-height: 1.9;
+      color: var(--text); margin-bottom: 1rem;
+    }
+
+    /* ── MEGHÍVÓ PANEL ── */
+    .invite-row {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+      padding: .65rem 1rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm); margin-bottom: .5rem;
+      flex-wrap: wrap;
+    }
+    .invite-token {
+      font-family: var(--font-mono); font-size: .72rem;
+      color: var(--gold2); word-break: break-all;
+    }
+
+    /* ── ÜZENET PANEL ── */
+    .msg-list {
+      display: flex; flex-direction: column; gap: .5rem;
+      max-height: 300px; overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    .msg-bubble {
+      padding: .6rem 1rem; border-radius: var(--r-sm);
+      font-size: .85rem; max-width: 80%;
+    }
+    .msg-bubble.teacher {
+      background: rgba(201,168,76,.12);
+      border: 1px solid var(--gold4);
+      align-self: flex-end; color: var(--text);
+    }
+    .msg-bubble.student {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      align-self: flex-start; color: var(--text);
+    }
+    .msg-meta {
+      font-size: .62rem; color: var(--muted);
+      font-family: var(--font-mono); margin-top: .25rem;
+    }
+
+    /* ── STAT SÁV ── */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-strip-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 1rem; text-align: center;
+    }
+    .stat-strip-val {
+      font-family: var(--font-display); font-size: 1.8rem;
+      font-weight: 700; color: var(--gold);
+    }
+    .stat-strip-lbl {
+      font-size: .65rem; color: var(--muted);
+      font-family: var(--font-mono); text-transform: uppercase;
+      margin-top: .25rem;
+    }
+
+    /* ── MODAL ── */
+    .edu-modal {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(0,0,0,.7);
+      display: none; align-items: center; justify-content: center;
+    }
+    .edu-modal.open { display: flex; }
+    .edu-modal-box {
+      background: var(--surface);
+      border: 1px solid var(--gold4);
+      border-radius: var(--r); padding: 2rem;
+      width: 95%; max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav id="nav">
+  <div class="nav-logo" onclick="window.location.href='/'" style="cursor:pointer">
+    <img src="/humano-logo.png" alt="HUMANO" style="height:44px;display:block">
+  </div>
+  <div class="nav-links">
+    <span class="nav-link" onclick="window.location.href='/'">← Főoldal</span>
+    <span class="nav-link active">Tanári Panel</span>
+  </div>
+  <div class="nav-actions">
+    <span id="nav-teacher-name" style="font-size:.76rem;color:var(--muted);font-family:var(--font-mono)"></span>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()">Kilépés</button>
+  </div>
+</nav>
+
+<!-- ═══ FŐ TARTALOM ═══ -->
+<div class="teacher-wrap">
+
+  <!-- Fejléc -->
+  <div class="teacher-header">
+    <div>
+      <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:700">
+        Tanári Panel <span class="gt">✦</span>
+      </h1>
+      <p style="color:var(--muted);font-size:.85rem;margin-top:.25rem"
+         id="teacher-humano-id">HUMANO ID: –</p>
+    </div>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-outline btn-sm" onclick="openNotifySettings()">
+        ⚙️ Értesítések
+      </button>
+      <button class="btn btn-gold" onclick="openCreateClassModal()">
+        + Új osztály
+      </button>
+    </div>
+  </div>
+
+  <!-- Statisztika sáv -->
+  <div class="stat-strip" id="teacher-stats">
+    <div class="stat-strip-card">
+      <div class="stat-strip-val" id="stat-total-classes">–</div>
+      <div class="stat-strip-lbl">Osztály</div>
+    </div>
+    <div class="stat-strip-card">
+      <div class="stat-strip-val" id="stat-total-submissions">–</div>
+      <div class="stat-strip-lbl">Beadás</div>
+    </div>
+    <div class="stat-strip-card">
+      <div class="stat-strip-val" id="stat-pending">–</div>
+      <div class="stat-strip-lbl">Várakozik</div>
+    </div>
+    <div class="stat-strip-card">
+      <div class="stat-strip-val" id="stat-avg-score">–</div>
+      <div class="stat-strip-lbl">Átlag Human Score</div>
+    </div>
+  </div>
+
+  <!-- Tabok -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('classes')">📚 Osztályaim</button>
+    <button class="tab-btn" onclick="switchTab('submissions')">📄 Beadások</button>
+    <button class="tab-btn" onclick="switchTab('invites')">🔗 Meghívók</button>
+  </div>
+
+  <!-- ── TAB: OSZTÁLYOK ── -->
+  <div id="tab-classes">
+    <div class="class-grid" id="class-grid">
+      <div style="color:var(--muted);font-size:.85rem;padding:2rem">⏳ Betöltés...</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: BEADÁSOK ── -->
+  <div id="tab-submissions" style="display:none">
+
+    <!-- Osztály választó -->
+    <div style="margin-bottom:1rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+      <select class="form-control" id="sub-class-select"
+              style="max-width:280px" onchange="loadSubmissions()">
+        <option value="">Válassz osztályt...</option>
+      </select>
+      <select class="form-control" id="sub-status-filter"
+              style="max-width:160px" onchange="filterSubmissions()">
+        <option value="">Minden státusz</option>
+        <option value="pending">Várakozik</option>
+        <option value="accepted">Elfogadva</option>
+        <option value="rejected">Visszaküldve</option>
+        <option value="revision">Javítandó</option>
+      </select>
+      <span style="font-size:.78rem;color:var(--muted)" id="sub-count-label"></span>
+    </div>
+
+    <!-- Táblázat -->
+    <div style="overflow-x:auto;background:var(--surface);
+                border:1px solid var(--border);border-radius:var(--r)">
+      <table class="sub-table">
+        <thead>
+          <tr>
+            <th>Diák</th>
+            <th>DOC ID</th>
+            <th>Human Score</th>
+            <th>Szavak</th>
+            <th>Beadva</th>
+            <th>Státusz</th>
+            <th>Műveletek</th>
+          </tr>
+        </thead>
+        <tbody id="submissions-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">
+            Válassz osztályt a beadások megtekintéséhez.
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Review panel (kiválasztott beadás részletei) -->
+    <div class="review-panel" id="review-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;
+                      font-weight:700;color:var(--gold2)" id="review-student-name">–</div>
+          <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)"
+               id="review-doc-id">–</div>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span id="review-score">–</span>
+          <span id="review-status-badge">–</span>
+          <button class="btn btn-ghost btn-sm" onclick="closeReview()">✕</button>
+        </div>
+      </div>
+
+      <!-- Dokumentum tartalma -->
+      <div style="font-size:.7rem;font-weight:700;color:var(--gold2);
+                  text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.5rem">
+        📄 Dolgozat tartalma
+      </div>
+      <div class="doc-content-preview" id="review-content">–</div>
+
+      <!-- Biometrikus adatok -->
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div class="card" style="flex:1;min-width:120px;padding:.75rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.3rem;
+                      font-weight:700;color:var(--gold)" id="review-keystrokes">–</div>
+          <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono)">Leütés</div>
+        </div>
+        <div class="card" style="flex:1;min-width:120px;padding:.75rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.3rem;
+                      font-weight:700;color:var(--gold)" id="review-pauses">–</div>
+          <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono)">Szünet</div>
+        </div>
+        <div class="card" style="flex:1;min-width:120px;padding:.75rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.3rem;
+                      font-weight:700;color:var(--gold)" id="review-words">–</div>
+          <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono)">Szó</div>
+        </div>
+        <div class="card" style="flex:1;min-width:120px;padding:.75rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.3rem;
+                      font-weight:700;color:var(--gold)" id="review-typed-pct">–</div>
+          <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono)">Kézzel gépelt</div>
+        </div>
+      </div>
+
+      <!-- Verify link -->
+      <div style="margin-bottom:1rem">
+        <a id="review-verify-link" href="#" target="_blank"
+           class="btn btn-outline btn-sm">🔍 HUMANO ellenőrzés megnyitása</a>
+      </div>
+
+      <!-- Üzenetek -->
+      <div style="font-size:.7rem;font-weight:700;color:var(--gold2);
+                  text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.5rem">
+        💬 Üzenetek
+      </div>
+      <div class="msg-list" id="review-messages">
+        <div style="color:var(--muted);font-size:.82rem">Betöltés...</div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-bottom:1.25rem">
+        <input type="text" class="form-control" id="review-msg-input"
+               placeholder="Írj üzenetet a diáknak..."
+               onkeydown="if(event.key==='Enter')sendTeacherMessage()"/>
+        <button class="btn btn-outline btn-sm" onclick="sendTeacherMessage()">Küld</button>
+      </div>
+
+      <!-- Döntés -->
+      <div style="font-size:.7rem;font-weight:700;color:var(--gold2);
+                  text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.75rem">
+        ⚖️ Döntés
+      </div>
+      <textarea class="form-control" id="review-note"
+                placeholder="Megjegyzés a diáknak (opcionális)..."
+                style="min-height:80px;margin-bottom:.75rem"></textarea>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="reviewSubmit('accepted')">
+          ✅ Elfogadás
+        </button>
+        <button class="btn btn-outline" onclick="reviewSubmit('revision')"
+                style="border-color:var(--gold4)">
+          🔄 Javítás kérése
+        </button>
+        <button class="btn btn-outline" onclick="reviewSubmit('rejected')"
+                style="border-color:rgba(224,85,85,.4);color:#e05555">
+          ❌ Visszaküldés
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: MEGHÍVÓK ── -->
+  <div id="tab-invites" style="display:none">
+
+    <!-- Osztály szintű meghívó -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-family:var(--font-display);font-size:1rem;
+                  font-weight:700;color:var(--gold2);margin-bottom:1rem">
+        🔗 Osztály meghívó generálása
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:1rem">
+        Egy linket generálsz az egész osztálynak – mindenki ezzel lép be.
+      </p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+        <select class="form-control" id="invite-class-select" style="max-width:280px">
+          <option value="">Válassz osztályt...</option>
+        </select>
+        <button class="btn btn-gold" onclick="generateClassInvite()">
+          🔗 Link generálása
+        </button>
+      </div>
+      <div id="class-invite-result" style="display:none;margin-top:1rem">
+        <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.3rem">
+          Osztály meghívó link:
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="text" class="form-control" id="class-invite-link"
+                 readonly style="font-family:var(--font-mono);font-size:.78rem"/>
+          <button class="btn btn-outline btn-sm"
+                  onclick="Edu.copyLink(document.getElementById('class-invite-link').value)">
+            📋 Másolás
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Személyre szabott meghívó -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="font-family:var(--font-display);font-size:1rem;
+                  font-weight:700;color:var(--gold2);margin-bottom:1rem">
+        👤 Személyes meghívó (egy diáknak)
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:1rem">
+        Névhez kötött, egyedi link – opcionálisan emailben is elküldi.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <select class="form-control" id="personal-invite-class">
+          <option value="">Osztály...</option>
+        </select>
+        <input type="text" class="form-control" id="personal-invite-name"
+               placeholder="Diák neve (pl. Kovács Péter)"/>
+        <input type="email" class="form-control" id="personal-invite-email"
+               placeholder="Email cím (opcionális – automatikus küldéshez)"/>
+        <button class="btn btn-gold" onclick="generatePersonalInvite()">
+          👤 Generálás
+        </button>
+      </div>
+      <div id="personal-invite-result" style="display:none;margin-top:.75rem">
+        <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.3rem">
+          Személyes meghívó link:
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="text" class="form-control" id="personal-invite-link"
+                 readonly style="font-family:var(--font-mono);font-size:.78rem"/>
+          <button class="btn btn-outline btn-sm"
+                  onclick="Edu.copyLink(document.getElementById('personal-invite-link').value)">
+            📋 Másolás
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meghívók listája -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-family:var(--font-display);font-size:1rem;
+                    font-weight:700;color:var(--gold2)">📋 Generált meghívók</div>
+        <select class="form-control" id="invite-list-class" style="max-width:200px"
+                onchange="loadInviteList()">
+          <option value="">Osztály...</option>
+        </select>
+      </div>
+      <div id="invite-list">
+        <div style="color:var(--muted);font-size:.82rem">Válassz osztályt...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /teacher-wrap -->
+
+<!-- ═══ ÉRTESÍTÉSI BEÁLLÍTÁSOK MODAL ═══ -->
+<div class="edu-modal" id="notify-settings-modal">
+  <div class="edu-modal-box">
+    <div style="font-family:var(--font-display);font-size:1.2rem;
+                font-weight:700;color:var(--gold2);margin-bottom:1.25rem">
+      ⚙️ Értesítési beállítások
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem">
+      <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer">
+        <input type="checkbox" id="notify-new-submission"
+               style="accent-color:var(--gold);width:16px;height:16px"/>
+        <div>
+          <div style="font-size:.88rem;font-weight:600;color:var(--text)">
+            Új beadás értesítő
+          </div>
+          <div style="font-size:.72rem;color:var(--muted)">
+            Emailt kapsz amikor egy diák bead egy dolgozatot
+          </div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer">
+        <input type="checkbox" id="notify-new-message"
+               style="accent-color:var(--gold);width:16px;height:16px"/>
+        <div>
+          <div style="font-size:.88rem;font-weight:600;color:var(--text)">
+            Új üzenet értesítő
+          </div>
+          <div style="font-size:.72rem;color:var(--muted)">
+            Emailt kapsz amikor egy diák üzenetet küld
+          </div>
+        </div>
+      </label>
+    </div>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-gold" onclick="saveNotifySettings()">✦ Mentés</button>
+      <button class="btn btn-outline" onclick="closeNotifySettings()">Mégse</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OSZTÁLY LÉTREHOZÁS MODAL ═══ -->
+<div class="edu-modal" id="create-class-modal">
+  <div class="edu-modal-box">
+    <div style="font-family:var(--font-display);font-size:1.2rem;
+                font-weight:700;color:var(--gold2);margin-bottom:1.25rem">
+      📚 Új osztály létrehozása
+    </div>
+    <div class="form-group">
+      <label class="form-label">Osztály neve</label>
+      <input type="text" class="form-control" id="new-class-name"
+             placeholder="pl. Matematika 11/A"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Leírás (opcionális)</label>
+      <textarea class="form-control" id="new-class-desc"
+                placeholder="pl. 2025/26-os tanév, tavaszi félév"
+                style="min-height:60px"></textarea>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem">
+      <button class="btn btn-gold" onclick="createClass()">✦ Létrehozás</button>
+      <button class="btn btn-outline" onclick="closeCreateClassModal()">Mégse</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div id="humano-toast"></div>
+
+<!-- ═══ SCRIPTEK ═══ -->
+<script src="/shared_js.js"></script>
+<script src="/edu.js"></script>
+<script>
+
+/* ── ÁLLAPOT ── */
+let _classes      = [];
+let _submissions  = [];
+let _activeSubId  = null;
+let _msgChannel   = null;
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Szerepkör ellenőrzés
+  const { data: { session } } = await db.auth.getSession();
+  if (!session?.user) { window.location.href = '/'; return; }
+
+  const profile = await Edu.requireRole('teacher');
+  if (!profile) return;
+
+  // Fejléc
+  const { data: p } = await db.from('profiles')
+    .select('username, humano_id')
+    .eq('id', session.user.id).single();
+  if (p) {
+    document.getElementById('nav-teacher-name').textContent = p.username || session.user.email;
+    document.getElementById('teacher-humano-id').textContent = 'HUMANO ID: ' + (p.humano_id || '–');
+  }
+
+  await loadClasses();
+  await loadStats();
+
+  // Realtime – ha éppen a beadások tabon van
+  Edu.watchSubmissions(null, () => {
+    if (document.getElementById('tab-submissions').style.display !== 'none') {
+      loadSubmissions();
+    }
+  });
+});
+
+/* ── TABVÁLTÁS ── */
+function switchTab(tab) {
+  ['classes','submissions','invites'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['classes','submissions','invites'][i] === tab);
+  });
+  if (tab === 'submissions') populateClassSelects();
+  if (tab === 'invites')     populateClassSelects();
+}
+
+/* ── STATISZTIKA ── */
+async function loadStats() {
+  const classes = await Edu.classLoadAll();
+  const totalSub = classes.reduce((s, c) => s + (c.total_submissions || 0), 0);
+  const pending  = classes.reduce((s, c) => s + (c.pending_count || 0), 0);
+  const avgScore = classes.length
+    ? Math.round(classes.reduce((s, c) => s + (parseFloat(c.avg_human_score) || 0), 0) / classes.length)
+    : 0;
+
+  document.getElementById('stat-total-classes').textContent    = classes.length;
+  document.getElementById('stat-total-submissions').textContent = totalSub;
+  document.getElementById('stat-pending').textContent           = pending;
+  document.getElementById('stat-avg-score').textContent         = avgScore ? avgScore + '%' : '–';
+}
+
+/* ── OSZTÁLYOK ── */
+async function loadClasses() {
+  _classes = await Edu.classLoadAll();
+  renderClasses();
+}
+
+function renderClasses() {
+  const grid = document.getElementById('class-grid');
+  if (!_classes.length) {
+    grid.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:2rem;grid-column:span 3">
+      Még nincs osztályod. Hozz létre egyet!
+    </div>`;
+    return;
+  }
+  grid.innerHTML = _classes.map(c => `
+    <div class="class-card" onclick="selectClass('${c.id}')">
+      <div class="class-code">${esc(c.code)}</div>
+      <div class="class-name">${esc(c.name)}</div>
+      <div class="class-stats">
+        <div class="class-stat">
+          <div class="class-stat-val">${c.total_submissions || 0}</div>
+          <div class="class-stat-lbl">Beadás</div>
+        </div>
+        <div class="class-stat">
+          <div class="class-stat-val" style="color:var(--gold3)">${c.pending_count || 0}</div>
+          <div class="class-stat-lbl">Várakozik</div>
+        </div>
+        <div class="class-stat">
+          <div class="class-stat-val" style="color:var(--success)">${c.accepted_count || 0}</div>
+          <div class="class-stat-lbl">Elfogadva</div>
+        </div>
+      </div>
+      <div style="margin-top:.75rem;display:flex;gap:.5rem">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();selectClass('${c.id}');switchTab('submissions')">
+          📄 Beadások
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteClass('${c.id}')">
+          🗑
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function selectClass(classId) {
+  document.querySelectorAll('.class-card').forEach(el => el.classList.remove('active'));
+  event.currentTarget?.classList.add('active');
+  document.getElementById('sub-class-select').value = classId;
+  switchTab('submissions');
+  loadSubmissions();
+}
+
+async function deleteClass(classId) {
+  const ok = await Edu.classDelete(classId);
+  if (ok) { await loadClasses(); await loadStats(); }
+}
+
+/* ── OSZTÁLY LÉTREHOZÁS ── */
+function openCreateClassModal() {
+  document.getElementById('create-class-modal').classList.add('open');
+  setTimeout(() => document.getElementById('new-class-name').focus(), 100);
+}
+function closeCreateClassModal() {
+  document.getElementById('create-class-modal').classList.remove('open');
+  document.getElementById('new-class-name').value = '';
+  document.getElementById('new-class-desc').value = '';
+}
+
+async function createClass() {
+  const name = document.getElementById('new-class-name').value.trim();
+  if (!name) { showToast('❌ Add meg az osztály nevét!'); return; }
+  const desc = document.getElementById('new-class-desc').value.trim();
+  const cls  = await Edu.classCreate(name, desc);
+  if (cls) {
+    closeCreateClassModal();
+    await loadClasses();
+    await loadStats();
+    populateClassSelects();
+  }
+}
+
+/* ── OSZTÁLY SELECTEK FELTÖLTÉSE ── */
+function populateClassSelects() {
+  const selects = [
+    'sub-class-select', 'invite-class-select',
+    'personal-invite-class', 'invite-list-class',
+  ];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">Válassz osztályt...</option>'
+      + _classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    if (cur) el.value = cur;
+  });
+}
+
+/* ── BEADÁSOK ── */
+async function loadSubmissions() {
+  const classId = document.getElementById('sub-class-select').value;
+  if (!classId) return;
+
+  const tbody = document.getElementById('submissions-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">⏳ Betöltés...</td></tr>';
+
+  _submissions = await Edu.submissionLoadForClass(classId);
+  filterSubmissions();
+  loadStats();
+}
+
+function filterSubmissions() {
+  const status = document.getElementById('sub-status-filter').value;
+  const filtered = status ? _submissions.filter(s => s.status === status) : _submissions;
+  document.getElementById('sub-count-label').textContent = `${filtered.length} beadás`;
+  renderSubmissions(filtered);
+}
+
+function renderSubmissions(subs) {
+  const tbody = document.getElementById('submissions-tbody');
+  if (!subs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">Nincs beadás.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = subs.map(s => `
+    <tr style="cursor:pointer" onclick="openReview('${s.id}')">
+      <td><strong>${esc(s.student_name || '–')}</strong></td>
+      <td style="font-family:var(--font-mono);font-size:.72rem">${esc(s.doc_id)}</td>
+      <td>${Edu.humanScoreBadge(s.human_score || 0)}</td>
+      <td>${s.word_count || 0}</td>
+      <td style="font-size:.78rem">${fmtDate(s.submitted_at)}</td>
+      <td>${Edu.statusBadge(s.status)}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openReview('${s.id}')">
+          🔍 Megnyit
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── REVIEW PANEL ── */
+async function openReview(subId) {
+  _activeSubId = subId;
+  const sub = _submissions.find(s => s.id === subId);
+  if (!sub) return;
+
+  const panel = document.getElementById('review-panel');
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  document.getElementById('review-student-name').textContent = sub.student_name || '–';
+  document.getElementById('review-doc-id').textContent       = sub.doc_id;
+  document.getElementById('review-score').innerHTML          = Edu.humanScoreBadge(sub.human_score || 0);
+  document.getElementById('review-status-badge').innerHTML   = Edu.statusBadge(sub.status);
+  document.getElementById('review-words').textContent        = sub.word_count || '–';
+  document.getElementById('review-note').value               = sub.teacher_note || '';
+
+  // Verify link
+  document.getElementById('review-verify-link').href =
+    `https://humano-hu.vercel.app/verify-unified#${sub.doc_id}`;
+
+  // Dokumentum tartalom + biometria
+  if (sub.documents) {
+    const pd = sub.documents.process_data || {};
+    document.getElementById('review-content').innerHTML =
+      sub.documents.content || '<span style="color:var(--muted)">Nincs tartalom.</span>';
+    document.getElementById('review-keystrokes').textContent = pd.keystrokeCount || '–';
+    document.getElementById('review-pauses').textContent    = pd.pauseCount || '–';
+    document.getElementById('review-typed-pct').textContent =
+      pd.typedPct !== undefined ? pd.typedPct + '%' : '–';
+  }
+
+  // Üzenetek betöltése
+  await loadMessages(subId);
+
+  // Realtime üzenetek
+  if (_msgChannel) _msgChannel.unsubscribe();
+  _msgChannel = Edu.watchMessages(subId, async () => {
+    await loadMessages(subId);
+  });
+}
+
+function closeReview() {
+  document.getElementById('review-panel').classList.remove('open');
+  if (_msgChannel) { _msgChannel.unsubscribe(); _msgChannel = null; }
+  _activeSubId = null;
+}
+
+async function reviewSubmit(status) {
+  if (!_activeSubId) return;
+  const note = document.getElementById('review-note').value.trim();
+  const ok   = await Edu.submissionReview(_activeSubId, status, note);
+  if (ok) {
+    // Helyi frissítés
+    const sub = _submissions.find(s => s.id === _activeSubId);
+    if (sub) { sub.status = status; sub.teacher_note = note; }
+    filterSubmissions();
+    document.getElementById('review-status-badge').innerHTML = Edu.statusBadge(status);
+    await loadStats();
+  }
+}
+
+/* ── ÜZENETEK ── */
+async function loadMessages(subId) {
+  const msgs = await Edu.messageLoad(subId);
+  await Edu.messageMarkRead(subId);
+  const list = document.getElementById('review-messages');
+  if (!msgs.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:.5rem">Még nincs üzenet.</div>';
+    return;
+  }
+  list.innerHTML = msgs.map(m => `
+    <div>
+      <div class="msg-bubble ${m.sender_role}">
+        ${esc(m.message)}
+      </div>
+      <div class="msg-meta" style="text-align:${m.sender_role === 'teacher' ? 'right' : 'left'}">
+        ${m.profiles?.username || '–'} · ${fmtDate(m.created_at)}
+      </div>
+    </div>`).join('');
+  list.scrollTop = list.scrollHeight;
+}
+
+async function sendTeacherMessage() {
+  if (!_activeSubId) return;
+  const inp = document.getElementById('review-msg-input');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+  await Edu.messageSend(_activeSubId, txt, 'teacher');
+  await loadMessages(_activeSubId);
+}
+
+/* ── MEGHÍVÓK ── */
+async function generateClassInvite() {
+  const classId = document.getElementById('invite-class-select').value;
+  if (!classId) { showToast('❌ Válassz osztályt!'); return; }
+  const link = await Edu.inviteCreateForClass(classId);
+  if (link) {
+    document.getElementById('class-invite-result').style.display = 'block';
+    document.getElementById('class-invite-link').value = link;
+  }
+}
+
+async function generatePersonalInvite() {
+  const classId = document.getElementById('personal-invite-class').value;
+  const name    = document.getElementById('personal-invite-name').value.trim();
+  const email   = document.getElementById('personal-invite-email').value.trim();
+  if (!classId) { showToast('❌ Válassz osztályt!'); return; }
+  if (!name)    { showToast('❌ Add meg a diák nevét!'); return; }
+  const link = await Edu.inviteCreatePersonal(classId, name, email);
+  if (link) {
+    document.getElementById('personal-invite-result').style.display = 'block';
+    document.getElementById('personal-invite-link').value = link;
+  }
+}
+
+async function loadInviteList() {
+  const classId = document.getElementById('invite-list-class').value;
+  const list    = document.getElementById('invite-list');
+  if (!classId) { list.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Válassz osztályt...</div>'; return; }
+
+  const invites = await Edu.inviteLoadForClass(classId);
+  if (!invites.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Még nincs generált meghívó.</div>';
+    return;
+  }
+  list.innerHTML = invites.map(inv => {
+    const link = `${EDU_CONFIG.joinBase}?token=${inv.token}`;
+    return `
+    <div class="invite-row">
+      <div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text)">
+          ${inv.student_name ? esc(inv.student_name) : '📚 Osztály meghívó'}
+        </div>
+        <div class="invite-token">${link.substring(0, 50)}...</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:.2rem">
+          ${inv.used_by ? '✅ Felhasználva' : Edu.fmtExpiry(inv.expires_at)}
+          ${inv.student_email ? ' · ' + esc(inv.student_email) : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-outline btn-sm" onclick="Edu.copyLink('${link}')">📋</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── ÉRTESÍTÉSI BEÁLLÍTÁSOK ── */
+async function openNotifySettings() {
+  const settings = await Edu.teacherLoadNotifySettings();
+  document.getElementById('notify-new-submission').checked = settings.notify_new_submission;
+  document.getElementById('notify-new-message').checked    = settings.notify_new_message;
+  document.getElementById('notify-settings-modal').classList.add('open');
+}
+function closeNotifySettings() {
+  document.getElementById('notify-settings-modal').classList.remove('open');
+}
+async function saveNotifySettings() {
+  const newSub = document.getElementById('notify-new-submission').checked;
+  const newMsg = document.getElementById('notify-new-message').checked;
+  await Edu.teacherUpdateNotifySettings(newSub, newMsg);
+  closeNotifySettings();
+}
+
+/* ── MODAL ESC BEZÁRÁS ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCreateClassModal();
+    closeNotifySettings();
+  }
+});
+document.getElementById('notify-settings-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('notify-settings-modal')) closeNotifySettings();
+});
+document.getElementById('create-class-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('create-class-modal')) closeCreateClassModal();
+});
+
+</script>
+</body>
+</html>
