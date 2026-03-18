@@ -169,6 +169,7 @@ function _onSectionActivated(hash) {
     if (hash === 'verify-unified') loadLatestRegistryUnified();
     if (hash === 'supporters') trackEvent('Subscription_Click', {});
     if (hash === 'roadmap') loadFeatureVotes();
+   if (hash === 'publikaciok') loadPublikaciok();
 if (hash === 'editor') {
     setTimeout(async () => {
         document.getElementById('doc-title-input')?.focus();
@@ -180,11 +181,11 @@ if (hash === 'editor') {
 }
 
 function _loadPageFromHash() {
-    const validHashes = [
-        'landing', 'auth', 'editor', 'dashboard', 'my-docs', 'admin',
-        'profile', 'verify-unified', 'pub-verify', 'roadmap',
-        'about', 'supporters', 'faq', 'privacy', 'calibration', 'whitepaper'
-    ];
+  const validHashes = [
+    'landing', 'auth', 'editor', 'dashboard', 'my-docs', 'admin',
+    'profile', 'verify-unified', 'pub-verify', 'roadmap',
+    'about', 'supporters', 'faq', 'privacy', 'publikaciok'
+];
     const hash = window.location.hash.replace('#', '');
     _showSection(validHashes.includes(hash) ? hash : 'landing');
 }
@@ -4826,6 +4827,161 @@ async function castVote(featureId) {
     }
     showToast('✦ Szavazat rögzítve – köszönjük!');
 }
+
+
+/* ─── PUBLIKÁCIÓK ───────────────────────────────────────── */
+let allPublikaciok = [];
+
+async function loadPublikaciok() {
+    const el = document.getElementById('pub-feed-list');
+    if (!el) return;
+
+    const { data: docs } = await db
+        .from('documents')
+        .select('doc_id, title, author_name, author_id, created_at, process_data, content')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+    if (!docs?.length) {
+        el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Még nincs publikált tartalom.</div>';
+        return;
+    }
+
+    // Lájkok és megtekintések lekérése
+    const docIds = docs.map(d => d.doc_id);
+    const { data: likes } = await db
+        .from('doc_likes')
+        .select('doc_id')
+        .in('doc_id', docIds);
+
+    const { data: views } = await db
+        .from('doc_views')
+        .select('doc_id')
+        .in('doc_id', docIds);
+
+    // Saját lájkok
+    let myLikes = [];
+    if (currentUser) {
+        const { data: ml } = await db
+            .from('doc_likes')
+            .select('doc_id')
+            .eq('user_id', currentUser.id)
+            .in('doc_id', docIds);
+        myLikes = (ml || []).map(l => l.doc_id);
+    }
+
+    // Összesítés
+    const likeCounts = {};
+    const viewCounts = {};
+    (likes || []).forEach(l => { likeCounts[l.doc_id] = (likeCounts[l.doc_id] || 0) + 1; });
+    (views || []).forEach(v => { viewCounts[v.doc_id] = (viewCounts[v.doc_id] || 0) + 1; });
+
+    allPublikaciok = docs.map(d => ({
+        ...d,
+        likeCount: likeCounts[d.doc_id] || 0,
+        viewCount: viewCounts[d.doc_id] || 0,
+        liked: myLikes.includes(d.doc_id)
+    }));
+
+    document.getElementById('pub-count-label').textContent = `${allPublikaciok.length} publikáció`;
+    renderPublikaciok(allPublikaciok);
+}
+
+function filterPublikációk() {
+    const search = document.getElementById('pub-search')?.value?.toLowerCase() || '';
+    const sort   = document.getElementById('pub-sort')?.value || 'newest';
+
+    let filtered = allPublikaciok.filter(d =>
+        (d.title || '').toLowerCase().includes(search) ||
+        (d.author_name || '').toLowerCase().includes(search)
+    );
+
+    if (sort === 'popular')      filtered.sort((a, b) => b.likeCount - a.likeCount);
+    if (sort === 'human_index')  filtered.sort((a, b) => (b.process_data?.humanIndex || 0) - (a.process_data?.humanIndex || 0));
+
+    renderPublikaciok(filtered);
+}
+
+function renderPublikaciok(docs) {
+    const el = document.getElementById('pub-feed-list');
+    if (!el) return;
+
+    el.innerHTML = docs.map(doc => {
+        const pd      = doc.process_data || {};
+        const preview = (doc.content || '').replace(/<[^>]+>/g, '').substring(0, 200) + '…';
+        const hi      = pd.humanIndex || 0;
+        const hiColor = hi >= 80 ? 'var(--success)' : hi >= 60 ? 'var(--gold)' : 'var(--muted)';
+
+        return `
+        <div class="card" style="margin-bottom:1.25rem;cursor:pointer" 
+             onclick="openPublikacio('${doc.doc_id}')">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem">
+                <div style="flex:1">
+                    <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;
+                                color:var(--gold2);margin-bottom:.3rem">${esc(doc.title || 'Névtelen')}</div>
+                    <div style="font-size:.75rem;color:var(--muted);font-family:var(--font-mono)">
+                        ${esc(doc.author_name || '–')} · ${fmtDate(doc.created_at)}
+                    </div>
+                </div>
+                <div style="text-align:center;flex-shrink:0">
+                    <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;
+                                color:${hiColor}">${hi}%</div>
+                    <div style="font-size:.6rem;color:var(--muted);font-family:var(--font-mono)">Human Score</div>
+                </div>
+            </div>
+            <div style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1rem">
+                ${esc(preview)}
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;font-size:.8rem;color:var(--muted)">
+                <button onclick="event.stopPropagation();toggleLike('${doc.doc_id}')"
+                        style="background:none;border:1px solid ${doc.liked ? 'var(--gold)' : 'var(--border)'};
+                               border-radius:20px;padding:.25rem .75rem;cursor:pointer;
+                               color:${doc.liked ? 'var(--gold)' : 'var(--muted)'};font-size:.8rem"
+                        id="like-btn-${doc.doc_id}">
+                    ❤️ <span id="like-count-${doc.doc_id}">${doc.likeCount}</span>
+                </button>
+                <span>👁️ ${doc.viewCount}</span>
+                <span style="margin-left:auto;font-size:.7rem;font-family:var(--font-mono);
+                             color:var(--muted2)">${esc(doc.doc_id)}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function toggleLike(docId) {
+    if (!currentUser) { showToast('⚠️ Lájkoláshoz be kell jelentkezni!'); return; }
+
+    const doc   = allPublikaciok.find(d => d.doc_id === docId);
+    if (!doc) return;
+
+    if (doc.liked) {
+        await db.from('doc_likes').delete()
+            .eq('doc_id', docId).eq('user_id', currentUser.id);
+        doc.liked = false;
+        doc.likeCount--;
+    } else {
+        await db.from('doc_likes').insert({ doc_id: docId, user_id: currentUser.id });
+        doc.liked = true;
+        doc.likeCount++;
+    }
+
+    const btn   = document.getElementById(`like-btn-${docId}`);
+    const count = document.getElementById(`like-count-${docId}`);
+    if (btn)   btn.style.color       = doc.liked ? 'var(--gold)' : 'var(--muted)';
+    if (btn)   btn.style.borderColor = doc.liked ? 'var(--gold)' : 'var(--border)';
+    if (count) count.textContent     = doc.likeCount;
+}
+
+async function openPublikacio(docId) {
+    // Megtekintés rögzítése
+    await db.from('doc_views').insert({ doc_id: docId });
+
+    // Átnavigálás a read oldalra
+    window.location.href = `/read/${docId}`;
+}
+
+
 
 /* ─── 27. INICIALIZÁLÁS ─────────────────────────────────────── */
 
