@@ -1487,7 +1487,7 @@ async function submitPricingForm(e) {
     const uzenet = formData.get('uzenet') || '';
     const csomag = formData.get('csomag') || '';
     try {
-        const res = await fetch('https://formspree.io/f/xpwzgqkv', {
+        const res = await fetch('https://formspree.io/f/xjgeqvnp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
