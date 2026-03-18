@@ -3505,6 +3505,21 @@ function editorCalcHumanIndex() {
         tlConfidence.textContent = confidenceLabel;
         tlConfidence.style.color = confidenceColor;
     }
+
+const tlSample = document.getElementById('tl-sample');
+    if (tlSample) {
+        tlSample.textContent = sampleSize < minSample
+            ? `${sampleSize}/${minSample} leütés`
+            : sampleSize < optimalSample
+            ? `${sampleSize}/${optimalSample} leütés`
+            : `✓ ${sampleSize} leütés`;
+        tlSample.style.color = sampleSize < minSample
+            ? '#e05555'
+            : sampleSize < optimalSample
+            ? 'var(--gold)'
+            : 'var(--success)';
+    }
+   
     if (tlExplanation) tlExplanation.textContent = explanation;
 
    const tlCrossValid = document.getElementById('tl-crossvalid');
