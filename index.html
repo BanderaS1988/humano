@@ -3265,21 +3265,17 @@ function goToCalibration() {
 
 function skipCalibrationReminder() {
   const dontShow = document.getElementById('cal-dont-show-again')?.checked;
-  if (dontShow) {
-    localStorage.setItem('humano_cal_skip_forever', '1');
-  }
+  if (dontShow) localStorage.setItem('humano_cal_skip_forever', '1');
   document.getElementById('cal-reminder-modal').classList.remove('open');
-  // Folytatja az editor megnyitását
+  if (typeof editorInit === 'function') editorInit();
 }
 
 async function checkCalibrationBeforeEditor() {
-  // 1. "Ne mutasd többé" beállítás ellenőrzése
+  // Ne mutasd többé checkbox esetén skip
   if (localStorage.getItem('humano_cal_skip_forever') === '1') return false;
 
-  // 2. Bejelentkezett-e?
   if (!currentUser) return false;
 
-  // 3. Van-e már kalibrációs profil az adatbázisban?
   try {
     const { data, error } = await db
       .from('typing_profiles')
@@ -3288,7 +3284,7 @@ async function checkCalibrationBeforeEditor() {
       .limit(1);
 
     if (error) return false;
-    if (data && data.length > 0) return false; // már kalibrált → ne mutasd
+    if (data && data.length > 0) return false; // már kalibrált
 
     return true; // nincs kalibráció → mutasd a modalt
   } catch (e) {
