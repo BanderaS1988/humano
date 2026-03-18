@@ -5639,14 +5639,14 @@ function showBiometricConsentModal() {
   const modal = document.getElementById('biometric-consent-modal');
   if (!modal) return;
   modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('open'));
+  modal.classList.add('open');
 }
 
 function hideBiometricConsentModal() {
   const modal = document.getElementById('biometric-consent-modal');
   if (!modal) return;
   modal.classList.remove('open');
-  modal.style.display = 'none';
+  setTimeout(() => { modal.style.display = 'none'; }, 300);
 }
 
 // Elfogadás kezelése
@@ -5658,13 +5658,8 @@ function handleConsentDecline() {
   showPage('landing');
 }
 
-// Event listenerek beállítása
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('consent-accept-btn')
-    ?.addEventListener('click', handleConsentAccept);
-  document.getElementById('consent-decline-btn')
-    ?.addEventListener('click', handleConsentDecline);
-});
+
+
 
 // Elfogadás kezelése
 async function handleConsentAccept() {
