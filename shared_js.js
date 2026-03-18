@@ -5195,6 +5195,181 @@ function generateSealCanvas(docId, author, date, otsStatus, size = 400) {
     return canvas;
 }
 
+
+async function generateSmartImage(docId) {
+    if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
+    showToast('⏳ Kép generálása...');
+
+    const { data: doc } = await db.from('documents')
+        .select('*')
+        .eq('doc_id', docId).single();
+    if (!doc) { showToast('❌ Dokumentum nem található!'); return; }
+
+    const pd      = doc.process_data || {};
+    const title   = doc.title || 'Névtelen alkotás';
+    const author  = doc.author_name || '–';
+    const date    = new Date(doc.created_at).toLocaleDateString('hu-HU');
+    const hi      = pd.humanIndex || 0;
+    const content = (doc.content || '').replace(/<[^>]+>/g, '').trim();
+
+    // Canvas méret
+    const width   = 1080;
+    const padding = 60;
+    const lineH   = 36;
+    const maxW    = width - padding * 2;
+
+    // Szöveg tördelés
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx    = tempCanvas.getContext('2d');
+    tempCtx.font     = '24px serif';
+
+    function wrapText(ctx, text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let line    = '';
+        for (const word of words) {
+            const test = line ? line + ' ' + word : word;
+            if (ctx.measureText(test).width > maxWidth && line) {
+                lines.push(line);
+                line = word;
+            } else {
+                line = test;
+            }
+        }
+        if (line) lines.push(line);
+        return lines;
+    }
+
+    const contentLines = wrapText(tempCtx, content, maxW);
+
+    // Magasság kiszámítása
+    const headerH  = 200;
+    const titleH   = 80;
+    const bodyH    = contentLines.length * lineH + 40;
+    const footerH  = 180;
+    const height   = headerH + titleH + bodyH + footerH;
+
+    // Fő canvas
+    const canvas = document.createElement('canvas');
+    canvas.width  = width;
+    canvas.height = height;
+    const ctx     = canvas.getContext('2d');
+
+    // Háttér
+    ctx.fillStyle = '#0c0a04';
+    ctx.fillRect(0, 0, width, height);
+
+    // Arany vonal felül
+    ctx.fillStyle = '#c9a84c';
+    ctx.fillRect(0, 0, width, 4);
+
+    // HUMANO fejléc
+    ctx.fillStyle = '#c9a84c';
+    ctx.font      = 'bold 28px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('✦ HUMANO ✦', width / 2, 60);
+
+    ctx.fillStyle = '#888';
+    ctx.font      = '18px monospace';
+    ctx.fillText('Hitelesített emberi tartalom', width / 2, 95);
+
+    // Human Score
+    ctx.fillStyle = hi >= 80 ? '#4ab870' : hi >= 60 ? '#c9a84c' : '#888';
+    ctx.font      = 'bold 22px monospace';
+    ctx.fillText(`⚡ ${hi}% Human Score`, width / 2, 135);
+
+    // Szerző + dátum
+    ctx.fillStyle = '#666';
+    ctx.font      = '18px monospace';
+    ctx.fillText(`${author} · ${date}`, width / 2, 170);
+
+    // Elválasztó vonal
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, 190);
+    ctx.lineTo(width - padding, 190);
+    ctx.stroke();
+
+    // Cím
+    ctx.fillStyle = '#f5f0e8';
+    ctx.font      = 'bold 36px serif';
+    ctx.textAlign = 'left';
+    const titleLines = wrapText(ctx, title, maxW);
+    let y = headerH + 45;
+    titleLines.forEach(line => {
+        ctx.fillText(line, padding, y);
+        y += 44;
+    });
+
+    // Elválasztó
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, y + 10);
+    ctx.lineTo(width - padding, y + 10);
+    ctx.stroke();
+    y += 30;
+
+    // Szöveg törzsz
+    ctx.fillStyle = '#c8c0b0';
+    ctx.font      = '24px serif';
+    contentLines.forEach(line => {
+        ctx.fillText(line, padding, y);
+        y += lineH;
+    });
+
+    // Footer elválasztó
+    const footerY = height - footerH;
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, footerY + 10);
+    ctx.lineTo(width - padding, footerY + 10);
+    ctx.stroke();
+
+    // DOC ID
+    ctx.fillStyle = '#c9a84c';
+    ctx.font      = '20px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(docId, width / 2, footerY + 50);
+
+    // Verify URL
+    ctx.fillStyle = '#666';
+    ctx.font      = '16px monospace';
+    ctx.fillText(`humano-hu.vercel.app/verify/${docId}`, width / 2, footerY + 80);
+
+    // Bitcoin státusz
+    ctx.fillStyle = doc.ots_receipt ? '#4ab870' : '#c9a84c';
+    ctx.font      = '18px monospace';
+    ctx.fillText(doc.ots_receipt ? '⛓️ Bitcoin blokkláncon rögzítve ✓' : '⏳ Blokklánc rögzítés folyamatban', width / 2, footerY + 115);
+
+    // QR kód
+    const qrSize = 100;
+    const qrX    = width - padding - qrSize;
+    const qrY    = footerY + 20;
+    const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent('https://humano-hu.vercel.app/verify/' + docId)}&color=C9A84C&bgcolor=0c0a04&margin=4&format=png`;
+
+    await new Promise(resolve => {
+        const qrImg    = new Image();
+        qrImg.crossOrigin = 'anonymous';
+        qrImg.onload  = () => { ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize); resolve(); };
+        qrImg.onerror = () => resolve();
+        qrImg.src     = qrUrl;
+    });
+
+    // Arany vonal alul
+    ctx.fillStyle = '#c9a84c';
+    ctx.fillRect(0, height - 4, width, 4);
+
+    // Letöltés
+    const a      = document.createElement('a');
+    a.download   = `HUMANO-${docId}.png`;
+    a.href       = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✅ Kép letöltve – töltsd fel Instagramra, Facebookra!');
+}
+
 async function downloadSeal(docId) {
     if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
     showToast('⏳ Pecsét generálása...');
