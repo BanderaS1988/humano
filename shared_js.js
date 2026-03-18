@@ -5566,20 +5566,6 @@ async function loadEditorWithConsentCheck() {
     return;
   }
 
-  // Ha van consent, ellenőrizzük a kalibrációt
-  const { data: profiles } = await db
-    .from('typing_profiles')
-    .select('id')
-    .eq('user_id', currentUser.id)
-    .limit(1);
-
-  // Ha nincs kalibrációs profil, megyünk a kalibrációra
-  if (!profiles || !profiles.length) {
-    showPage('calibration');
-    return;
-  }
-
-  // Ha van consent ÉS van kalibráció, indulhat az editor
   if (typeof editorInit === 'function') editorInit();
 }
 
