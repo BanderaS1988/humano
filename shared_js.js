@@ -3978,22 +3978,17 @@ function checkTlFlush() { if (E.tlBatch.length >= 5) flushTlBatch(); }
 
 // TOOLBAR FUNKCIÓK
 // Formázási függvények a toolbarhoz
-// TOOLBAR FUNKCIÓK - JAVÍTOTT VERZIÓ
+
 function fmt(cmd) {
     const editor = document.getElementById('doc-content-area');
     if (!editor) return;
-
     editor.focus();
-
-    // Próbáljuk meg a document.execCommand-ot, ha működik
     try {
         document.execCommand('styleWithCSS', false, true);
         document.execCommand(cmd, false, null);
     } catch (e) {
         console.warn('execCommand failed, using fallback', e);
     }
-
-    // Kis késleltetéssel frissítjük az állapotot
     setTimeout(updateToolbarState, 50);
 }
 
