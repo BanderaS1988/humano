@@ -2579,6 +2579,36 @@ function openEntropyInfo() {
 
     modal.classList.add('open');
 }
+
+function openTripleLockInfo() {
+    const modal = document.getElementById('info-modal');
+    const title = document.getElementById('info-modal-title');
+    const body  = document.getElementById('info-modal-body');
+    if (!modal || !title || !body) return;
+    title.textContent = '💎 Kognitív Jelenlét – mi ez és mire jó?';
+    body.innerHTML = `
+      <p style="margin-bottom:1rem;line-height:1.8">A <strong style="color:var(--gold)">Kognitív Jelenlét</strong> három különböző szinten méri az emberi alkotás mélységét – olyan jeleket rögzít, amelyeket egy AI vagy bot nem tud szimulálni.</p>
+      <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem">
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.85rem 1rem">
+          <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">🧠 Gondolkodási szünetek</div>
+          <div style="font-size:.83rem;color:var(--muted);line-height:1.7">Az emberi agy fogalmi váltásoknál – mondathatárokon, összetett szavak előtt – természetes szüneteket tart. Az AI lineárisan, egyenletes ritmusban gépel. Ha a szüneteid mondathatárokon vannak, az emberi gondolkodás bizonyítéka. <strong style="color:var(--gold3)">70+ a jó eredmény.</strong></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.85rem 1rem">
+          <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">✍️ Alkotói hév</div>
+          <div style="font-size:.83rem;color:var(--muted);line-height:1.7">Az emberi alkotó lassul a bonyolult szavaknál és gyorsul az ismerős, érzelmi töltetű részeknél. Ez a "Creative Flow" – a szókomplexitás és gépelési sebesség korrelációja. Ha ez magas, valódi szellemi munka zajlott. <strong style="color:var(--gold3)">60+ a jó eredmény.</strong></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.85rem 1rem">
+          <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">🫀 Biológiai ritmus</div>
+          <div style="font-size:.83rem;color:var(--muted);line-height:1.7">A fizikai test apró, nem-lineáris ingadozásokat okoz a gépelési ritmusban – izomfáradtság, idegrendszeri válaszidő. A gépek "tökéletesen véletlenszerűek", az emberek "tökéletlenül emberi" ritmussal gépelnek. <strong style="color:var(--gold3)">50+ a jó eredmény.</strong></div>
+        </div>
+      </div>
+      <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.85rem 1rem;font-size:.8rem;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--gold2)">Mennyire megbízható?</strong><br>
+        Minden számítás a böngésződben fut – a szöveg tartalma soha nem kerül elemzésre. A három mutató együttesen olyan bizonyítékot alkot, amelyet szoftveresen lehetetlen szimulálni. A <strong style="color:var(--gold)">85+ összesített pontszám</strong> magas kognitív jelenlétet igazol.
+      </div>`;
+    modal.classList.add('open');
+}
+  
 </script>
 
 <!-- ═══ PASTE MODAL ═══ -->
