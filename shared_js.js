@@ -4447,10 +4447,14 @@ function copyBadgeCode() {
     if (code && code !== '–') { navigator.clipboard?.writeText(code); showToast('🏷️ Badge kód másolva!'); }
 }
 
-// EDITOR INIT (az új verzió)
+// EDITOR INIT (az új verzió) - JAVÍTVA kalibrációs ellenőrzéssel
 function editorInit() {
     const ta = document.getElementById('doc-content-area');
     if (!ta) return;
+    
+    // Kalibrációs ellenőrzés - EZ HIÁNYZOTT!
+    setTimeout(checkCalibrationModal, 1000);
+    
     ta.addEventListener('drop', e => e.preventDefault());
     ta.addEventListener('input', () => {
         editorUpdateStats();
@@ -4527,6 +4531,27 @@ function editorInit() {
                 updateToolbarState();
             }
         });
+    }
+}
+
+// Kalibrációs modal ellenőrző függvény - add hozzá a shared.js-hez, ha még nincs
+async function checkCalibrationModal() {
+    if (!currentUser) return;
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+    
+    try {
+        const { data } = await db
+            .from('typing_profiles')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .limit(1);
+        
+        if (!data || !data.length) {
+            document.getElementById('cal-reminder-modal')?.classList.add('open');
+        }
+    } catch (e) {
+        console.log('Kalibráció ellenőrzési hiba:', e);
     }
 }
 
