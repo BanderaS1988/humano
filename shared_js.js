@@ -2941,6 +2941,43 @@ function startAutosaveTimer() {
     autosaveTimer = setInterval(autoSaveDraft, 10000);
 }
 
+// ── OFFLINE QUEUE ────────────────────────────────────────────
+const offlineQueue = [];
+let isOnline = navigator.onLine;
+
+window.addEventListener('online', async () => {
+    isOnline = true;
+    showToast('✅ Kapcsolat visszaállítva – szinkronizálás...');
+    await flushOfflineQueue();
+});
+
+window.addEventListener('offline', () => {
+    isOnline = false;
+    showToast('⚠️ Nincs internetkapcsolat – az adatok lokálisan mentve.');
+});
+
+async function flushOfflineQueue() {
+    if (!offlineQueue.length) return;
+    showToast(`⏳ ${offlineQueue.length} mentés szinkronizálása...`);
+    while (offlineQueue.length) {
+        const item = offlineQueue.shift();
+        try {
+            await item();
+        } catch (err) {
+            console.warn('Offline queue hiba:', err);
+            offlineQueue.unshift(item);
+            break;
+        }
+    }
+    if (!offlineQueue.length) showToast('✅ Minden adat szinkronizálva!');
+}
+
+function queueOrRun(fn) {
+    if (isOnline) return fn();
+    offlineQueue.push(fn);
+    showToast('📥 Offline – mentés sorba állítva.');
+}
+
 function checkDraftsOnEditorOpen() {
     const idx = getDraftIndex();
     const myDrafts = idx.filter(d => d.id.includes(currentUser?.id || 'anon'));
