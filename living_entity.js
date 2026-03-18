@@ -453,6 +453,16 @@ async function loadLivingEntityDashboard() {
         loadSignalQueue(),
         loadStoryStats(),
         loadPressReleases(),
+        db.from('signal_queue').select('*', { count: 'exact', head: true })
+          .then(({ count }) => {
+              const el = document.getElementById('signal-count');
+              if (el) el.textContent = count ?? 0;
+          }),
+        db.from('press_releases').select('*', { count: 'exact', head: true })
+          .then(({ count }) => {
+              const el = document.getElementById('press-count');
+              if (el) el.textContent = count ?? 0;
+          }),
         checkOllamaStatus().then(ok => {
             const el = document.getElementById('ollama-status');
             if (!el) return;
