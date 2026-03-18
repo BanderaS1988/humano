@@ -235,7 +235,7 @@ if (doc.published_url && pubUrlEl) {
         : '<span style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:var(--gold3)">⏳ Blokklánc rögzítés folyamatban</span>';
 
     // Megosztás gombok
-    const readUrl = `https://humano-hu.vercel.app/read/${docId}`;
+    const readUrl = `https://humano-hu.vercel.app/share/${docId}`;
     const shareText = encodeURIComponent(`${doc.title} – Hitelesített emberi tartalom\n${readUrl}`);
     document.getElementById('r-share-btns').innerHTML = `
         <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(readUrl)}" 
