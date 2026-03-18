@@ -146,11 +146,7 @@ function _showSection(hash) {
             }
         });
         
-        if (hash === 'editor') {
-            if (typeof loadEditorWithConsentCheck === 'function') {
-                loadEditorWithConsentCheck();
-            }
-        }
+     
         
         _onSectionActivated(hash);
     }
@@ -170,7 +166,6 @@ function _onSectionActivated(hash) {
    if (hash === 'publikaciok') loadPublikaciok();
 if (hash === 'editor') {
     setTimeout(async () => {
-        document.getElementById('doc-title-input')?.focus();
         initPulseCanvas();
         checkDraftsOnEditorOpen();
         await loadEditorWithConsentCheck();
