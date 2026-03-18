@@ -223,6 +223,7 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
     <span class="nav-link" onclick="showPage('landing')">Főoldal</span>
 <span class="nav-link" onclick="showPage('about')">Rólunk</span>
 <div class="nav-divider"></div>
+    <span class="nav-link" onclick="showPage('publikaciok')">Publikációk</span>
 <span class="nav-link" onclick="showPage('verify-unified')">Ellenőrzés & Registry</span>
 <span class="nav-link" onclick="showPage('roadmap')">Roadmap</span>
 <span class="nav-link" onclick="showPage('supporters')">Előfizetés</span>
@@ -1952,6 +1953,43 @@ document.addEventListener('humano:verify-result', () => {
   </div>
 </div>
 
+
+<!-- ═══ PUBLIKÁCIÓK ═══ -->
+<div id="page-publikaciok" class="page">
+  <div style="max-width:900px;margin:0 auto;padding:2rem">
+
+    <!-- Fejléc -->
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:600;margin-bottom:.5rem">
+        Hitelesített <span class="gt">Publikációk</span>
+      </h1>
+      <p style="color:var(--muted);font-size:.9rem;max-width:560px;margin:0 auto;line-height:1.8">
+        Minden tartalom itt bizonyítottan emberi — billentyűleütés-dinamika, SHA-256 és Bitcoin blokklánc által hitelesítve.
+      </p>
+    </div>
+
+    <!-- Szűrők -->
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center">
+      <input class="form-control" id="pub-search" placeholder="🔍 Keresés..." 
+             style="max-width:280px;font-size:.85rem" oninput="filterPublikációk()"/>
+      <select class="form-control" id="pub-sort" style="max-width:180px;font-size:.85rem" 
+              onchange="filterPublikációk()">
+        <option value="newest">Legújabb először</option>
+        <option value="popular">Legnépszerűbb</option>
+        <option value="human_index">Legjobb Human Score</option>
+      </select>
+      <div style="margin-left:auto;font-size:.78rem;color:var(--muted)" id="pub-count-label"></div>
+    </div>
+
+    <!-- Feed lista -->
+    <div id="pub-feed-list">
+      <div style="text-align:center;padding:3rem;color:var(--muted)">⏳ Betöltés...</div>
+    </div>
+
+  </div>
+</div>
+
+  
 <!-- ═══ MY DOCS ═══ -->
 <div id="page-my-docs" class="page">
   <div class="my-docs-wrap">
