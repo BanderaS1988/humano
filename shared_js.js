@@ -3348,6 +3348,51 @@ function editorCalcHumanIndex() {
     );
     E.tripleLockScore = tripleLockScore;
 
+
+// ── KERESZT-VALIDÁCIÓ ────────────────────────────────────
+    // Ha az egyik score túl jó de a másik nem konzisztens, az gyanús
+    let crossValidFlag = false;
+    let crossValidWarning = '';
+
+    if (scores.length === 3) {
+        const maxScore = Math.max(...scores);
+        const minScore = Math.min(...scores);
+        const spread = maxScore - minScore;
+
+        // Ha a spread > 50 – nagy eltérés a három score között
+        if (spread > 50) {
+            crossValidFlag = true;
+            crossValidWarning = 'Nagy eltérés a mutatók között – az eredmény kevésbé megbízható.';
+        }
+
+        // Ha CF-DNA 90+ de SMD < 20 – gyanús mintázat
+        if (cfDnaScore >= 90 && smdScore < 20) {
+            crossValidFlag = true;
+            crossValidWarning = 'Szokatlan mintázat – magas kognitív jelenlét de alacsony biológiai ritmus.';
+        }
+
+        // Ha NLS 90+ de CF-DNA < 20 – gyanús
+        if (flowPulseScore >= 90 && cfDnaScore < 20) {
+            crossValidFlag = true;
+            crossValidWarning = 'Szokatlan mintázat – alkotói hév magas de nincs gondolkodási szünet.';
+        }
+
+        // Ha mind a három 95+ felett van – túl tökéletes, gyanús
+        if (cfDnaScore >= 95 && flowPulseScore >= 95 && smdScore >= 95) {
+            crossValidFlag = true;
+            crossValidWarning = 'Túl egyenletes eredmény – természetes emberi gépelésben mindig van variáció.';
+        }
+    }
+
+    E.crossValidFlag = crossValidFlag;
+    E.crossValidWarning = crossValidWarning;
+
+    // Ha gyanús mintázat, csökkentjük a Triple-Lock score-t
+    const adjustedTripleLockScore = crossValidFlag
+        ? Math.round(tripleLockScore * 0.75)
+        : tripleLockScore;
+    E.tripleLockScore = adjustedTripleLockScore;
+   
     // Triple-Lock UI frissítés
 // ── CONFIDENCE SZÁMÍTÁS ──────────────────────────────────
     // Mennyire megbízható az eredmény – mintaméret és konzisztencia alapján
