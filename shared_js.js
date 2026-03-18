@@ -4613,6 +4613,7 @@ function editorKeyDown(e) {
             sel.addRange(range);
         }
     }
+    
     // ── ANTI-SPOOF ELLENŐRZÉS ──
     if (!E.antiSpoof) E.antiSpoof = {
         suspiciousPatterns: 0,
@@ -4667,85 +4668,12 @@ function editorKeyDown(e) {
             }
         }
     }
+    
     resetInactivityTimer();
     E.lastKey = now;
     editorUpdateStats();
     editorCheckSave();
     checkTlFlush();
-}
-
-
-
-// ── ANTI-SPOOF ELLENŐRZÉS ─────────────────────────────────
-    if (!E.antiSpoof) E.antiSpoof = {
-        suspiciousPatterns: 0,
-        lastIntervals: [],
-        roboticSequences: 0,
-        tooFastCount: 0,
-        suspiciousFlag: false,
-        suspiciousReason: ''
-    };
-
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        const as = E.antiSpoof;
-        as.lastIntervals.push(E.lastKey ? now - E.lastKey : 150);
-        if (as.lastIntervals.length > 20) as.lastIntervals.shift();
-
-        if (as.lastIntervals.length >= 10) {
-            // 1. Túl gyors gépelés detektálás (< 20ms interval)
-            const tooFast = as.lastIntervals.filter(v => v < 20).length;
-            if (tooFast > 3) {
-                as.tooFastCount++;
-                if (as.tooFastCount >= 3) {
-                    as.suspiciousFlag = true;
-                    as.suspiciousReason = 'Emberileg lehetetlen gépelési sebesség észlelve.';
-                }
-            }
-
-            // 2. Robotikus ismétlődő minta detektálás
-            const roundIntervals = as.lastIntervals.map(v => Math.round(v / 10) * 10);
-            const uniqueVals = new Set(roundIntervals).size;
-            if (uniqueVals <= 2 && as.lastIntervals.length >= 15) {
-                as.roboticSequences++;
-                if (as.roboticSequences >= 3) {
-                    as.suspiciousFlag = true;
-                    as.suspiciousReason = 'Robotikus, ismétlődő gépelési mintázat észlelve.';
-                }
-            }
-
-            // 3. Tökéletesen egyenletes ritmus (szórás < 5ms) – bot gyanú
-            const asMean = as.lastIntervals.reduce((a, b) => a + b, 0) / as.lastIntervals.length;
-            const asStddev = Math.sqrt(
-                as.lastIntervals.reduce((s, v) => s + Math.pow(v - asMean, 2), 0) / as.lastIntervals.length
-            );
-            if (asStddev < 5 && asMean < 200) {
-                as.suspiciousPatterns++;
-                if (as.suspiciousPatterns >= 5) {
-                    as.suspiciousFlag = true;
-                    as.suspiciousReason = 'Tökéletesen egyenletes ritmus – természetes emberi gépelésben ez nem lehetséges.';
-                }
-            }
-
-            // Anti-spoof UI frissítés
-            const asWarn = document.getElementById('anti-spoof-warn');
-            const asText = document.getElementById('anti-spoof-text');
-            if (asWarn && asText) {
-                if (as.suspiciousFlag) {
-                    asWarn.style.display = 'block';
-                    asText.textContent = as.suspiciousReason;
-                } else {
-                    asWarn.style.display = 'none';
-                }
-            }
-        }
-    }
-   
-       resetInactivityTimer();
-    E.lastKey = now;
-    editorUpdateStats();
-    editorCheckSave();
-    checkTlFlush();
-
 }
 
 
