@@ -606,3 +606,5 @@ window.loadLivingLog           = loadLivingLog;
 window.loadStoryStats          = loadStoryStats;
 window.loadPressReleases       = loadPressReleases;
 window.loadLivingEntityDashboard = loadLivingEntityDashboard; // ← EZT ADD IDE
+window.generateWeeklyPressRelease   = generateDailyPressRelease; // ← EZT ADD MÉG HOZZÁ
+
