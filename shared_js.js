@@ -4849,7 +4849,7 @@ async function loadPublikaciok() {
     const { data: docs } = await db
         .from('documents')
         .select('doc_id, title, author_name, author_id, created_at, process_data, content')
-        .eq('is_public', true)
+        .eq('is_published', true)
         .order('created_at', { ascending: false })
         .limit(50);
 
