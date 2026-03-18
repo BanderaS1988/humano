@@ -4042,6 +4042,11 @@ function togglePublic() {
     if (cb) cb.checked = !cb.checked;
 }
 
+function togglePublish() {
+    const cb = document.getElementById('doc-is-published');
+    if (cb) cb.checked = !cb.checked;
+}
+
 // MÉDIA MODAL KEZELÉS
 const mediaGallery = []; // { src, name } – munkamenet galéria
 let mediaSelectedSrc = null;
