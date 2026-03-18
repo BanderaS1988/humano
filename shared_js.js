@@ -1182,6 +1182,11 @@ function copyId() {
     showToast('📋 ID másolva!');
 }
 
+function openReadPage() {
+    if (!E.certDocId) return;
+    window.open(`/read/${E.certDocId}`, '_blank');
+}
+
 function copyBadgeCode() {
     const code = document.getElementById('badge-html-code')?.textContent;
     if (code && code !== '–') { copyToClipboard(code); showToast('🏷️ Badge kód másolva!'); }
