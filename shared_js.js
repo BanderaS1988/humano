@@ -355,8 +355,17 @@ async function doRegister() {
     }
 
     authAlert('✅ Sikeres regisztráció! Átirányítás...', 'success');
+
+if (role === 'teacher') {
+    setTimeout(() => {
+        window.location.href = '/teacher';
+    }, 1500);
+} else {
+    // Beállítjuk a currentUser-t mielőtt átirányítunk
+    currentUser = data.user;
     setTimeout(() => showPage('dashboard'), 1500);
 }
+
 
 
 async function doLogin() {
