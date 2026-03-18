@@ -3191,7 +3191,7 @@ function updateEditorTimer() {
     if (el) el.textContent = `${m}:${s}`;
 }
 
-function editorCalcHumanIndex() {
+async function editorCalcHumanIndex() {
    if (E.keys < 20) return;
 
     // ── MINIMUM MINTAMÉRET ELLENŐRZÉS ────────────────────────
