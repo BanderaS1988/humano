@@ -3301,7 +3301,10 @@ async function editorCalcHumanIndex() {
         fill.style.width = pct + '%';
         fill.style.background = color;
     }
-    if (stat) stat.textContent = pct + '%';
+    if (stat) stat.textContent = category === 'gépies'  ? 'Gépies ritmus'
+                           : category === 'közepes' ? 'Vegyes ritmus'
+                           : category === 'emberi'  ? 'Emberi ritmus'
+                           : 'Intenzív alkotás';
 
     E.humanCategory = category;
     E.humanCV = parseFloat(cv.toFixed(3));
@@ -3563,7 +3566,9 @@ async function editorCalcHumanIndex() {
     if (tlBaseline) {
         if (baselineScore > 0) {
             tlBaseline.style.display = 'block';
-            tlBaseline.textContent = `Profil egyezés: ${baselineScore}/100 (${E.baselineProfiles} mintából)`;
+           const diff = baselineScore - 50;
+const diffText = diff > 0 ? `+${diff}% a saját átlagodhoz képest` : `${diff}% a saját átlagodhoz képest`;
+tlBaseline.textContent = `Alkotói jelenlét: ${diffText} (${E.baselineProfiles} minta alapján)`;
             tlBaseline.style.color = baselineScore >= 70 ? 'var(--success)' : baselineScore >= 40 ? 'var(--gold)' : '#e05555';
         } else {
             tlBaseline.style.display = 'none';
