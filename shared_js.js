@@ -598,10 +598,14 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
   const CW = W - PL - PR;
 
   const humanLabel = processData?.humanCategory || ((processData?.humanIndex ?? '-') + '%');
-  const entropyPct = processData?.entropyPct ?? 0;
+const entropyPct = processData?.entropyPct ?? 0;
   const entropyCV = processData?.entropyCV ?? 0;
   const typedPct = processData?.typedPct ?? 100;
   const pastedPct = processData?.pastedPct ?? 0;
+  const cfDnaScore = processData?.cfDnaScore ?? 0;
+  const flowPulseScore = processData?.flowPulseScore ?? 0;
+  const smdScore = processData?.smdScore ?? 0;
+  const tripleLockScore = processData?.tripleLockScore ?? 0;
 
   // ====== PDF generálás (teljesen változatlan) ======
   doc.setFillColor(6, 6, 8); doc.rect(0, 0, W, H, 'F');
@@ -664,7 +668,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
   doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
   doc.text('BIOMETRIKUS ADATOK', PL + 4, y + 5);
 
-  const bio = [
+const bio = [
     ['Leutes', processData?.keystrokeCount ?? '-'],
     ['Torles', processData?.deletionCount ?? '-'],
     ['Szunet', processData?.pauseCount ?? '-'],
@@ -672,7 +676,16 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     ['Ritmus', humanLabel],
     ['Iras ideje', processData?.sessionDurationMs ? Math.round(processData.sessionDurationMs / 60000) + ' perc' : '-'],
   ];
-  const bColW = CW / bio.length;
+
+  // Triple-Lock szekció a PDF-ben
+  const tripleLock = [
+    ['CF-DNA', cfDnaScore + '/100'],
+    ['NLS', flowPulseScore + '/100'],
+    ['SMD', smdScore + '/100'],
+    ['Kognitiv', tripleLockScore + '/100'],
+  ];
+   
+const bColW = CW / bio.length;
   bio.forEach(([lbl, val], i) => {
     const bx = PL + i * bColW + bColW / 2;
     const fontSize = String(val).length > 6 ? 5.5 : 7;
@@ -682,6 +695,21 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     doc.text(lbl, bx, y + 19, { align: 'center' });
   });
   y += 26;
+
+  // Triple-Lock szekció
+  doc.setFillColor(16, 16, 26); doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.5);
+  doc.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
+  doc.setTextColor(201, 168, 76); doc.setFontSize(6); doc.setFont('helvetica', 'bold');
+  doc.text('TRIPLE-LOCK KOGNITIV JELENLÉT', W / 2, y + 5, { align: 'center' });
+  const tColW = CW / tripleLock.length;
+  tripleLock.forEach(([lbl, val], i) => {
+    const tx = PL + i * tColW + tColW / 2;
+    doc.setTextColor(240, 208, 112); doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+    doc.text(String(val), tx, y + 11, { align: 'center' });
+    doc.setTextColor(100, 80, 30); doc.setFontSize(5); doc.setFont('helvetica', 'normal');
+    doc.text(lbl, tx, y + 16, { align: 'center' });
+  });
+  y += 22;
 
   doc.setFillColor(16, 16, 26); doc.setDrawColor(100, 80, 30); doc.setLineWidth(0.3);
   doc.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
@@ -1988,7 +2016,7 @@ function renderVerifyResultUnified(doc) {
 
     document.getElementById('v-hash-unified').textContent = doc.hash || '–';
 
-    const meta = [
+const meta = [
         ['Dokumentum ID', doc.doc_id],
         ['Szerző', doc.author_name || '–'],
         ['Létrehozva', fmtDate(doc.created_at)],
@@ -1997,6 +2025,10 @@ function renderVerifyResultUnified(doc) {
         ['Szünetek', pd.pauseCount ?? '–'],
         ['Ritmus', humanLabel],
         ['Bizalmi szint', `${badge.icon} ${badge.label}`],
+        ['💎 Kognitív Jelenlét', pd.tripleLockScore ? pd.tripleLockScore + '/100' : '–'],
+        ['🧠 Gondolkodási szünetek', pd.cfDnaScore ? pd.cfDnaScore + '/100' : '–'],
+        ['✍️ Alkotói hév', pd.flowPulseScore ? pd.flowPulseScore + '/100' : '–'],
+        ['🫀 Biológiai ritmus', pd.smdScore ? pd.smdScore + '/100' : '–'],
     ];
     document.getElementById('v-meta-unified').innerHTML = meta
         .map(([l, v]) => `<div class="meta-item"><label>${l}</label><span>${v}</span></div>`)
