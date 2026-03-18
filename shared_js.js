@@ -2248,8 +2248,8 @@ async function loadMyDocs() {
         return;
     }
     document.getElementById('my-docs-list').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">⏳ Betöltés...</div>';
-    const { data, error } = await db.from('documents')
-        .select('doc_id,title,content,hash,created_at,process_data,is_public,ots_receipt,ots_pending')
+   const { data, error } = await db.from('documents')
+        .select('doc_id,title,content,hash,created_at,process_data,is_public,is_published,ots_receipt,ots_pending')
         .eq('author_id', currentUser.id)
         .order('created_at', { ascending: false });
     if (error || !data) {
