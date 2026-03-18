@@ -292,21 +292,60 @@ async function doRegister() {
     const email = document.getElementById('r-email')?.value.trim();
     const pass = document.getElementById('r-pass')?.value;
     const pass2 = document.getElementById('r-pass2')?.value;
+    const teacherCode = document.getElementById('r-teacher-code')?.value.trim().toUpperCase();
+
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) return authAlert('Felhasználónév: 3–30 karakter (betű, szám, _)');
     if (!email || !/\S+@\S+\.\S+/.test(email)) return authAlert('Érvényes email cím szükséges.');
     if (pass.length < 8) return authAlert('Jelszó minimum 8 karakter.');
     if (pass !== pass2) return authAlert('A két jelszó nem egyezik.');
+
     authAlert('⏳ Regisztráció...', 'info');
-    const { data, error } = await db.auth.signUp({ email, password: pass, options: { data: { username } } });
+
+    // Ha van tanári kód, ellenőrizzük, mielőtt regisztrálnánk
+    if (teacherCode) {
+        const { data: codeData, error: codeError } = await db
+            .from('teacher_codes')
+            .select('id')
+            .eq('code', teacherCode)
+            .is('used_by', null)
+            .single();
+
+        if (codeError || !codeData) {
+            return authAlert('❌ Érvénytelen vagy már felhasznált tanári kód.');
+        }
+    }
+
+    const { data, error } = await db.auth.signUp({ 
+        email, 
+        password: pass, 
+        options: { data: { username } } 
+    });
+
     if (error) return authAlert(error.message);
+
     if (data.user) {
         const ts = Date.now().toString(36).toUpperCase();
         const humanoId = `HMN-${username.substring(0, 4).toUpperCase()}-${ts}`;
         const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        
+        let role = 'user';
+        if (teacherCode) {
+            role = 'teacher';
+            // Megjelöljük a kódot felhasználtként
+            await db
+                .from('teacher_codes')
+                .update({ 
+                    used_by: data.user.id, 
+                    used_at: new Date().toISOString() 
+                })
+                .eq('code', teacherCode);
+        }
+
         await db.from('profiles').upsert({
             id: data.user.id,
             username,
             humano_id: humanoId,
+            role: role,
             plan: 'free',
             monthly_credits: 10,
             used_credits: 0,
@@ -314,6 +353,7 @@ async function doRegister() {
             created_at: new Date().toISOString()
         });
     }
+
     authAlert('✅ Sikeres regisztráció! Átirányítás...', 'success');
     setTimeout(() => showPage('dashboard'), 1500);
 }
