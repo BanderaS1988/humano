@@ -3123,6 +3123,10 @@ try {
 }
       
         showToast('✅ Szöveg hitelesítve és mentve!');
+      const targetEmail = document.getElementById('target-email-input')?.value?.trim();
+if (targetEmail) {
+    setTimeout(() => openSendEmailModal(), 1000);
+}
         await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
         if (btn) btn.textContent = '✅ Hitelesítve';
 
