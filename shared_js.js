@@ -299,8 +299,6 @@ async function doRegister() {
     if (pass.length < 8) return authAlert('Jelszó minimum 8 karakter.');
     if (pass !== pass2) return authAlert('A két jelszó nem egyezik.');
 
-    authAlert('⏳ Regisztráció...', 'info');
-
     // Ha van tanári kód, ellenőrizzük, mielőtt regisztrálnánk
     if (teacherCode) {
         const { data: codeData, error: codeError } = await db
@@ -314,6 +312,8 @@ async function doRegister() {
             return authAlert('❌ Érvénytelen vagy már felhasznált tanári kód.');
         }
     }
+
+    authAlert('⏳ Regisztráció...', 'info');
 
     const { data, error } = await db.auth.signUp({ 
         email, 
@@ -352,18 +352,21 @@ async function doRegister() {
             trial_ends_at: trialEndsAt,
             created_at: new Date().toISOString()
         });
+
+        // Beállítjuk a currentUser-t
+        currentUser = data.user;
     }
 
     authAlert('✅ Sikeres regisztráció! Átirányítás...', 'success');
 
-if (role === 'teacher') {
-    setTimeout(() => {
-        window.location.href = '/teacher';
-    }, 1500);
-} else {
-    // Beállítjuk a currentUser-t mielőtt átirányítunk
-    currentUser = data.user;
-    setTimeout(() => showPage('dashboard'), 1500);
+    // Átirányítás a szerepkör alapján
+    if (teacherCode) {
+        setTimeout(() => {
+            window.location.href = '/teacher';
+        }, 1500);
+    } else {
+        setTimeout(() => showPage('dashboard'), 1500);
+    }
 }
 
 
