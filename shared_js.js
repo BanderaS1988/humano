@@ -3212,10 +3212,9 @@ function updateEditorTimer() {
 }
 
 async function editorCalcHumanIndex() {
-   if (E.keys < 20) return;
+    if (E.keys < 20) return;
 
     // ── MINIMUM MINTAMÉRET ELLENŐRZÉS ────────────────────────
-    // Kevés adat esetén a score-ok nem megbízhatóak
     const sampleSize = E.keys;
     const minSample = 50;
     const optimalSample = 200;
@@ -3225,7 +3224,6 @@ async function editorCalcHumanIndex() {
     if (!E.scoreHistory) E.scoreHistory = [];
     if (!E.lastScoreTime) E.lastScoreTime = Date.now();
 
-    // Minden 30 másodpercben mentünk egy snapshot-ot
     if (Date.now() - E.lastScoreTime > 30000 && E.tripleLockScore > 0) {
         E.scoreHistory.push({
             ts: Date.now(),
@@ -3238,7 +3236,6 @@ async function editorCalcHumanIndex() {
         E.lastScoreTime = Date.now();
     }
 
-    // Time-series alapú simítás – ha van előzmény, átlagoljuk
     const historyWeight = E.scoreHistory.length >= 3 ? 0.3 : 0;
     const historyAvg = E.scoreHistory.length >= 3
         ? Math.round(E.scoreHistory.slice(-3).reduce((s, h) => s + h.tripleLock, 0) / 3)
@@ -3310,9 +3307,7 @@ async function editorCalcHumanIndex() {
     E.humanCV = parseFloat(cv.toFixed(3));
     E.humanPct = pct;
 
-
-// ── FELHASZNÁLÓ-SPECIFIKUS BASELINE ──────────────────────
-    // Az aktuális session-t a felhasználó saját kalibrációs profiljához mérjük
+    // ── FELHASZNÁLÓ-SPECIFIKUS BASELINE ──────────────────────
     let baselineScore = 0;
     let baselineDeviation = 0;
 
@@ -3326,22 +3321,16 @@ async function editorCalcHumanIndex() {
                 .limit(5);
 
             if (profiles && profiles.length >= 1) {
-                // Átlagoljuk az összes profilt (max 5)
                 const avgBurstMean = profiles.reduce((s, p) => s + (p.burst_mean || 0), 0) / profiles.length;
-                const avgRhythmEntropy = profiles.reduce((s, p) => s + (p.rhythm_entropy || 0), 0) / profiles.length;
                 const avgRevisionRate = profiles.reduce((s, p) => s + (p.revision_rate || 0), 0) / profiles.length;
 
-                // Aktuális értékek
                 const currentBurstMean = mean;
                 const currentRevisionRate = E.dels / Math.max(1, E.keys);
 
-                // Eltérés a baseline-tól
                 const burstDev = Math.abs(currentBurstMean - avgBurstMean) / Math.max(avgBurstMean, 1);
                 const revDev = Math.abs(currentRevisionRate - avgRevisionRate) / Math.max(avgRevisionRate, 0.01);
 
                 baselineDeviation = Math.round((burstDev + revDev) / 2 * 100);
-
-                // Baseline score: minél kisebb az eltérés, annál jobb
                 baselineScore = Math.max(0, 100 - baselineDeviation);
 
                 E.baselineScore = baselineScore;
@@ -3352,7 +3341,7 @@ async function editorCalcHumanIndex() {
             console.warn('Baseline hiba:', err);
         }
     }
-   
+
     // ── CF-DNA: Szünetek pozíciója mondathatárokon ───────────
     const cfText = document.getElementById('doc-content-area')?.innerText || '';
     const cfPauses = E.events.filter(e => e.type === 'pause');
@@ -3433,8 +3422,7 @@ async function editorCalcHumanIndex() {
     E.biologicalEntropy = biologicalEntropy;
     E.smdScore = smdScore;
 
-   // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
-    // Ha van baseline profil, azt is beleszámítjuk
+    // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
     const baselineWeight = baselineScore > 0 ? 0.20 : 0;
     const rawTripleLock = Math.round(
         (cfDnaScore * (0.35 - baselineWeight / 3)) +
@@ -3443,12 +3431,10 @@ async function editorCalcHumanIndex() {
         (baselineScore * baselineWeight)
     );
 
-    // Kis mintánál csökkentjük a score-t
     const weightedTripleLock = sampleSize < minSample
         ? Math.round(rawTripleLock * sampleWeight)
         : rawTripleLock;
 
-    // Time-series simítás ha van elég előzmény
     const tripleLockScore = historyWeight > 0
         ? Math.round((weightedTripleLock * (1 - historyWeight)) + (historyAvg * historyWeight))
         : weightedTripleLock;
@@ -3456,67 +3442,16 @@ async function editorCalcHumanIndex() {
     E.tripleLockScore = tripleLockScore;
     E.sampleWeight = parseFloat(sampleWeight.toFixed(2));
 
-
-// ── KERESZT-VALIDÁCIÓ ────────────────────────────────────
-    // Ha az egyik score túl jó de a másik nem konzisztens, az gyanús
-    let crossValidFlag = false;
-    let crossValidWarning = '';
-
-    if (scores.length === 3) {
-        const maxScore = Math.max(...scores);
-        const minScore = Math.min(...scores);
-        const spread = maxScore - minScore;
-
-        // Ha a spread > 50 – nagy eltérés a három score között
-        if (spread > 50) {
-            crossValidFlag = true;
-            crossValidWarning = 'Nagy eltérés a mutatók között – az eredmény kevésbé megbízható.';
-        }
-
-        // Ha CF-DNA 90+ de SMD < 20 – gyanús mintázat
-        if (cfDnaScore >= 90 && smdScore < 20) {
-            crossValidFlag = true;
-            crossValidWarning = 'Szokatlan mintázat – magas kognitív jelenlét de alacsony biológiai ritmus.';
-        }
-
-        // Ha NLS 90+ de CF-DNA < 20 – gyanús
-        if (flowPulseScore >= 90 && cfDnaScore < 20) {
-            crossValidFlag = true;
-            crossValidWarning = 'Szokatlan mintázat – alkotói hév magas de nincs gondolkodási szünet.';
-        }
-
-        // Ha mind a három 95+ felett van – túl tökéletes, gyanús
-        if (cfDnaScore >= 95 && flowPulseScore >= 95 && smdScore >= 95) {
-            crossValidFlag = true;
-            crossValidWarning = 'Túl egyenletes eredmény – természetes emberi gépelésben mindig van variáció.';
-        }
-    }
-
-    E.crossValidFlag = crossValidFlag;
-    E.crossValidWarning = crossValidWarning;
-
-    // Ha gyanús mintázat, csökkentjük a Triple-Lock score-t
-    const adjustedTripleLockScore = crossValidFlag
-        ? Math.round(tripleLockScore * 0.75)
-        : tripleLockScore;
-    E.tripleLockScore = adjustedTripleLockScore;
-   
-    // Triple-Lock UI frissítés
-// ── CONFIDENCE SZÁMÍTÁS ──────────────────────────────────
-    // Mennyire megbízható az eredmény – mintaméret és konzisztencia alapján
+    // ── CONFIDENCE SZÁMÍTÁS ──────────────────────────────────
+    // FIX: scores deklaráció IDE kerül, a kereszt-validáció ELÉ
     const scores = [cfDnaScore, flowPulseScore, smdScore].filter(s => s > 0);
     const scoreMean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     const scoreStddev = scores.length > 1
         ? Math.sqrt(scores.reduce((s, v) => s + Math.pow(v - scoreMean, 2), 0) / scores.length)
         : 50;
 
-    // Minél kisebb a szórás a három score között, annál megbízhatóbb
     const consistencyScore = Math.max(0, 100 - scoreStddev);
-
-    // Mintaméret alapú megbízhatóság
     const sampleScore = Math.min(100, Math.round((E.keys / 200) * 100));
-
-    // Összesített confidence
     const confidence = Math.round((consistencyScore * 0.6) + (sampleScore * 0.4));
 
     let confidenceLabel, confidenceColor;
@@ -3533,6 +3468,42 @@ async function editorCalcHumanIndex() {
 
     E.confidence = confidence;
     E.confidenceLabel = confidenceLabel;
+
+    // ── KERESZT-VALIDÁCIÓ ────────────────────────────────────
+    // FIX: scores már deklarálva van felette, itt csak használjuk
+    let crossValidFlag = false;
+    let crossValidWarning = '';
+
+    if (scores.length === 3) {
+        const maxScore = Math.max(...scores);
+        const minScore = Math.min(...scores);
+        const spread = maxScore - minScore;
+
+        if (spread > 50) {
+            crossValidFlag = true;
+            crossValidWarning = 'Nagy eltérés a mutatók között – az eredmény kevésbé megbízható.';
+        }
+        if (cfDnaScore >= 90 && smdScore < 20) {
+            crossValidFlag = true;
+            crossValidWarning = 'Szokatlan mintázat – magas kognitív jelenlét de alacsony biológiai ritmus.';
+        }
+        if (flowPulseScore >= 90 && cfDnaScore < 20) {
+            crossValidFlag = true;
+            crossValidWarning = 'Szokatlan mintázat – alkotói hév magas de nincs gondolkodási szünet.';
+        }
+        if (cfDnaScore >= 95 && flowPulseScore >= 95 && smdScore >= 95) {
+            crossValidFlag = true;
+            crossValidWarning = 'Túl egyenletes eredmény – természetes emberi gépelésben mindig van variáció.';
+        }
+    }
+
+    E.crossValidFlag = crossValidFlag;
+    E.crossValidWarning = crossValidWarning;
+
+    const adjustedTripleLockScore = crossValidFlag
+        ? Math.round(tripleLockScore * 0.75)
+        : tripleLockScore;
+    E.tripleLockScore = adjustedTripleLockScore;
 
     // ── MAGYARÁZAT GENERÁLÁS ─────────────────────────────────
     let explanation = '';
@@ -3562,7 +3533,7 @@ async function editorCalcHumanIndex() {
     const tlConfidence = document.getElementById('tl-confidence');
     const tlExplanation = document.getElementById('tl-explanation');
 
-    if (tlScore) tlScore.textContent = tripleLockScore ? tripleLockScore + '/100' : '–';
+    if (tlScore) tlScore.textContent = adjustedTripleLockScore ? adjustedTripleLockScore + '/100' : '–';
     if (tlCfdna) tlCfdna.textContent = cfDnaScore ? cfDnaScore + '/100' : '–';
     if (tlNls)   tlNls.textContent   = flowPulseScore ? flowPulseScore + '/100' : '–';
     if (tlSmd)   tlSmd.textContent   = smdScore ? smdScore + '/100' : '–';
@@ -3571,7 +3542,7 @@ async function editorCalcHumanIndex() {
         tlConfidence.style.color = confidenceColor;
     }
 
-const tlSample = document.getElementById('tl-sample');
+    const tlSample = document.getElementById('tl-sample');
     if (tlSample) {
         tlSample.textContent = sampleSize < minSample
             ? `${sampleSize}/${minSample} leütés`
@@ -3584,10 +3555,10 @@ const tlSample = document.getElementById('tl-sample');
             ? 'var(--gold)'
             : 'var(--success)';
     }
-   
+
     if (tlExplanation) tlExplanation.textContent = explanation;
 
-// Baseline megjelenítés
+    // ── BASELINE MEGJELENÍTÉS ────────────────────────────────
     const tlBaseline = document.getElementById('tl-baseline');
     if (tlBaseline) {
         if (baselineScore > 0) {
@@ -3598,7 +3569,7 @@ const tlSample = document.getElementById('tl-sample');
             tlBaseline.style.display = 'none';
         }
     }
-
+}
    
    const tlCrossValid = document.getElementById('tl-crossvalid');
     const tlCrossValidText = document.getElementById('tl-crossvalid-text');
