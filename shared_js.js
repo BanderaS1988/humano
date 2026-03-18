@@ -3349,14 +3349,75 @@ function editorCalcHumanIndex() {
     E.tripleLockScore = tripleLockScore;
 
     // Triple-Lock UI frissítés
+// ── CONFIDENCE SZÁMÍTÁS ──────────────────────────────────
+    // Mennyire megbízható az eredmény – mintaméret és konzisztencia alapján
+    const scores = [cfDnaScore, flowPulseScore, smdScore].filter(s => s > 0);
+    const scoreMean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const scoreStddev = scores.length > 1
+        ? Math.sqrt(scores.reduce((s, v) => s + Math.pow(v - scoreMean, 2), 0) / scores.length)
+        : 50;
+
+    // Minél kisebb a szórás a három score között, annál megbízhatóbb
+    const consistencyScore = Math.max(0, 100 - scoreStddev);
+
+    // Mintaméret alapú megbízhatóság
+    const sampleScore = Math.min(100, Math.round((E.keys / 200) * 100));
+
+    // Összesített confidence
+    const confidence = Math.round((consistencyScore * 0.6) + (sampleScore * 0.4));
+
+    let confidenceLabel, confidenceColor;
+    if (confidence >= 75) {
+        confidenceLabel = 'Magas megbízhatóság';
+        confidenceColor = 'var(--success)';
+    } else if (confidence >= 50) {
+        confidenceLabel = 'Közepes megbízhatóság';
+        confidenceColor = 'var(--gold)';
+    } else {
+        confidenceLabel = 'Alacsony – több adat kell';
+        confidenceColor = '#e05555';
+    }
+
+    E.confidence = confidence;
+    E.confidenceLabel = confidenceLabel;
+
+    // ── MAGYARÁZAT GENERÁLÁS ─────────────────────────────────
+    let explanation = '';
+    if (E.keys < 50) {
+        explanation = 'Még kevés adat – írj legalább 100 leütést a pontosabb értékeléshez.';
+    } else if (cfDnaScore >= 70 && flowPulseScore >= 60 && smdScore >= 50) {
+        explanation = 'Minden mutató emberi alkotásra utal – természetes gondolkodási szünetek, alkotói hév és biológiai ritmus egyaránt megfigyelhető.';
+    } else if (cfDnaScore >= 70 && flowPulseScore < 40) {
+        explanation = 'A gondolkodási szünetek természetesek, de az alkotói hév alacsony – valószínűleg gyors, rutinszerű gépelés.';
+    } else if (cfDnaScore < 40 && smdScore >= 60) {
+        explanation = 'A biológiai ritmus emberi, de kevés gondolkodási szünet van mondathatárokon – esetleg folyamatos, megszakítás nélküli gépelés.';
+    } else if (flowPulseScore >= 70 && cfDnaScore < 40) {
+        explanation = 'Erős alkotói hév látható – a szókomplexitás és gépelési sebesség korrelációja emberi mintázatot mutat.';
+    } else if (tripleLockScore < 30) {
+        explanation = 'Alacsony kognitív jelenlét – lehetséges okok: beillesztett tartalom, nagyon gyors egyenletes gépelés, vagy segédeszköz használata.';
+    } else {
+        explanation = 'Vegyes mintázat – az emberi alkotás jelei részben megfigyelhetők. Több szöveg írásával pontosabb kép alakul ki.';
+    }
+
+    E.explanation = explanation;
+
+    // ── TRIPLE-LOCK UI FRISSÍTÉS ─────────────────────────────
     const tlScore = document.getElementById('triple-lock-score');
     const tlCfdna = document.getElementById('tl-cfdna');
     const tlNls   = document.getElementById('tl-nls');
     const tlSmd   = document.getElementById('tl-smd');
+    const tlConfidence = document.getElementById('tl-confidence');
+    const tlExplanation = document.getElementById('tl-explanation');
+
     if (tlScore) tlScore.textContent = tripleLockScore ? tripleLockScore + '/100' : '–';
     if (tlCfdna) tlCfdna.textContent = cfDnaScore ? cfDnaScore + '/100' : '–';
     if (tlNls)   tlNls.textContent   = flowPulseScore ? flowPulseScore + '/100' : '–';
     if (tlSmd)   tlSmd.textContent   = smdScore ? smdScore + '/100' : '–';
+    if (tlConfidence) {
+        tlConfidence.textContent = confidenceLabel;
+        tlConfidence.style.color = confidenceColor;
+    }
+    if (tlExplanation) tlExplanation.textContent = explanation;
 
     updateEntropyBar();
 }
