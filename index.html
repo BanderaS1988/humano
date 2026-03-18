@@ -410,10 +410,22 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
           <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px;font-family:var(--font-mono)">A te HUMANO ID-d lesz:</div>
           <div class="gt" id="id-preview" style="font-size:1rem;font-weight:800;letter-spacing:2px;font-family:var(--font-mono)">–</div>
         </div>
-        <div class="form-group"><label class="form-label">Felhasználónév</label><input class="form-control" id="r-user" type="text" placeholder="pl. kovacs_peter" oninput="updateIdPreview()"/></div>
+     <div class="form-group"><label class="form-label">Felhasználónév</label><input class="form-control" id="r-user" type="text" placeholder="pl. kovacs_peter" oninput="updateIdPreview()"/></div>
         <div class="form-group"><label class="form-label">E-mail cím</label><input class="form-control" id="r-email" type="email" placeholder="email@example.com"/></div>
         <div class="form-group"><label class="form-label">Jelszó</label><input class="form-control" id="r-pass" type="password" placeholder="••••••••"/></div>
         <div class="form-group"><label class="form-label">Jelszó megerősítése</label><input class="form-control" id="r-pass2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        
+        <!-- TANÁRI KÓD MEZŐ -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Tanári kód <span style="color:var(--gold3);font-size:0.7rem;">(csak tanároknak)</span></label>
+          <input class="form-control" id="r-teacher-code" type="text" 
+                 placeholder="pl. TANAR-2026-HUMANO" 
+                 style="font-family:var(--font-mono);text-transform:uppercase"/>
+          <div style="font-size:0.7rem;color:var(--muted2);margin-top:0.2rem;">
+            Hagyd üresen, ha diákként regisztrálnál.
+          </div>
+        </div>
+        
         <div class="form-group" style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:1rem">
           <input type="checkbox" id="r-consent" style="margin-top:3px;accent-color:var(--gold);cursor:pointer;flex-shrink:0"/>
           <label for="r-consent" style="font-size:.74rem;color:var(--muted);line-height:1.6;cursor:pointer">
