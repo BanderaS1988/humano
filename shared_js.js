@@ -4621,6 +4621,7 @@ function editorKeyDown(e) {
 }
 
 
+
 // ── ANTI-SPOOF ELLENŐRZÉS ─────────────────────────────────
     if (!E.antiSpoof) E.antiSpoof = {
         suspiciousPatterns: 0,
