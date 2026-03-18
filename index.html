@@ -731,6 +731,18 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
               <div style="font-family:var(--font-display);font-size:1.1rem;color:var(--gold)" id="rhythm-var">–</div>
             </div>
           </div>
+
+          <!-- Triple-Lock -->
+          <div class="card" style="border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.02)">
+            <div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.5rem">Triple-Lock Score</div>
+            <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold)" id="triple-lock-score">–</div>
+            <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem;display:flex;flex-direction:column;gap:.2rem">
+              <div>CF-DNA: <strong id="tl-cfdna" style="color:var(--gold3)">–</strong></div>
+              <div>NLS: <strong id="tl-nls" style="color:var(--gold3)">–</strong></div>
+              <div>SMD: <strong id="tl-smd" style="color:var(--gold3)">–</strong></div>
+            </div>
+          </div>
+          
           <!-- Munkamenet statisztika -->
           <div class="card">
             <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.8rem;text-transform:uppercase;font-family:var(--font-mono)">📊 Munkamenet</div>
@@ -1721,8 +1733,7 @@ document.addEventListener('humano:verify-result', () => {
     <strong id="biometric-data-section" style="color:var(--gold3)">2.2 Szöveg hitelesítésekor</strong><br>
     Szöveg tartalma, SHA-256 hash, billentyűleütés-dinamika (időintervallumok, szünetek, javítások száma), gépelési munkamenet hossza, beillesztett szöveg aránya, szöveg kategóriája (opcionális, felhasználó által megadott – aggregált statisztikai elemzéshez használható). Jogalap: szerződés teljesítése.<br><br>
     
-    <strong style="color:var(--gold3)">Fontos:</strong> A billentyűleütés-dinamika kizárólag statisztikai formában kerül tárolásra. A leütött billentyűk karakterei nem kerülnek naplózásra – kivéve a szöveg tartalmát, amelyet a felhasználó maga ment el.<br><br>
-    
+<strong style="color:var(--gold3)">Triple-Lock algoritmusok (CF-DNA, NLS, SMD):</strong> A HUMANO három kiegészítő algoritmust futtat kizárólag a felhasználó böngészőjében: (1) szünetek pozíciójának elemzése mondatszerkezeten belül, (2) szókomplexitás és gépelési sebesség korrelációja, (3) biológiai ritmusingadozások mérése. Ezek az algoritmusok kizárólag absztrakt matematikai mutatókat állítanak elő – a szöveg tartalma, a szavak jelentése és a felhasználó személyazonossága nem kerül elemzésre vagy továbbításra.<br><br>    
     <strong style="color:var(--gold3)">2.3 Kalibrációs profil (opcionális)</strong><br>
     Ha a felhasználó elvégzi az Írói Azonosság Kalibrációt, a rendszer eltárolja az egyedi gépelési mintázat statisztikai jellemzőit: átlagos gépelési burst hossza, gondolkodási szünetek szórása, javítási arány, ritmus-entrópia. Ezek kizárólag a felhasználó saját profiljához való összehasonlításra szolgálnak, harmadik félnek nem kerülnek átadásra. 
     <strong style="color:var(--gold)">A kalibrációs profilodat a profiloldalon külön is törölheted, a beleegyezés visszavonásával együtt vagy attól függetlenül.</strong> Jogalap: hozzájárulás (GDPR 6. cikk a) pont).<br><br>
@@ -2753,8 +2764,17 @@ if (!trialActive && !unlimited && used >= limit) {
             typedPct:    Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
             pastedPct:   Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
             pasteEvents: pasteEvents.length,
-            entropyCV:   E.entropyCV  || 0,
-            entropyPct:  E.entropyPct || 0,
+           entropyCV:         E.entropyCV        || 0,
+            entropyPct:        E.entropyPct       || 0,
+            cfDnaScore:        E.cfDnaScore       || 0,
+            boundaryPauses:    E.boundaryPauses   || 0,
+            midWordPauses:     E.midWordPauses     || 0,
+            nlsCorrelation:    E.nlsCorrelation   || 0,
+            flowPulseScore:    E.flowPulseScore   || 0,
+            microDriftIndex:   E.microDriftIndex  || 0,
+            biologicalEntropy: E.biologicalEntropy || 0,
+            smdScore:          E.smdScore         || 0,
+            tripleLockScore:   E.tripleLockScore  || 0,
         };
 
         const isPublic = document.getElementById('doc-is-public')?.checked || false;
