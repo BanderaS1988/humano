@@ -4686,10 +4686,12 @@ function editorKeyDown(e) {
         }
     }
    
+       resetInactivityTimer();
     E.lastKey = now;
     editorUpdateStats();
     editorCheckSave();
     checkTlFlush();
+
 }
 
 
