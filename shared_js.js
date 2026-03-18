@@ -139,37 +139,6 @@ function _showSection(hash) {
         window.scrollTo(0, 0);
         history.replaceState(null, '', '#' + hash);
         
-        // KALIBRÁCIÓS MODAL - EZ FOG MŰKÖDNI
-        if (hash === 'editor' && currentUser) {
-            // Ne használj setTimeout-ot a Supabase híváson belül
-            setTimeout(async () => {
-                try {
-                    // Ne mutasd, ha már kihagyta
-                    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-                    
-                    const { data, error } = await db
-                        .from('typing_profiles')
-                        .select('id')
-                        .eq('user_id', currentUser.id);
-                    
-                    if (error) {
-                        console.log('Adatbázis hiba:', error);
-                        return;
-                    }
-                    
-                    // Ha nincs kalibráció (üres a tömb), mutasd a modalt
-                    if (!data || data.length === 0) {
-                        const modal = document.getElementById('cal-reminder-modal');
-                        if (modal) {
-                            modal.classList.add('open');
-                        }
-                    }
-                } catch (e) {
-                    console.log('Hiba a kalibráció ellenőrzésekor:', e);
-                }
-            }, 800);
-        }
-        
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active-page');
             if (link.getAttribute('onclick')?.includes(`'${hash}'`)) {
@@ -177,12 +146,11 @@ function _showSection(hash) {
             }
         });
         
-        // Itt hívódnak meg az oldal-specifikus funkciók
-if (hash === 'editor') {
-    if (typeof loadEditorWithConsentCheck === 'function') {
-        loadEditorWithConsentCheck();
-    }
-}
+        if (hash === 'editor') {
+            if (typeof loadEditorWithConsentCheck === 'function') {
+                loadEditorWithConsentCheck();
+            }
+        }
         
         _onSectionActivated(hash);
     }
