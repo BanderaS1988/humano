@@ -2947,12 +2947,16 @@ let isOnline = navigator.onLine;
 
 window.addEventListener('online', async () => {
     isOnline = true;
+    const banner = document.getElementById('offline-banner');
+    if (banner) banner.style.display = 'none';
     showToast('✅ Kapcsolat visszaállítva – szinkronizálás...');
     await flushOfflineQueue();
 });
 
 window.addEventListener('offline', () => {
     isOnline = false;
+    const banner = document.getElementById('offline-banner');
+    if (banner) banner.style.display = 'block';
     showToast('⚠️ Nincs internetkapcsolat – az adatok lokálisan mentve.');
 });
 
