@@ -4535,7 +4535,9 @@ function editorInit() {
 }
 
 // Kalibrációs modal ellenőrző függvény - add hozzá a shared.js-hez, ha még nincs
+// Kalibrációs modal ellenőrző függvény
 async function checkCalibrationModal() {
+    console.log('Kalibráció ellenőrzés...'); // Debug
     if (!currentUser) return;
     if (!document.getElementById('page-editor')?.classList.contains('active')) return;
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
@@ -4547,8 +4549,13 @@ async function checkCalibrationModal() {
             .eq('user_id', currentUser.id)
             .limit(1);
         
+        console.log('Kalibrációs profilok:', data); // Debug
+        
         if (!data || !data.length) {
+            console.log('Nincs kalibráció - modal megnyitása');
             document.getElementById('cal-reminder-modal')?.classList.add('open');
+        } else {
+            console.log('Van kalibráció - modal nem kell');
         }
     } catch (e) {
         console.log('Kalibráció ellenőrzési hiba:', e);
@@ -5568,6 +5575,8 @@ const ConsentManager = {
 // EDITOR BETÖLTÉS – Consent ellenőrzéssel
 // ─────────────────────────────────────────────────────────────
 
+
+// EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
 async function loadEditorWithConsentCheck() {
   if (!currentUser) {
     showPage('auth');
@@ -5581,7 +5590,11 @@ async function loadEditorWithConsentCheck() {
     return;
   }
 
+  // Ha van consent, akkor inicializáljuk az editort
   if (typeof editorInit === 'function') editorInit();
+  
+  // ÉS KÜLÖN ellenőrizzük a kalibrációt (függetlenül az editorInit-től)
+  setTimeout(checkCalibrationModal, 1500);
 }
 
 
