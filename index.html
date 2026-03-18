@@ -3220,8 +3220,9 @@ async function submitAddSignal() {
 }
 </script>
 
+
+  
 <!-- ═══ KALIBRÁCIÓS EMLÉKEZTETŐ MODAL ═══ -->
-<!-- Ezt a </body> tag elé, a többi <script> blokk UTÁN illeszd be -->
 
 <div class="modal-overlay" id="cal-reminder-modal" style="z-index:9700">
   <div class="modal-box" style="max-width:480px;text-align:center">
@@ -3341,6 +3342,84 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+
+});
+</script>
+
+<!-- ═══ INAKTIVITÁS MODAL ═══ -->
+<div class="modal-overlay" id="inactivity-modal" style="z-index:9800;display:none">
+  <div class="modal-box" style="max-width:420px;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">⏸</div>
+    <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;
+                color:var(--gold2);margin-bottom:.6rem">
+      Még ott vagy?
+    </div>
+    <p style="font-size:.86rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
+      2 perce nem gépeltél – az idő megállt.<br>
+      Az inaktív időszak <strong style="color:var(--gold)">nem számít bele</strong> a munkamenetbe.
+    </p>
+    <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem;
+                margin-bottom:1.25rem;font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">
+      Szünet ideje: <strong id="inactivity-duration" style="color:var(--gold)">0:00</strong>
+    </div>
+    <button class="btn btn-gold" style="width:100%;padding:.85rem" 
+            onclick="resumeFromInactivity()">
+      ▶ Folytatom az írást
+    </button>
+  </div>
+</div>
+
+<script>
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000;
+let inactivityTimer = null;
+let inactivityStart = null;
+let inactivityDurationTimer = null;
+let totalInactiveMs = 0;
+
+function resetInactivityTimer() {
+    if (document.getElementById('inactivity-modal')?.classList.contains('open')) return;
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(showInactivityModal, INACTIVITY_TIMEOUT);
+}
+
+function showInactivityModal() {
+    if (!E.sessionStart) return;
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+    inactivityStart = Date.now();
+    document.getElementById('inactivity-modal').style.display = 'flex';
+    document.getElementById('inactivity-modal').classList.add('open');
+    inactivityDurationTimer = setInterval(() => {
+        const elapsed = Date.now() - inactivityStart;
+        const m = Math.floor(elapsed / 60000);
+        const s = Math.floor((elapsed % 60000) / 1000);
+        const el = document.getElementById('inactivity-duration');
+        if (el) el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+    }, 1000);
+    if (E.timerInterval) {
+        clearInterval(E.timerInterval);
+        E.timerInterval = null;
+    }
+}
+
+function resumeFromInactivity() {
+    const inactiveDuration = Date.now() - inactivityStart;
+    totalInactiveMs += inactiveDuration;
+    if (E.sessionStart) E.sessionStart += inactiveDuration;
+    document.getElementById('inactivity-modal').classList.remove('open');
+    document.getElementById('inactivity-modal').style.display = 'none';
+    clearInterval(inactivityDurationTimer);
+    inactivityDurationTimer = null;
+    inactivityStart = null;
+    if (E.sessionStart && !E.timerInterval) {
+        E.timerInterval = setInterval(updateEditorTimer, 1000);
+    }
+    resetInactivityTimer();
+    showToast('▶ Folytatás – a szünet ideje nem számít bele.');
+}
+</script>
+
+</body>
+</html>
   
 </body>
 </html>  
