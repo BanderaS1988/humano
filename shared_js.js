@@ -5649,7 +5649,7 @@ function hideBiometricConsentModal() {
   setTimeout(() => { modal.style.display = 'none'; }, 300);
 }
 
-// Elfogadás kezelése
+
 
 // Elutasítás kezelése
 function handleConsentDecline() {
