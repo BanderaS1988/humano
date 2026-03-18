@@ -4007,6 +4007,23 @@ function updateCertPanel(docId, hash, savedAt, otsReceipt, otsPending) {
         badgeEl.style.display = 'inline-flex';
     }
 
+   // Pontszám magyarázat
+    const explanationEl = g('cert-score-explanation');
+    const explanationText = g('cert-score-explanation-text');
+    if (explanationEl && explanationText) {
+        explanationEl.style.display = 'block';
+        const pct = E.humanPct || 0;
+        if (pct >= 85) {
+            explanationText.innerHTML = `<span style="color:var(--success)">✅ Magas kognitív jelenlét</span> – A gépelési ritmus nagyon változatos és természetes emberi mintázatot mutat. Ez erős bizonyítéka az alkotói folyamatnak.`;
+        } else if (pct >= 60) {
+            explanationText.innerHTML = `<span style="color:var(--gold)">🟡 Közepes kognitív jelenlét</span> – A gépelési ritmus emberi jellegű. <strong style="color:var(--text)">Ez NEM jelenti azt hogy AI írta a szöveget</strong> – csak azt hogy a gépelési mintázat kevésbé változatos. Lehetséges okok: gyors gépelés, speciális billentyűzet, vagy kevés gondolkodási szünet.`;
+        } else if (pct >= 40) {
+            explanationText.innerHTML = `<span style="color:var(--gold3)">🟠 Vegyes mintázat</span> – <strong style="color:var(--text)">Ez NEM jelenti azt hogy csaltál vagy AI írta</strong> – a HUMANO nem ítélkezik, tényeket közöl. Lehetséges okok: gyors gépeléstechnika, diktálás utáni begépelés, saját anyagból másolás, vagy speciális beviteli eszköz. Az ellenőrző fél dönti el mi az elfogadható.`;
+        } else {
+            explanationText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – <strong style="color:var(--text)">Ez NEM egyenlő azzal hogy AI írta a szöveget.</strong> A rendszer a gépelési ritmus változatosságát méri – nem a szöveg tartalmát. Lehetséges okok: beillesztett tartalom, nagyon gyors és egyenletes gépelés, vagy segédeszköz használata. A tanúsítvány tényeket közöl – az értékelés az ellenőrző félé.`;
+        }
+    }
+
     generateQR('cert-qr-container', docId);
     const bl = g('badge-preview-link');
     const bll = g('badge-doc-id-label');
