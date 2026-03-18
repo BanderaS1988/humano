@@ -3990,10 +3990,23 @@ function editorInit() {
             document.getElementById('s-human').textContent = '–';
             document.getElementById('e-rhythm-warn').style.display = 'none';
             document.getElementById('e-word-warn').style.display = 'none';
-            const entropyFill = document.getElementById('entropy-fill');
-            const entropyLabel = document.getElementById('entropy-label');
-            if (entropyFill) { entropyFill.style.width = '0%'; entropyFill.style.background = 'var(--muted2)'; }
-            if (entropyLabel) { entropyLabel.textContent = '–'; entropyLabel.style.color = 'var(--muted)'; }
+      const entropyFill = document.getElementById('entropy-fill');
+    const entropyLabel = document.getElementById('entropy-label');
+    if (entropyFill) { entropyFill.style.width = '0%'; entropyFill.style.background = 'var(--muted2)'; }
+    if (entropyLabel) { entropyLabel.textContent = '–'; entropyLabel.style.color = 'var(--muted)'; }
+
+    E.cfDnaScore = 0; E.boundaryPauses = 0; E.midWordPauses = 0;
+    E.nlsCorrelation = 0; E.flowPulseScore = 0;
+    E.microDriftIndex = 0; E.biologicalEntropy = 0; E.smdScore = 0;
+    E.tripleLockScore = 0;
+    const tlScore = document.getElementById('triple-lock-score');
+    const tlCfdna = document.getElementById('tl-cfdna');
+    const tlNls   = document.getElementById('tl-nls');
+    const tlSmd   = document.getElementById('tl-smd');
+    if (tlScore) tlScore.textContent = '–';
+    if (tlCfdna) tlCfdna.textContent = '–';
+    if (tlNls)   tlNls.textContent   = '–';
+    if (tlSmd)   tlSmd.textContent   = '–';
         }
     });
     ta.addEventListener('keydown', editorKeyDown);
@@ -4025,6 +4038,8 @@ function editorInit() {
         });
     }
 }
+
+
 function editorKeyDown(e) {
     const now = Date.now();
     if (!E.sessionStart) {
