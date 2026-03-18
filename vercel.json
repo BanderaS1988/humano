@@ -1,5 +1,8 @@
 {
   "rewrites": [
+    { "source": "/teacher", "destination": "/teacher.html" },
+    { "source": "/student", "destination": "/student.html" },
+    { "source": "/join", "destination": "/student.html" },
     { "source": "/story/:path*", "destination": "/story_page.html" },
     { "source": "/read/:path*", "destination": "/read.html" },
     { "source": "/share/:path*", "destination": "/api/read/[docId]" },
