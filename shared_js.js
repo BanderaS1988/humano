@@ -138,14 +138,28 @@ function _showSection(hash) {
         el.classList.add('active');
         window.scrollTo(0, 0);
         history.replaceState(null, '', '#' + hash);
-        if (hash === 'editor') {
-            if (!currentUser) {
-                setTimeout(() => showPage('auth'), 100);
-                return;
-            } else {
-                document.getElementById('editor-wrap').style.display = 'block';
-            }
+        
+        // EZT ADD HOZZÁ - KALIBRÁCIÓS MODAL ELLENŐRZÉS
+        if (hash === 'editor' && currentUser) {
+            setTimeout(async () => {
+                // Ne mutasd, ha már kihagyta
+                if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+                
+                // Ellenőrizzük, van-e kalibráció
+                const { data } = await db
+                    .from('typing_profiles')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .limit(1);
+                
+                // Ha nincs kalibráció, mutasd a modalt
+                if (!data || !data.length) {
+                    document.getElementById('cal-reminder-modal')?.classList.add('open');
+                }
+            }, 1000); // 1 másodperc várakozás, hogy az editor betöltődjön
         }
+        // VÉGE
+        
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active-page');
             if (link.getAttribute('onclick')?.includes(`'${hash}'`)) {
@@ -4534,7 +4548,6 @@ function editorInit() {
     }
 }
 
-// Kalibrációs modal ellenőrző függvény - add hozzá a shared.js-hez, ha még nincs
 // Kalibrációs modal ellenőrző függvény
 async function checkCalibrationModal() {
     console.log('Kalibráció ellenőrzés...'); // Debug
