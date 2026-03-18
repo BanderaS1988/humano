@@ -132,26 +132,26 @@ function showPage(p) {
 function _showSection(hash) {
     document.getElementById('nav-links')?.classList.remove('open');
     document.getElementById('hamburger-btn')?.classList.remove('open');
-
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     const el = document.getElementById('page-' + hash);
     if (el) {
         el.classList.add('active');
         window.scrollTo(0, 0);
         history.replaceState(null, '', '#' + hash);
-
-        // Ha az editor oldal jelenik meg, ellenőrizzük a bejelentkezést
         if (hash === 'editor') {
             if (!currentUser) {
-                // Ha nincs bejelentkezve, átirányítjuk az auth oldalra
                 setTimeout(() => showPage('auth'), 100);
                 return;
             } else {
-                // Ha be van jelentkezve, megjelenítjük az editor tartalmát
                 document.getElementById('editor-wrap').style.display = 'block';
             }
         }
-
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active-page');
+            if (link.getAttribute('onclick')?.includes(`'${hash}'`)) {
+                link.classList.add('active-page');
+            }
+        });
         _onSectionActivated(hash);
     } else {
         console.warn('Nem található szekció: page-' + hash);
