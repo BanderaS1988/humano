@@ -3464,6 +3464,17 @@ function editorCalcHumanIndex() {
     }
     if (tlExplanation) tlExplanation.textContent = explanation;
 
+   const tlCrossValid = document.getElementById('tl-crossvalid');
+    const tlCrossValidText = document.getElementById('tl-crossvalid-text');
+    if (tlCrossValid && tlCrossValidText) {
+        if (crossValidFlag) {
+            tlCrossValid.style.display = 'block';
+            tlCrossValidText.textContent = crossValidWarning;
+        } else {
+            tlCrossValid.style.display = 'none';
+        }
+    }
+
     updateEntropyBar();
 }
 
