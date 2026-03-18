@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title id="page-title">HUMANO – Publikáció</title>
+  <meta name="description" id="page-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+  <link rel="stylesheet" href="shared_css.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<nav id="nav">
+  <div class="nav-logo gt" onclick="window.location='/'">✦ HUMANO</div>
+</nav>
+
+<div style="max-width:760px;margin:4rem auto;padding:0 2rem">
+  <div id="read-loading" style="text-align:center;padding:4rem;color:var(--muted)">⏳ Betöltés...</div>
+
+  <article id="read-content" style="display:none">
+
+    <!-- Fejléc -->
+    <div style="margin-bottom:2rem">
+      <div style="font-size:.72rem;font-family:var(--font-mono);color:var(--muted);
+                  text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem"
+           id="r-date"></div>
+      <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:700;
+                 margin-bottom:.75rem;line-height:1.3" id="r-title"></h1>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <span style="font-size:.85rem;color:var(--muted)" id="r-author"></span>
+        <span style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);
+                     border-radius:20px;padding:.2rem .75rem;font-size:.78rem;
+                     color:var(--gold)" id="r-human-score"></span>
+        <span style="background:rgba(74,184,112,.1);border:1px solid rgba(74,184,112,.25);
+                     border-radius:20px;padding:.2rem .75rem;font-size:.78rem;
+                     color:var(--success)">✦ HUMANO Hitelesített</span>
+      </div>
+    </div>
+
+    <div class="gold-line" style="margin:0 0 2rem"></div>
+
+    <!-- Teljes szöveg -->
+    <div id="r-body" style="font-size:1rem;line-height:1.9;color:var(--text);
+                             margin-bottom:3rem"></div>
+
+    <div class="gold-line" style="margin:0 0 2rem"></div>
+
+    <!-- Hitelesítési adatok -->
+    <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);
+                border-radius:var(--r);padding:1.5rem;margin-bottom:2rem">
+      <div style="font-size:.75rem;font-weight:700;color:var(--gold2);
+                  text-transform:uppercase;font-family:var(--font-mono);margin-bottom:1rem">
+        🔒 Hitelesítési adatok
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+                  gap:1rem;margin-bottom:1rem" id="r-biometric"></div>
+      <div style="font-size:.68rem;font-family:var(--font-mono);color:var(--muted);
+                  margin-bottom:.35rem">SHA-256</div>
+      <div style="font-family:var(--font-mono);font-size:.7rem;word-break:break-all;
+                  color:var(--gold2);background:var(--surface2);padding:.75rem;
+                  border-radius:var(--r-sm)" id="r-hash"></div>
+      <div style="margin-top:1rem" id="r-ots"></div>
+    </div>
+
+    <!-- Lájk + megtekintés -->
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem">
+      <button id="r-like-btn" onclick="toggleReadLike()"
+              style="background:none;border:1px solid var(--border);border-radius:20px;
+                     padding:.4rem 1.25rem;cursor:pointer;color:var(--muted);font-size:.9rem">
+        ❤️ <span id="r-like-count">0</span>
+      </button>
+      <span style="font-size:.85rem;color:var(--muted)">👁️ <span id="r-view-count">0</span> megtekintés</span>
+    </div>
+
+    <!-- Kommentek -->
+    <div style="margin-bottom:2rem">
+      <div style="font-size:.9rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">
+        💬 Hozzászólások
+      </div>
+      <div id="r-comments-list" style="margin-bottom:1rem"></div>
+      <div id="r-comment-form">
+        <textarea id="r-comment-input" class="form-control" 
+                  style="min-height:80px;margin-bottom:.5rem"
+                  placeholder="Írj hozzászólást..."></textarea>
+        <button class="btn btn-gold btn-sm" onclick="submitComment()">
+          ✦ Hozzászólás küldése
+        </button>
+      </div>
+    </div>
+
+    <!-- Megosztás -->
+    <div style="background:var(--surface2);border:1px solid var(--gold4);
+                border-radius:var(--r);padding:1.25rem;margin-bottom:2rem">
+      <div style="font-size:.75rem;font-weight:700;color:var(--gold2);
+                  margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="r-share-btns"></div>
+    </div>
+
+    <a href="/#publikaciok" style="color:var(--gold);font-size:.85rem">
+      ← Vissza a publikációkhoz
+    </a>
+
+  </article>
+</div>
+
+<script src="shared_js.js"></script>
+<script>
+const { createClient } = supabase;
+const db = createClient(
+  'https://vidlijysdhbfvvytuzcg.supabase.co',
+  'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so'
+);
+
+let readDocId   = null;
+let readLiked   = false;
+
+async function loadReadPage() {
+    const loadingEl = document.getElementById('read-loading');
+    const docId = window.location.pathname.split('/read/')[1]?.toUpperCase();
+
+    if (!docId) {
+        loadingEl.textContent = '❌ Nincs dokumentum azonosító.';
+        return;
+    }
+
+    readDocId = docId;
+
+    const { data: doc } = await db
+        .from('documents')
+        .select('*')
+        .eq('doc_id', docId)
+        .eq('is_public', true)
+        .single();
+
+    if (!doc) {
+        loadingEl.textContent = '❌ Dokumentum nem található vagy nem nyilvános.';
+        return;
+    }
+
+    // Megtekintés rögzítése
+    await db.from('doc_views').insert({ doc_id: docId });
+
+    // Lájkok
+    const { count: likeCount } = await db
+        .from('doc_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('doc_id', docId);
+
+    // Megtekintések
+    const { count: viewCount } = await db
+        .from('doc_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('doc_id', docId);
+
+    // Saját lájk
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) {
+        const { data: myLike } = await db
+            .from('doc_likes')
+            .select('id')
+            .eq('doc_id', docId)
+            .eq('user_id', session.user.id)
+            .single();
+        readLiked = !!myLike;
+    }
+
+    // Megjelenítés
+    loadingEl.style.display  = 'none';
+    document.getElementById('read-content').style.display = 'block';
+
+    const pd = doc.process_data || {};
+
+    document.title = `${doc.title || 'Publikáció'} – HUMANO`;
+    document.getElementById('page-desc').content = doc.title || 'Hitelesített emberi tartalom';
+    document.getElementById('r-date').textContent = new Date(doc.created_at)
+        .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('r-title').textContent   = doc.title || 'Névtelen';
+    document.getElementById('r-author').textContent  = '✍️ ' + (doc.author_name || '–');
+    document.getElementById('r-human-score').textContent = `⚡ ${pd.humanIndex || 0}% Human Score`;
+    document.getElementById('r-body').innerHTML      = doc.content || '';
+    document.getElementById('r-hash').textContent    = doc.hash || '–';
+    document.getElementById('r-like-count').textContent = likeCount || 0;
+    document.getElementById('r-view-count').textContent = viewCount || 0;
+
+    // Lájk gomb
+    updateLikeBtn();
+
+    // Biometrikus adatok
+    const BIO = [
+        { label: 'Leütések',     val: pd.keystrokeCount },
+        { label: 'Javítások',    val: pd.deletionCount },
+        { label: 'Szünetek',     val: pd.pauseCount },
+        { label: 'Humán Index',  val: pd.humanIndex ? pd.humanIndex + '%' : null },
+        { label: 'Írási idő',    val: pd.sessionDurationMs ? Math.round(pd.sessionDurationMs / 60000) + ' perc' : null },
+    ];
+    document.getElementById('r-biometric').innerHTML = BIO.map(b => `
+        <div style="background:var(--surface2);border-radius:var(--r-sm);
+                    padding:.65rem;text-align:center">
+            <div style="font-family:var(--font-display);font-size:1.3rem;
+                        font-weight:700;color:var(--gold)">${b.val ?? '–'}</div>
+            <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono);
+                        text-transform:uppercase;margin-top:.2rem">${b.label}</div>
+        </div>`).join('');
+
+    // OTS
+    document.getElementById('r-ots').innerHTML = doc.ots_receipt
+        ? '<span style="background:rgba(74,184,112,.1);border:1px solid rgba(74,184,112,.25);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:#4ab870">⛓️ Bitcoin blokkláncon rögzítve ✓</span>'
+        : '<span style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:var(--gold3)">⏳ Blokklánc rögzítés folyamatban</span>';
+
+    // Megosztás gombok
+    const readUrl = `https://humano-hu.vercel.app/read/${docId}`;
+    const shareText = encodeURIComponent(`${doc.title} – Hitelesített emberi tartalom\n${readUrl}`);
+    document.getElementById('r-share-btns').innerHTML = `
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(readUrl)}" 
+           target="_blank" class="btn btn-outline btn-sm">Facebook</a>
+        <a href="https://twitter.com/intent/tweet?text=${shareText}" 
+           target="_blank" class="btn btn-outline btn-sm">Twitter/X</a>
+        <a href="https://wa.me/?text=${shareText}" 
+           target="_blank" class="btn btn-outline btn-sm">WhatsApp</a>
+        <a href="https://t.me/share/url?url=${encodeURIComponent(readUrl)}&text=${encodeURIComponent(doc.title)}" 
+           target="_blank" class="btn btn-outline btn-sm">Telegram</a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(readUrl)}" 
+           target="_blank" class="btn btn-outline btn-sm">LinkedIn</a>
+        <button class="btn btn-gold btn-sm" onclick="copyReadLink()">🔗 Link másolása</button>
+    `;
+
+    // Kommentek betöltése
+    loadComments();
+}
+
+function updateLikeBtn() {
+    const btn = document.getElementById('r-like-btn');
+    if (!btn) return;
+    btn.style.color       = readLiked ? 'var(--gold)' : 'var(--muted)';
+    btn.style.borderColor = readLiked ? 'var(--gold)' : 'var(--border)';
+}
+
+async function toggleReadLike() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { alert('Lájkoláshoz be kell jelentkezni!'); return; }
+
+    const countEl = document.getElementById('r-like-count');
+    let count = parseInt(countEl.textContent) || 0;
+
+    if (readLiked) {
+        await db.from('doc_likes').delete()
+            .eq('doc_id', readDocId).eq('user_id', session.user.id);
+        readLiked = false;
+        count--;
+    } else {
+        await db.from('doc_likes').insert({ doc_id: readDocId, user_id: session.user.id });
+        readLiked = true;
+        count++;
+    }
+
+    countEl.textContent = count;
+    updateLikeBtn();
+}
+
+async function loadComments() {
+    const { data } = await db
+        .from('doc_comments')
+        .select('*')
+        .eq('doc_id', readDocId)
+        .order('created_at', { ascending: true });
+
+    const el = document.getElementById('r-comments-list');
+    if (!el) return;
+
+    if (!data?.length) {
+        el.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Még nincs hozzászólás.</div>';
+        return;
+    }
+
+    el.innerHTML = data.map(c => `
+        <div style="background:var(--surface2);border-radius:var(--r-sm);
+                    padding:.75rem 1rem;margin-bottom:.5rem">
+            <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono);
+                        margin-bottom:.35rem">${c.username || 'Névtelen'} · ${new Date(c.created_at).toLocaleDateString('hu-HU')}</div>
+            <div style="font-size:.88rem;color:var(--text);line-height:1.7">${c.content}</div>
+        </div>`).join('');
+}
+
+async function submitComment() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { alert('Kommentáláshoz be kell jelentkezni!'); return; }
+
+    const input = document.getElementById('r-comment-input');
+    const content = input?.value?.trim();
+    if (!content) return;
+
+    const { data: profile } = await db
+        .from('profiles')
+        .select('username')
+        .eq('id', session.user.id)
+        .single();
+
+    await db.from('doc_comments').insert({
+        doc_id:   readDocId,
+        user_id:  session.user.id,
+        username: profile?.username || 'Névtelen',
+        content
+    });
+
+    input.value = '';
+    loadComments();
+}
+
+function copyReadLink() {
+    const url = `https://humano-hu.vercel.app/read/${readDocId}`;
+    navigator.clipboard.writeText(url);
+    alert('Link másolva!');
+}
+
+document.addEventListener('DOMContentLoaded', loadReadPage);
+</script>
+</body>
+</html>
