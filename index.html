@@ -1401,7 +1401,7 @@ document.addEventListener('humano:verify-result', () => {
     <li class="active" style="font-size:.78rem;color:var(--muted)">◎ Admin felület (egyedi fejlesztés)</li>
     <li class="active" style="font-size:.78rem;color:var(--muted)">◎ C2PA metaadatok (opcionális)</li>
   </ul>
-  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="openStripeCheckout('institution')">📨 Egyedi ajánlatkérés</button>
+  <button class="btn btn-gold" style="width:100%;margin-top:1.5rem" onclick="openPricingContact('institution')">📨 Egyedi ajánlatkérés</button>
 </div>
       </div>
 
@@ -2755,6 +2755,8 @@ document.getElementById('tl-modal').addEventListener('click', function(e) {
   <script src="/edu.js"></script>
   
 <script>
+
+  
 function openEntropyInfo() {
     const modal = document.getElementById('info-modal');
     const title = document.getElementById('info-modal-title');
@@ -3217,5 +3219,132 @@ async function submitAddSignal() {
     document.getElementById('signal-url').value = '';
 }
 </script>
+
+<!-- ═══ KALIBRÁCIÓS EMLÉKEZTETŐ MODAL ═══ -->
+<!-- Ezt a </body> tag elé, a többi <script> blokk UTÁN illeszd be -->
+
+<div class="modal-overlay" id="cal-reminder-modal" style="z-index:9700">
+  <div class="modal-box" style="max-width:480px;text-align:center">
+    <div style="font-size:2.8rem;margin-bottom:.75rem">✍️</div>
+    <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;
+                color:var(--gold2);margin-bottom:.6rem">
+      Pontosabb eredmények – kalibrálj!
+    </div>
+    <p style="font-size:.86rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
+      Még nem végezted el az <strong style="color:var(--text)">Írói Azonosság Kalibrációt</strong>.<br>
+      Ez mindössze <strong style="color:var(--gold)">2-3 perc</strong>, és sokkal személyre szabottabb
+      Kognitív Jelenlét mutatót kapsz a hitelesítéseidhez.<br><br>
+      <span style="color:var(--muted2);font-size:.78rem">Teljesen opcionális – bármikor elvégezheted később is.</span>
+    </p>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="goToCalibration()">
+        ✦ Kalibrálok most
+      </button>
+      <button class="btn btn-outline" onclick="skipCalibrationReminder()">
+        Kihagyom – írok most
+      </button>
+    </div>
+    <div style="margin-top:1rem">
+      <label style="display:flex;align-items:center;justify-content:center;
+                    gap:.5rem;font-size:.74rem;color:var(--muted2);cursor:pointer">
+        <input type="checkbox" id="cal-dont-show-again"
+               style="accent-color:var(--gold)"/>
+        Ne mutasd többé ezt az üzenetet
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Kalibrációs emlékeztető logika ──
+
+function goToCalibration() {
+  document.getElementById('cal-reminder-modal').classList.remove('open');
+  showPage('calibration');
+}
+
+function skipCalibrationReminder() {
+  const dontShow = document.getElementById('cal-dont-show-again')?.checked;
+  if (dontShow) {
+    localStorage.setItem('humano_cal_skip_forever', '1');
+  }
+  document.getElementById('cal-reminder-modal').classList.remove('open');
+  // Folytatja az editor megnyitását
+}
+
+async function checkCalibrationBeforeEditor() {
+  // 1. "Ne mutasd többé" beállítás ellenőrzése
+  if (localStorage.getItem('humano_cal_skip_forever') === '1') return false;
+
+  // 2. Bejelentkezett-e?
+  if (!currentUser) return false;
+
+  // 3. Van-e már kalibrációs profil az adatbázisban?
+  try {
+    const { data, error } = await db
+      .from('typing_profiles')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .limit(1);
+
+    if (error) return false;
+    if (data && data.length > 0) return false; // már kalibrált → ne mutasd
+
+    return true; // nincs kalibráció → mutasd a modalt
+  } catch (e) {
+    return false;
+  }
+}
+
+// Az eredeti requireAuth('editor') hívást kiegészítjük.
+// Felülírjuk a showPage függvényt úgy, hogy editor esetén ellenőriz.
+const _origShowPage = typeof showPage === 'function' ? showPage : null;
+
+// MutationObserver figyeli, mikor válik aktívvá az editor oldal
+const _calObserver = new MutationObserver(async (mutations) => {
+  for (const m of mutations) {
+    if (
+      m.target.id === 'page-editor' &&
+      m.target.classList.contains('active')
+    ) {
+      const shouldShow = await checkCalibrationBeforeEditor();
+      if (shouldShow) {
+        // Kis késleltetés, hogy az editor teljesen betöltsön
+        setTimeout(() => {
+          document.getElementById('cal-reminder-modal').classList.add('open');
+        }, 600);
+      }
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const editorPage = document.getElementById('page-editor');
+  if (editorPage) {
+    _calObserver.observe(editorPage, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  // ESC bezárja
+  document.addEventListener('keydown', (e) => {
+    if (
+      e.key === 'Escape' &&
+      document.getElementById('cal-reminder-modal')?.classList.contains('open')
+    ) {
+      skipCalibrationReminder();
+    }
+  });
+
+  // Háttérre kattintva bezár
+  document.getElementById('cal-reminder-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('cal-reminder-modal')) {
+      skipCalibrationReminder();
+    }
+  });
+});
+</script>
+  
 </body>
 </html>  
