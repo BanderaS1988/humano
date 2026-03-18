@@ -5096,6 +5096,13 @@ window.checkAndShowAiActDisclaimer = checkAndShowAiActDisclaimer;
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+
+ // Offline állapot ellenőrzése oldal betöltésekor
+    if (!navigator.onLine) {
+        const banner = document.getElementById('offline-banner');
+        if (banner) banner.style.display = 'block';
+    }
+   
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) {
         currentUser = session.user;
