@@ -1187,6 +1187,33 @@ function openReadPage() {
     window.open(`/read/${E.certDocId}`, '_blank');
 }
 
+function updateShareButtons(docId, title) {
+    const readUrl   = `https://humano-hu.vercel.app/read/${docId}`;
+    const shareText = encodeURIComponent(`${title} – Hitelesített emberi tartalom\n${readUrl}`);
+    const urlEnc    = encodeURIComponent(readUrl);
+
+    const fb = document.getElementById('share-fb');
+    const tw = document.getElementById('share-tw');
+    const wa = document.getElementById('share-wa');
+    const tg = document.getElementById('share-tg');
+    const li = document.getElementById('share-li');
+    const rd = document.getElementById('share-rd');
+
+    if (fb) fb.href = `https://www.facebook.com/sharer/sharer.php?u=${urlEnc}`;
+    if (tw) tw.href = `https://twitter.com/intent/tweet?text=${shareText}`;
+    if (wa) wa.href = `https://wa.me/?text=${shareText}`;
+    if (tg) tg.href = `https://t.me/share/url?url=${urlEnc}&text=${encodeURIComponent(title)}`;
+    if (li) li.href = `https://www.linkedin.com/sharing/share-offsite/?url=${urlEnc}`;
+    if (rd) rd.href = `https://reddit.com/submit?url=${urlEnc}&title=${encodeURIComponent(title)}`;
+}
+
+function copyReadLink() {
+    if (!E.certDocId) return;
+    const url = `https://humano-hu.vercel.app/read/${E.certDocId}`;
+    copyToClipboard(url);
+    showToast('🔗 Link másolva!');
+}
+
 function copyBadgeCode() {
     const code = document.getElementById('badge-html-code')?.textContent;
     if (code && code !== '–') { copyToClipboard(code); showToast('🏷️ Badge kód másolva!'); }
