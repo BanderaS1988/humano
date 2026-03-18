@@ -90,6 +90,34 @@ async function teacherActivate(codeText) {
   return true;
 }
 
+
+
+/* ─── ÉRTESÍTÉSI BEÁLLÍTÁSOK ──────────────────────────────── */
+
+async function teacherLoadNotifySettings() {
+    if (!currentUser) return { notify_new_submission: true, notify_new_message: true };
+    const { data } = await db.from('profiles')
+        .select('notify_new_submission, notify_new_message')
+        .eq('id', currentUser.id)
+        .single();
+    return {
+        notify_new_submission: data?.notify_new_submission ?? true,
+        notify_new_message:    data?.notify_new_message    ?? true,
+    };
+}
+
+async function teacherUpdateNotifySettings(newSub, newMsg) {
+    const { error } = await db.from('profiles')
+        .update({
+            notify_new_submission: newSub,
+            notify_new_message:    newMsg,
+        })
+        .eq('id', currentUser.id);
+    if (error) { showToast('❌ ' + error.message); return false; }
+    showToast('✅ Beállítások mentve!');
+    return true;
+}
+
 /* ─── 4. OSZTÁLY KEZELÉS ──────────────────────────────────── */
 
 // Osztály létrehozása
@@ -699,6 +727,10 @@ window.Edu = {
   // Tanár
   teacherCheckCode,
   teacherActivate,
+
+    // Értesítési beállítások
+    teacherLoadNotifySettings,
+    teacherUpdateNotifySettings,
 
   // Osztály
   classCreate,
