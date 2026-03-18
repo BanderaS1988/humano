@@ -3290,6 +3290,49 @@ function editorCalcHumanIndex() {
     E.humanCV = parseFloat(cv.toFixed(3));
     E.humanPct = pct;
 
+
+// ── FELHASZNÁLÓ-SPECIFIKUS BASELINE ──────────────────────
+    // Az aktuális session-t a felhasználó saját kalibrációs profiljához mérjük
+    let baselineScore = 0;
+    let baselineDeviation = 0;
+
+    if (currentUser && E.keys >= 50) {
+        try {
+            const { data: profiles } = await db
+                .from('typing_profiles')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (profiles && profiles.length >= 1) {
+                // Átlagoljuk az összes profilt (max 5)
+                const avgBurstMean = profiles.reduce((s, p) => s + (p.burst_mean || 0), 0) / profiles.length;
+                const avgRhythmEntropy = profiles.reduce((s, p) => s + (p.rhythm_entropy || 0), 0) / profiles.length;
+                const avgRevisionRate = profiles.reduce((s, p) => s + (p.revision_rate || 0), 0) / profiles.length;
+
+                // Aktuális értékek
+                const currentBurstMean = mean;
+                const currentRevisionRate = E.dels / Math.max(1, E.keys);
+
+                // Eltérés a baseline-tól
+                const burstDev = Math.abs(currentBurstMean - avgBurstMean) / Math.max(avgBurstMean, 1);
+                const revDev = Math.abs(currentRevisionRate - avgRevisionRate) / Math.max(avgRevisionRate, 0.01);
+
+                baselineDeviation = Math.round((burstDev + revDev) / 2 * 100);
+
+                // Baseline score: minél kisebb az eltérés, annál jobb
+                baselineScore = Math.max(0, 100 - baselineDeviation);
+
+                E.baselineScore = baselineScore;
+                E.baselineDeviation = baselineDeviation;
+                E.baselineProfiles = profiles.length;
+            }
+        } catch (err) {
+            console.warn('Baseline hiba:', err);
+        }
+    }
+   
     // ── CF-DNA: Szünetek pozíciója mondathatárokon ───────────
     const cfText = document.getElementById('doc-content-area')?.innerText || '';
     const cfPauses = E.events.filter(e => e.type === 'pause');
@@ -3371,11 +3414,13 @@ function editorCalcHumanIndex() {
     E.smdScore = smdScore;
 
    // ── TRIPLE-LOCK ÖSSZESÍTŐ ─────────────────────────────────
-    // Mintaméret és time-series alapú súlyozás
+    // Ha van baseline profil, azt is beleszámítjuk
+    const baselineWeight = baselineScore > 0 ? 0.20 : 0;
     const rawTripleLock = Math.round(
-        (cfDnaScore * 0.35) +
-        (flowPulseScore * 0.35) +
-        (smdScore * 0.30)
+        (cfDnaScore * (0.35 - baselineWeight / 3)) +
+        (flowPulseScore * (0.35 - baselineWeight / 3)) +
+        (smdScore * (0.30 - baselineWeight / 3)) +
+        (baselineScore * baselineWeight)
     );
 
     // Kis mintánál csökkentjük a score-t
@@ -3522,6 +3567,19 @@ const tlSample = document.getElementById('tl-sample');
    
     if (tlExplanation) tlExplanation.textContent = explanation;
 
+// Baseline megjelenítés
+    const tlBaseline = document.getElementById('tl-baseline');
+    if (tlBaseline) {
+        if (baselineScore > 0) {
+            tlBaseline.style.display = 'block';
+            tlBaseline.textContent = `Profil egyezés: ${baselineScore}/100 (${E.baselineProfiles} mintából)`;
+            tlBaseline.style.color = baselineScore >= 70 ? 'var(--success)' : baselineScore >= 40 ? 'var(--gold)' : '#e05555';
+        } else {
+            tlBaseline.style.display = 'none';
+        }
+    }
+
+   
    const tlCrossValid = document.getElementById('tl-crossvalid');
     const tlCrossValidText = document.getElementById('tl-crossvalid-text');
     if (tlCrossValid && tlCrossValidText) {
