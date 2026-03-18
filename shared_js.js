@@ -1208,14 +1208,15 @@ function openSendEmailModal() {
     const hash = E.certHash || document.getElementById('cert-hash-val')?.textContent;
     const title = E.certTitle || document.getElementById('doc-title-input')?.value || '–';
     const link = `https://humano-hu.vercel.app/verify/${docId}`;
-
+    const readLink  = `https://humano-hu.vercel.app/read/${docId}`;
     document.getElementById('send-doc-id-hidden').value = docId;
     document.getElementById('send-verify-link-hidden').value = link;
     document.getElementById('send-hash-hidden').value = hash;
     document.getElementById('send-doc-summary').innerHTML = `
     <strong style="color:var(--gold2)">${esc(title)}</strong><br>
     <span style="font-family:var(--font-mono);font-size:.75rem">DOC ID: ${esc(docId)}</span><br>
-    <span style="color:var(--muted)">Link: <a href="${link}" target="_blank" style="color:var(--gold)">${link}</a></span>`;
+    <span style="color:var(--muted)">Verify link: <a href="${link}" target="_blank" style="color:var(--gold)">${link}</a></span>
+    <br><span style="color:var(--muted)">Read link: <a href="${readLink}" target="_blank" style="color:var(--gold)">${readLink}</a></span>`;
     document.getElementById('send-subject').value = `HUMANO hitelesített szöveg: ${title}`;
 
     const targetEmail = document.getElementById('target-email-input')?.value?.trim();
