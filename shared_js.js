@@ -1680,14 +1680,23 @@ function toggleFaq(i) {
 /* ─── 16. API KULCSOK ───────────────────────────────────────── */
 async function generateApiKey() {
     if (!currentUser) return;
-    const arr = crypto.getRandomValues(new Uint8Array(16));
-    const key = 'HMN_KEY_' + Array.from(arr).map(b => b.toString(36).padStart(2, '0')).join('').toUpperCase().substring(0, 24);
-    const expires_at = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await db.from('api_keys').insert({ user_id: currentUser.id, key, name: 'Default', expires_at });
-    if (error) { showToast('❌ Hiba: ' + error.message); return; }
-    showToast('✦ API kulcs létrehozva!');
-    loadApiKeys();
-}
+
+    // API kulcs csak Pro+ csomagnak
+    const { data: profile } = await db
+        .from('profiles')
+        .select('plan, trial_ends_at')
+        .eq('id', currentUser.id)
+        .single();
+
+    const plan = profile?.plan || 'free';
+    const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+    const hasApi = plan === 'pro' || plan === 'institution' || plan === 'premium' || trialActive;
+
+    if (!hasApi) {
+        showToast('❌ API hozzáférés Pro csomagtól elérhető!');
+        showPage('supporters');
+        return;
+    }
 
 async function loadApiKeys() {
     if (!currentUser) return;
