@@ -4,7 +4,16 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title id="page-title">HUMANO – Publikáció</title>
-  <meta name="description" id="page-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+<meta name="description" id="page-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+<meta property="og:title" id="og-title" content="HUMANO – Publikáció"/>
+<meta property="og:description" id="og-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+<meta property="og:image" content="https://humano-hu.vercel.app/og-image.png"/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" id="og-url" content="https://humano-hu.vercel.app"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" id="tw-title" content="HUMANO – Publikáció"/>
+<meta name="twitter:description" id="tw-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+<meta name="twitter:image" content="https://humano-hu.vercel.app/og-image.png"/>
   <link rel="stylesheet" href="shared_css.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -169,8 +178,17 @@ async function loadReadPage() {
 
     const pd = doc.process_data || {};
 
-    document.title = `${doc.title || 'Publikáció'} – HUMANO`;
-    document.getElementById('page-desc').content = doc.title || 'Hitelesített emberi tartalom';
+    const pageTitle = `${doc.title || 'Publikáció'} – HUMANO`;
+const pageDesc  = `${doc.author_name || 'Szerző'} hitelesített cikke – ${pd.humanIndex || 0}% Human Score | HUMANO`;
+const pageUrl   = `https://humano-hu.vercel.app/read/${docId}`;
+
+document.title = pageTitle;
+document.getElementById('page-desc').content  = pageDesc;
+document.getElementById('og-title').content   = pageTitle;
+document.getElementById('og-desc').content    = pageDesc;
+document.getElementById('og-url').content     = pageUrl;
+document.getElementById('tw-title').content   = pageTitle;
+document.getElementById('tw-desc').content    = pageDesc;
     document.getElementById('r-date').textContent = new Date(doc.created_at)
         .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('r-title').textContent   = doc.title || 'Névtelen';
