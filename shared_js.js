@@ -4896,6 +4896,11 @@ async function loadPublikaciok() {
         .select('doc_id')
         .in('doc_id', docIds);
 
+   const { data: comments } = await db
+        .from('doc_comments')
+        .select('doc_id')
+        .in('doc_id', docIds);
+
     // Saját lájkok
     let myLikes = [];
     if (currentUser) {
@@ -4908,15 +4913,17 @@ async function loadPublikaciok() {
     }
 
     // Összesítés
-    const likeCounts = {};
-    const viewCounts = {};
-    (likes || []).forEach(l => { likeCounts[l.doc_id] = (likeCounts[l.doc_id] || 0) + 1; });
-    (views || []).forEach(v => { viewCounts[v.doc_id] = (viewCounts[v.doc_id] || 0) + 1; });
-
+    const likeCounts    = {};
+const viewCounts    = {};
+const commentCounts = {};
+(likes    || []).forEach(l => { likeCounts[l.doc_id]    = (likeCounts[l.doc_id]    || 0) + 1; });
+(views    || []).forEach(v => { viewCounts[v.doc_id]    = (viewCounts[v.doc_id]    || 0) + 1; });
+(comments || []).forEach(c => { commentCounts[c.doc_id] = (commentCounts[c.doc_id] || 0) + 1; });
     allPublikaciok = docs.map(d => ({
         ...d,
-        likeCount: likeCounts[d.doc_id] || 0,
-        viewCount: viewCounts[d.doc_id] || 0,
+        likeCount:    likeCounts[d.doc_id]    || 0,
+        viewCount:    viewCounts[d.doc_id]    || 0,
+        commentCount: commentCounts[d.doc_id] || 0,
         liked: myLikes.includes(d.doc_id)
     }));
 
@@ -4978,6 +4985,8 @@ function renderPublikaciok(docs) {
                     ❤️ <span id="like-count-${doc.doc_id}">${doc.likeCount}</span>
                 </button>
                 <span>👁️ ${doc.viewCount}</span>
+<span>💬 ${doc.commentCount}</span>
+${doc.published_url ? `<a href="${doc.published_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:.75rem;color:var(--gold);text-decoration:none">🔗 Megjelent itt</a>` : ''}
                 <span style="margin-left:auto;font-size:.7rem;font-family:var(--font-mono);
                              color:var(--muted2)">${esc(doc.doc_id)}</span>
             </div>
