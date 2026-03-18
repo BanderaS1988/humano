@@ -5212,11 +5212,14 @@ async function generateSmartImage(docId) {
     const hi      = pd.humanIndex || 0;
     const content = (doc.content || '').replace(/<[^>]+>/g, '').trim();
 
-    // Canvas méret
-    const width   = 1080;
-    const padding = 60;
-    const lineH   = 36;
-    const maxW    = width - padding * 2;
+ // Canvas méret - fix Instagram Stories méret
+const width    = 1080;
+const height   = 1920;
+const padding  = 60;
+const lineH    = 36;
+const maxW     = width - padding * 2;
+const maxChars = 800; // csak az első 800 karakter kerül a képre
+const contentPreview = content.substring(0, maxChars) + (content.length > maxChars ? '…' : '');
 
     // Szöveg tördelés
     const tempCanvas = document.createElement('canvas');
@@ -5240,14 +5243,12 @@ async function generateSmartImage(docId) {
         return lines;
     }
 
-    const contentLines = wrapText(tempCtx, content, maxW);
+    const contentLines = wrapText(tempCtx, contentPreview, maxW);
 
-    // Magasság kiszámítása
+    // Fix magasság
     const headerH  = 200;
     const titleH   = 80;
-    const bodyH    = contentLines.length * lineH + 40;
-    const footerH  = 180;
-    const height   = headerH + titleH + bodyH + footerH;
+    const footerH  = 200;
 
     // Fő canvas
     const canvas = document.createElement('canvas');
@@ -5311,13 +5312,25 @@ async function generateSmartImage(docId) {
     ctx.stroke();
     y += 30;
 
-    // Szöveg törzsz
-    ctx.fillStyle = '#c8c0b0';
-    ctx.font      = '24px serif';
-    contentLines.forEach(line => {
-        ctx.fillText(line, padding, y);
-        y += lineH;
-    });
+   // Szöveg törzs - csak ami belefér
+ctx.fillStyle = '#c8c0b0';
+ctx.font      = '24px serif';
+const maxBodyY = height - footerH - 20;
+for (const line of contentLines) {
+    if (y + lineH > maxBodyY) {
+        // "Tovább olvasás" jelzés
+        ctx.fillStyle = '#c9a84c';
+        ctx.font      = '22px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('→ Olvasd el a teljes cikket:', width / 2, y + lineH);
+        ctx.font      = '20px monospace';
+        ctx.fillText(`humano-hu.vercel.app/read/${docId}`, width / 2, y + lineH + 35);
+        ctx.textAlign = 'left';
+        break;
+    }
+    ctx.fillText(line, padding, y);
+    y += lineH;
+}
 
     // Footer elválasztó
     const footerY = height - footerH;
