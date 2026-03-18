@@ -1481,31 +1481,26 @@ async function submitPricingForm(e) {
     e.preventDefault();
     const al = document.getElementById('pricing-contact-alert');
     if (al) al.innerHTML = '<div class="alert alert-info">⏳ Küldés...</div>';
-
     const formData = new FormData(e.target);
-    const nev      = formData.get('nev') || '';
-    const email    = formData.get('email') || '';
-    const uzenet   = formData.get('uzenet') || '';
-    const csomag   = formData.get('csomag') || '';
-
+    const nev    = formData.get('nev') || '';
+    const email  = formData.get('email') || '';
+    const uzenet = formData.get('uzenet') || '';
+    const csomag = formData.get('csomag') || '';
     try {
-        const res = await fetch(`${SUPA_URL}/functions/v1/send-email`, {
+        const res = await fetch('https://formspree.io/f/xpwzgqkv', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
-                to:      'info@humano.hu',
-                subject: `HUMANO előfizetési érdeklődés – ${getPlanLabel(csomag)}`,
-                type:    'general',
-                message: `Név: ${nev}\nEmail: ${email}\nCsomag: ${getPlanLabel(csomag)}\n\n${uzenet}`,
+                nev,
+                email,
+                csomag: typeof getPlanLabel === 'function' ? getPlanLabel(csomag) : csomag,
+                uzenet,
+                _subject: `HUMANO előfizetési érdeklődés – ${typeof getPlanLabel === 'function' ? getPlanLabel(csomag) : csomag}`
             }),
         });
-
-        const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'Hiba');
-
+        if (!res.ok) throw new Error('Küldési hiba');
         if (al) al.innerHTML = '<div class="alert alert-success">✅ Üzenet elküldve! Hamarosan visszajelzünk.</div>';
         e.target.reset();
-
     } catch (err) {
         if (al) al.innerHTML = `<div class="alert alert-error">❌ Hiba: ${err.message}</div>`;
     }
