@@ -141,7 +141,7 @@ async function loadReadPage() {
         .from('documents')
         .select('*')
         .eq('doc_id', docId)
-        .eq('is_public', true)
+        .eq('is_published', true)
         .single();
 
     if (!doc) {
