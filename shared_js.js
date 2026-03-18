@@ -2326,12 +2326,38 @@ function renderMyDocs(docs) {
           <button class="btn btn-gold btn-sm" onclick="openPubVerify('${esc(d.doc_id)}')">🔍 Megtekint</button>
           <button class="btn btn-outline btn-sm" onclick="downloadMyDocPdf('${esc(d.doc_id)}')">📄 PDF</button>
           <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${esc(d.doc_id)}');showToast('DOC ID másolva!')">📋 ID</button>
-          <button class="btn btn-outline btn-sm" id="pub-toggle-${esc(d.doc_id)}" onclick="toggleDocPublic('${esc(d.doc_id)}',${d.is_public})" title="${d.is_public ? 'Nyilvánosság visszavonása' : 'Nyilvánosra állítás'}">${d.is_public ? '🌐 Nyilvános' : '🔒 Privát'}</button>
-        </div>
+<button class="btn btn-outline btn-sm" id="pub-toggle-${esc(d.doc_id)}" onclick="toggleDocPublic('${esc(d.doc_id)}',${d.is_public})" title="${d.is_public ? 'Nyilvánosság visszavonása' : 'Nyilvánosra állítás'}">${d.is_public ? '🌐 Nyilvános' : '🔒 Privát'}</button>
+<button class="btn btn-outline btn-sm" id="publish-toggle-${esc(d.doc_id)}" onclick="toggleDocPublished('${esc(d.doc_id)}',${d.is_published || false})" title="${d.is_published ? 'Publikálás visszavonása' : 'Publikálás'}">${d.is_published ? '📢 Publikált' : '📄 Publikálás'}</button> : '📄 Publikálás'}</button>        </div>
       </div>
     </div>`;
     }).join('');
     document.getElementById('my-docs-count-label').textContent = `${docs.length} dokumentum`;
+}
+
+async function toggleDocPublished(docId, currentState) {
+    const newState = !currentState;
+    const { error } = await db.from('documents')
+        .update({ is_published: newState })
+        .eq('doc_id', docId)
+        .eq('author_id', currentUser.id);
+
+    if (error) {
+        showToast('❌ Hiba: ' + error.message);
+        return;
+    }
+
+    // Helyi adat frissítése
+    const doc = myDocsAll.find(d => d.doc_id === docId);
+    if (doc) doc.is_published = newState;
+
+    // Gomb frissítése
+    const btn = document.getElementById(`publish-toggle-${docId}`);
+    if (btn) {
+        btn.textContent = newState ? '📢 Publikált' : '📄 Publikálás';
+        btn.title = newState ? 'Publikálás visszavonása' : 'Publikálás';
+    }
+
+    showToast(newState ? '📢 Publikálva – megjelenik a Publikációk oldalon!' : '🔒 Publikálás visszavonva.');
 }
 
 async function downloadMyDocPdf(docId) {
