@@ -4566,8 +4566,9 @@ function editorInit() {
 }
 
 // Kalibrációs modal ellenőrző függvény
+// Kalibrációs modal ellenőrző függvény
 async function checkCalibrationModal() {
-    console.log('Kalibráció ellenőrzés...'); // Debug
+    console.log('Kalibráció ellenőrzés...');
     if (!currentUser) return;
     if (!document.getElementById('page-editor')?.classList.contains('active')) return;
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
@@ -4576,19 +4577,17 @@ async function checkCalibrationModal() {
         const { data } = await db
             .from('typing_profiles')
             .select('id')
-            .eq('user_id', currentUser.id)
-            .limit(1);
+            .eq('user_id', currentUser.id);
         
-        console.log('Kalibrációs profilok:', data); // Debug
-        
-        if (!data || !data.length) {
+        if (!data || data.length === 0) {
             console.log('Nincs kalibráció - modal megnyitása');
-            document.getElementById('cal-reminder-modal')?.classList.add('open');
-        } else {
-            console.log('Van kalibráció - modal nem kell');
+            const modal = document.getElementById('cal-reminder-modal');
+            if (modal) {
+                modal.classList.add('open');
+            }
         }
     } catch (e) {
-        console.log('Kalibráció ellenőrzési hiba:', e);
+        console.log('Hiba:', e);
     }
 }
 
@@ -5606,7 +5605,7 @@ const ConsentManager = {
 // ─────────────────────────────────────────────────────────────
 
 
-// EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
+
 // EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
 async function loadEditorWithConsentCheck() {
   if (!currentUser) {
@@ -5629,7 +5628,7 @@ async function loadEditorWithConsentCheck() {
   // 2. Ha a consent nem volt meg, akkor itt nem fut le
 }
 
-// Módosítsd a handleConsentAccept függvényt:
+// Elfogadás kezelése
 async function handleConsentAccept() {
   const btn = document.getElementById('consent-accept-btn');
   if (btn) { 
@@ -5642,10 +5641,10 @@ async function handleConsentAccept() {
     hideBiometricConsentModal();
     showToast('✅ Beleegyezés rögzítve');
     
-    // Inicializáljuk az editort
+    // Editor inicializálása
     if (typeof editorInit === 'function') editorInit();
     
-    // ÉS KÜLÖN ellenőrizzük a kalibrációt
+    // Kalibráció ellenőrzése 1.5 másodperc múlva
     setTimeout(checkCalibrationModal, 1500);
     
   } catch (err) {
@@ -5656,7 +5655,6 @@ async function handleConsentAccept() {
     }
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // BIOMETRIKUS CONSENT MODAL
