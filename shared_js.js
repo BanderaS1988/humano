@@ -1188,7 +1188,7 @@ function openReadPage() {
 }
 
 function updateShareButtons(docId, title) {
-    const readUrl   = `https://humano-hu.vercel.app/read/${docId}`;
+    const readUrl   = `https://humano-hu.vercel.app/share/${docId}`;
     const shareText = encodeURIComponent(`${title} – Hitelesített emberi tartalom\n${readUrl}`);
     const urlEnc    = encodeURIComponent(readUrl);
 
