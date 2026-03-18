@@ -2090,6 +2090,24 @@ if (tlBtn) {
     tlBtn.style.display = 'inline-flex';
     tlBtn.dataset.docId = doc.doc_id;
 }
+
+
+   // Pontszám magyarázat a verify oldalon
+    const vExpl = document.getElementById('v-score-explanation');
+    const vExplText = document.getElementById('v-score-explanation-text');
+    if (vExpl && vExplText) {
+        vExpl.style.display = 'block';
+        const pct = pd.humanIndex || 0;
+        if (pct >= 85) {
+            vExplText.innerHTML = `<span style="color:var(--success)">✅ Magas kognitív jelenlét</span> – A gépelési ritmus nagyon változatos és természetes emberi mintázatot mutat. Ez erős bizonyítéka az alkotói folyamatnak.`;
+        } else if (pct >= 60) {
+            vExplText.innerHTML = `<span style="color:var(--gold)">🟡 Közepes kognitív jelenlét</span> – A gépelési ritmus emberi jellegű. <strong style="color:var(--text)">Ez NEM jelenti azt hogy AI írta a szöveget</strong> – csak azt hogy a gépelési mintázat kevésbé változatos. Lehetséges okok: gyors gépelés, speciális billentyűzet, vagy kevés gondolkodási szünet.`;
+        } else if (pct >= 40) {
+            vExplText.innerHTML = `<span style="color:var(--gold3)">🟠 Vegyes mintázat</span> – <strong style="color:var(--text)">Ez NEM jelenti azt hogy csalt vagy AI írta</strong> – a HUMANO nem ítélkezik, tényeket közöl. Lehetséges okok: gyors gépeléstechnika, diktálás utáni begépelés, saját anyagból másolás, vagy speciális beviteli eszköz. Az ellenőrző fél dönti el mi az elfogadható.`;
+        } else {
+            vExplText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – <strong style="color:var(--text)">Ez NEM egyenlő azzal hogy AI írta a szöveget.</strong> A rendszer a gépelési ritmus változatosságát méri – nem a szöveg tartalmát. Lehetséges okok: beillesztett tartalom, nagyon gyors és egyenletes gépelés, vagy segédeszköz használata. A tanúsítvány tényeket közöl – az értékelés az ellenőrző félé.`;
+        }
+    }
     document.getElementById('v-result-unified').style.display = 'block';
    document.dispatchEvent(new Event('humano:verify-result'));
     document.getElementById('v-result-unified').scrollIntoView({ behavior: 'smooth' });
