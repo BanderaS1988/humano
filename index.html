@@ -708,11 +708,37 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
     <div id="tl-widget" style="display:none;margin-top:1rem">
         <button class="btn btn-outline" style="width:100%;padding:.65rem" onclick="openTlModal()">▶ Alkotói idővonal megtekintése</button>
     </div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
+   <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
     <button class="btn btn-outline btn-sm" onclick="copyId()">📋 ID másolása</button>
     <button class="btn btn-outline btn-sm" onclick="copyBadgeCode()">🏷️ Badge kód</button>
     <button class="btn btn-gold btn-sm" onclick="openReadPage()">🌐 Publikáció megtekintése</button>
 </div>
+
+<!-- Tartalom megosztása -->
+<div id="share-published-section" style="display:none;margin-top:1rem;
+     background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);
+     border-radius:var(--r);padding:1.25rem">
+    <div style="font-size:.75rem;font-weight:700;color:var(--gold2);
+                text-transform:uppercase;margin-bottom:.75rem">
+        📤 Tartalom megosztása
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a id="share-fb"  href="#" target="_blank" class="btn btn-outline btn-sm">📘 Facebook</a>
+        <a id="share-tw"  href="#" target="_blank" class="btn btn-outline btn-sm">🐦 Twitter/X</a>
+        <a id="share-wa"  href="#" target="_blank" class="btn btn-outline btn-sm">💬 WhatsApp</a>
+        <a id="share-tg"  href="#" target="_blank" class="btn btn-outline btn-sm">✈️ Telegram</a>
+        <a id="share-li"  href="#" target="_blank" class="btn btn-outline btn-sm">💼 LinkedIn</a>
+        <a id="share-rd"  href="#" target="_blank" class="btn btn-outline btn-sm">🤖 Reddit</a>
+        <button class="btn btn-gold btn-sm" onclick="copyReadLink()">🔗 Link másolása</button>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);margin-top:.75rem">
+        A link mögött olvasható a teljes cikk + hitelesítési pecsét.
+    </div>
+</div>
+
+
+
+  
 </div><!-- /cert-panel -->
 
           <div style="margin-top:.5rem;padding:.5rem .75rem;
