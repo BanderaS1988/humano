@@ -221,17 +221,19 @@ a 'Visszavonás' gombra kattintva. Visszavonás után az adatok 30 napon belül 
   </button>
   <div class="nav-links" id="nav-links">
     <span class="nav-link" onclick="showPage('landing')">Főoldal</span>
-<span class="nav-link" onclick="showPage('about')">Rólunk</span>
-<div class="nav-divider"></div>
+    <span class="nav-link" onclick="showPage('about')">Rólunk</span>
+    <div class="nav-divider"></div>
     <span class="nav-link" onclick="showPage('publikaciok')">Publikációk</span>
-<span class="nav-link" onclick="showPage('verify-unified')">Ellenőrzés & Registry</span>
-<span class="nav-link" onclick="showPage('roadmap')">Roadmap</span>
-<span class="nav-link" onclick="showPage('supporters')">Előfizetés</span>
-<span class="nav-link" onclick="showPage('whitepaper')">Módszertan</span>
+    <span class="nav-link" onclick="showPage('verify-unified')">Ellenőrzés & Registry</span>
+    <span class="nav-link" onclick="showPage('roadmap')">Roadmap</span>
+    <span class="nav-link" onclick="showPage('supporters')">Előfizetés</span>
+    <span class="nav-link" onclick="showPage('whitepaper')">Módszertan</span>
     <div class="nav-divider"></div>
     <span class="nav-link" onclick="requireAuth('editor')">Írás</span>
     <span class="nav-link" onclick="requireAuth('dashboard')">Dashboard</span>
     <span class="nav-link" onclick="requireAuth('my-docs')">Szövegeim</span>
+    <!-- TANÁRI PANEL LINK -->
+    <span class="nav-link" id="teacher-nav-link" style="display:none" onclick="window.location.href='/teacher'">👨‍🏫 Tanári Panel</span>
     <span class="nav-link" id="admin-nav-link" style="display:none" onclick="showPage('admin')">Admin</span>
     <span class="nav-link" onclick="showPage('profile')">Profil</span>
     <div class="nav-divider"></div>
