@@ -4119,7 +4119,7 @@ function editorKeyDown(e) {
         document.getElementById('sidebar-dels').textContent = E.dels;
         typedChars = Math.max(0, typedChars - 1);
         updatePasteRatio();
-        tlRecord('delete');
+     tlRecord('delete').catch(() => {});
         checkTlFlush();
     }
     else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -4152,7 +4152,7 @@ function editorKeyDown(e) {
         drawPulse();
         editorRhythm();
         editorCalcHumanIndex();
-        tlRecord('insert', e.key);
+          tlRecord('insert', e.key).catch(() => {});
         checkTlFlush();
     }
     const sel = window.getSelection();
