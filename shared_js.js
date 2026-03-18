@@ -5629,6 +5629,44 @@ async function loadEditorWithConsentCheck() {
 }
 
 // Elfogadás kezelése
+
+
+// ─────────────────────────────────────────────────────────────
+// BIOMETRIKUS CONSENT MODAL
+// ─────────────────────────────────────────────────────────────
+
+function showBiometricConsentModal() {
+  const modal = document.getElementById('biometric-consent-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('open'));
+}
+
+function hideBiometricConsentModal() {
+  const modal = document.getElementById('biometric-consent-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.style.display = 'none';
+}
+
+// Elfogadás kezelése
+
+// Elutasítás kezelése
+function handleConsentDecline() {
+  hideBiometricConsentModal();
+  showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
+  showPage('landing');
+}
+
+// Event listenerek beállítása
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('consent-accept-btn')
+    ?.addEventListener('click', handleConsentAccept);
+  document.getElementById('consent-decline-btn')
+    ?.addEventListener('click', handleConsentDecline);
+});
+
+// Elfogadás kezelése
 async function handleConsentAccept() {
   const btn = document.getElementById('consent-accept-btn');
   if (btn) { 
@@ -5656,73 +5694,6 @@ async function handleConsentAccept() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// BIOMETRIKUS CONSENT MODAL
-// ─────────────────────────────────────────────────────────────
-
-function showBiometricConsentModal() {
-  const modal = document.getElementById('biometric-consent-modal');
-  if (!modal) return;
-  modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('open'));
-}
-
-function hideBiometricConsentModal() {
-  const modal = document.getElementById('biometric-consent-modal');
-  if (!modal) return;
-  modal.classList.remove('open');
-  modal.style.display = 'none';
-}
-
-// Elfogadás kezelése
-async function handleConsentAccept() {
-  const btn = document.getElementById('consent-accept-btn');
-  if (btn) { 
-    btn.disabled = true; 
-    btn.textContent = '⏳ Rögzítés...'; 
-  }
-
-  try {
-    await ConsentManager.record('keystroke_dynamics');
-    hideBiometricConsentModal();
-    showToast('✅ Beleegyezés rögzítve');
-    
-    // Consent után azonnal kalibráció ellenőrzés
-    const { data: profiles } = await db
-      .from('typing_profiles')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .limit(1);
-      
-    if (!profiles || !profiles.length) {
-      showPage('calibration');
-    } else if (typeof editorInit === 'function') {
-      editorInit();
-    }
-    
-  } catch (err) {
-    showToast('❌ Hiba: ' + err.message);
-    if (btn) { 
-      btn.disabled = false; 
-      btn.textContent = '✦ Elfogadom'; 
-    }
-  }
-}
-
-// Elutasítás kezelése
-function handleConsentDecline() {
-  hideBiometricConsentModal();
-  showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
-  showPage('landing');
-}
-
-// Event listenerek beállítása
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('consent-accept-btn')
-    ?.addEventListener('click', handleConsentAccept);
-  document.getElementById('consent-decline-btn')
-    ?.addEventListener('click', handleConsentDecline);
-});
 
 // ─────────────────────────────────────────────────────────────
 // FELLEBBEZÉSI RENDSZER
