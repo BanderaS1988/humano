@@ -183,7 +183,7 @@ function _loadPageFromHash() {
     const validHashes = [
         'landing', 'auth', 'editor', 'dashboard', 'my-docs', 'admin',
         'profile', 'verify-unified', 'pub-verify', 'roadmap',
-        'about', 'supporters', 'faq', 'privacy', 'calibration'
+        'about', 'supporters', 'faq', 'privacy', 'calibration', 'whitepaper'
     ];
     const hash = window.location.hash.replace('#', '');
     _showSection(validHashes.includes(hash) ? hash : 'landing');
