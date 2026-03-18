@@ -2991,8 +2991,9 @@ if (!unlimited && used >= limit) {
             tripleLockScore:   E.tripleLockScore  || 0,
         };
 
-        const isPublic    = document.getElementById('doc-is-public')?.checked || false;
-const isPublished = document.getElementById('doc-is-published')?.checked || false;
+        const isPublic      = document.getElementById('doc-is-public')?.checked || false;
+const isPublished   = document.getElementById('doc-is-published')?.checked || false;
+const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim() || null;
       
         const { error } = await queueOrRun(() => db.from('documents').insert({
             doc_id:       docId,
@@ -3004,6 +3005,7 @@ const isPublished = document.getElementById('doc-is-published')?.checked || fals
             author_name:  profile.username || currentUser.email,
             is_public:     isPublic,
             is_published:  isPublished,
+          published_url:  publishedUrl,
             process_data: processData,
             saved_at:     new Date().toISOString(),
             created_at:   new Date().toISOString(),
