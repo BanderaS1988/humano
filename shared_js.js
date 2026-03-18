@@ -206,25 +206,35 @@ async function updateNavAuth(user) {
     const nb = document.getElementById('nav-auth-btn');
     const nl = document.getElementById('nav-logout-btn');
     const al = document.getElementById('admin-nav-link');
+    const tl = document.getElementById('teacher-nav-link');
 
     if (user) {
         const name = await getProfileName(user);
         if (nu) { nu.textContent = name; nu.style.display = 'inline'; }
         if (nb) nb.style.display = 'none';
         if (nl) nl.style.display = 'inline-flex';
-        checkAdminAccess();
         
-        // ─── IDE JÖN ──────────────────────────
-        checkCalibration();  // Ellenőrzi, hogy kell-e kalibrációs oldal
-       
-      checkCalibrationAge();
-        // ─────────────────────────────────────
+        // Szerepkör ellenőrzése a tanári linkhez
+        const { data: profile } = await db
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+            
+        if (profile?.role === 'teacher' && tl) {
+            tl.style.display = 'inline';
+        }
+        
+        checkAdminAccess();
+        checkCalibration();
+        checkCalibrationAge();
         
     } else {
         if (nu) nu.style.display = 'none';
         if (nb) nb.style.display = 'inline-flex';
         if (nl) nl.style.display = 'none';
         if (al) al.style.display = 'none';
+        if (tl) tl.style.display = 'none';
     }
     updateHeroCta(user);
 }
