@@ -1190,6 +1190,11 @@ async function checkCalibrationAge() {
 }
 
 async function checkAndShowCalibrationReminder() {
+
+  // AZONNALI ELLENŐRZÉS - ezt kiírja a konzolra
+    console.log('checkAndShowCalibrationReminder lefutott');
+    alert('checkAndShowCalibrationReminder lefutott - ellenőrizd a konzolt');
+   
     // Ne jelenjen meg, ha a user kérte, hogy ne mutassa többé
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
     if (!currentUser) return;
