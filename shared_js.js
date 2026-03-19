@@ -681,6 +681,27 @@ function _loadPageFromHash() {
         'profile', 'verify-unified', 'pub-verify', 'roadmap',
         'about', 'supporters', 'faq', 'privacy', 'publikaciok'
     ];
+    
+    // URL path alapú routing (mobil/direct link)
+    const path = window.location.pathname;
+    const verifyMatch = path.match(/^\/verify\/(.+)$/);
+    const readMatch = path.match(/^\/read\/(.+)$/);
+    
+    if (verifyMatch) {
+        const docId = verifyMatch[1];
+        const vi = document.getElementById('v-input-unified');
+        if (vi) vi.value = docId;
+        _showSection('verify-unified');
+        setTimeout(() => doVerifyUnified(), 500);
+        return;
+    }
+    
+    if (readMatch) {
+        const docId = readMatch[1];
+        openPubVerify(docId);
+        return;
+    }
+    
     const hash = window.location.hash.replace('#', '');
     _showSection(validHashes.includes(hash) ? hash : 'landing');
 }
