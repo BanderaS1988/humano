@@ -176,26 +176,6 @@ function _onSectionActivated(hash) {
 
 
 
-async function checkAndShowCalibrationReminder() {
-    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-    if (!currentUser) return;
-    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
-    if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
-
-    try {
-        const { data, error } = await db
-            .from('typing_profiles')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .limit(1);
-
-        if (error || (data && data.length > 0)) return;
-
-        const modal = document.getElementById('cal-reminder-modal');
-        if (modal) modal.classList.add('open');
-
-    } catch (e) { /* silent */ }
-}
 
 // ═══════════════════════════════════════════════════════════
 // 3. goToCalibration – "Kalibrálok most" gomb
