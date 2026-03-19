@@ -4159,31 +4159,28 @@ async function submitSendEmail(e) {
     const hash = document.getElementById('send-hash-hidden').value;
     const subject = document.getElementById('send-subject').value;
     const message = document.getElementById('send-message').value;
+    const title = E.certTitle || docId;
 
     try {
-        const { data: { session } } = await db.auth.getSession();
-        const token = session?.access_token;
-
-        const res = await fetch(`${SUPA_URL}/functions/v1/send-email`, {
+        const res = await fetch('https://formspree.io/f/xjgeqvnp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
+                _subject: subject || `HUMANO hitelesített szöveg: ${title}`,
                 to: toEmail,
-                subject: subject || `HUMANO hitelesített szöveg`,
-                type: 'certification',
+                dokumentum_cim: title,
                 doc_id: docId,
-                hash: hash,
-                verify_link: verifyLink,
-                message: message,
+                sha256_hash: hash,
+                ellenorzo_link: verifyLink,
+                uzenet: message || '–',
             }),
         });
 
         const data = await res.json();
-
-        if (!res.ok || data.error) throw new Error(data.error || 'Küldési hiba');
+        if (!res.ok) throw new Error(data?.error || 'Küldési hiba');
 
         document.getElementById('send-modal-alert').innerHTML = '<div class="alert alert-success">✅ Sikeresen elküldve!</div>';
         setTimeout(() => closeSendModal(), 2000);
