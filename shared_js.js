@@ -153,25 +153,57 @@ function _showSection(hash) {
 }
 
 function _onSectionActivated(hash) {
-    if (hash === 'dashboard') loadDashboard();
-    if (hash === 'admin') { loadAdmin(); loadLivingEntityDashboard(); }
-    if (hash === 'landing') loadPublicStats();
-    if (hash === 'calibration') calInit();
-    if (hash === 'faq') renderFaq();
-    if (hash === 'my-docs') loadMyDocs();
-    if (hash === 'profile') loadProfile();
+    if (hash === 'dashboard')      loadDashboard();
+    if (hash === 'admin')          { loadAdmin(); loadLivingEntityDashboard(); }
+    if (hash === 'landing')        loadPublicStats();
+    if (hash === 'calibration')    calInit();
+    if (hash === 'faq')            renderFaq();
+    if (hash === 'my-docs')        loadMyDocs();
+    if (hash === 'profile')        loadProfile();
     if (hash === 'verify-unified') loadLatestRegistryUnified();
-    if (hash === 'supporters') trackEvent('Subscription_Click', {});
-    if (hash === 'roadmap') loadFeatureVotes();
-   if (hash === 'publikaciok') loadPublikaciok();
-if (hash === 'editor') {
-    setTimeout(async () => {
-        initPulseCanvas();
-        checkDraftsOnEditorOpen();
-        await loadEditorWithConsentCheck();
-    }, 200);
+    if (hash === 'supporters')     trackEvent('Subscription_Click', {});
+    if (hash === 'roadmap')        loadFeatureVotes();
+    if (hash === 'publikaciok')    loadPublikaciok();
+
+    if (hash === 'editor') {
+        // Kis delay hogy a DOM teljesen renderelődjön
+        setTimeout(() => {
+            initPulseCanvas();
+            checkDraftsOnEditorOpen();
+            // EGYETLEN belépési pont – ez kezeli a consent + init + kalibráció sorrendet
+            startEditorFlow();
+        }, 200);
+    }
 }
+
+async function startEditorFlow() {
+    if (!currentUser) {
+        showPage('auth');
+        return;
+    }
+
+    // 1. LÉPÉS: Consent ellenőrzése
+    const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
+
+    if (!hasConsent) {
+        // Megmutatjuk a consent modalt, és MEGÁLLUNK.
+        // A folyamat az "Elfogadom" gombra kattintás után folytatódik
+        // a handleConsentAccept() függvényen keresztül.
+        showBiometricConsentModal();
+        return;
+    }
+
+    // 2. LÉPÉS: Consent megvan → Editor inicializálása
+    // Az editorInit() NEM tartalmaz kalibrációs hívást!
+    editorInit();
+
+    // 3. LÉPÉS: Kalibráció ellenőrzése (rövid delay az editor betöltése után)
+    setTimeout(() => {
+        checkAndShowCalibrationReminder();
+    }, 800);
 }
+
+
 
 function _loadPageFromHash() {
   const validHashes = [
@@ -4444,17 +4476,20 @@ function copyBadgeCode() {
 function editorInit() {
     const ta = document.getElementById('doc-content-area');
     if (!ta) return;
-    
-    // Kalibrációs ellenőrzés - EZ HIÁNYZOTT!
-    setTimeout(checkCalibrationModal, 1000);
-    
+
+    // ELTÁVOLÍTVA: setTimeout(checkCalibrationModal, 1000) ← EZ VOLT AZ EGYIK FŐ HIBA
+
     ta.addEventListener('drop', e => e.preventDefault());
+
     ta.addEventListener('input', () => {
         editorUpdateStats();
         const cleaned = ta.innerText.replace(/[\n\r\u200B\uFEFF]/g, '').trim();
         if (!cleaned) {
-            E.keys = 0; E.dels = 0; E.pauses = 0; E.focusSwitches = 0; E.warns = 0;
-            E.events = []; E.pulseHistory = []; E.sessionStart = null; E.lastKey = null;
+            // Reset minden counter
+            E.keys = 0; E.dels = 0; E.pauses = 0; E.focusSwitches = 0;
+            E.warns = 0; E.repeatKeys = 0;
+            E.events = []; E.pulseHistory = [];
+            E.sessionStart = null; E.lastKey = null;
             E.certDocId = null; E.certTitle = null; E.certHash = null;
             E.tlBatch = [];
             clearInterval(E.timerInterval); E.timerInterval = null;
@@ -4462,61 +4497,86 @@ function editorInit() {
             pastedChars = 0;
             pasteEvents = [];
             pasteAllowed = false;
+
             const ratioBar = document.getElementById('paste-ratio-bar');
             if (ratioBar) ratioBar.style.display = 'none';
+
             editorSetStatus('idle');
             editorUpdateStats();
             editorCheckSave();
             drawPulse();
-            ['s-chars', 's-words', 's-keys', 's-dels', 's-pauses', 's-focus',
-                'sidebar-keys', 'sidebar-dels', 'sidebar-pauses', 'sidebar-focus'
-            ].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '0'; });
-            ['human-index', 'rhythm-var'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '–'; });
-            document.getElementById('human-pct-fill').style.width = '0%';
-            document.getElementById('sidebar-time').textContent = '00:00';
-            document.getElementById('s-speed').textContent = '–';
-            document.getElementById('s-human').textContent = '–';
-            document.getElementById('e-rhythm-warn').style.display = 'none';
-            document.getElementById('e-word-warn').style.display = 'none';
-      const entropyFill = document.getElementById('entropy-fill');
-    const entropyLabel = document.getElementById('entropy-label');
-    if (entropyFill) { entropyFill.style.width = '0%'; entropyFill.style.background = 'var(--muted2)'; }
-    if (entropyLabel) { entropyLabel.textContent = '–'; entropyLabel.style.color = 'var(--muted)'; }
 
-    E.cfDnaScore = 0; E.boundaryPauses = 0; E.midWordPauses = 0;
-    E.nlsCorrelation = 0; E.flowPulseScore = 0;
-    E.microDriftIndex = 0; E.biologicalEntropy = 0; E.smdScore = 0;
-    E.tripleLockScore = 0;
-    const tlScore = document.getElementById('triple-lock-score');
-    const tlCfdna = document.getElementById('tl-cfdna');
-    const tlNls   = document.getElementById('tl-nls');
-    const tlSmd   = document.getElementById('tl-smd');
-    if (tlScore) tlScore.textContent = '–';
-    if (tlCfdna) tlCfdna.textContent = '–';
-    if (tlNls)   tlNls.textContent   = '–';
-    if (tlSmd)   tlSmd.textContent   = '–';
+            ['s-chars','s-words','s-keys','s-dels','s-pauses','s-focus',
+             'sidebar-keys','sidebar-dels','sidebar-pauses','sidebar-focus'
+            ].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '0'; });
+
+            ['human-index','rhythm-var'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '–';
+            });
+
+            const hpf = document.getElementById('human-pct-fill');
+            if (hpf) hpf.style.width = '0%';
+
+            const stEl = document.getElementById('sidebar-time');
+            if (stEl) stEl.textContent = '00:00';
+
+            const spEl = document.getElementById('s-speed');
+            if (spEl) spEl.textContent = '–';
+
+            const shEl = document.getElementById('s-human');
+            if (shEl) shEl.textContent = '–';
+
+            const rwEl = document.getElementById('e-rhythm-warn');
+            if (rwEl) rwEl.style.display = 'none';
+
+            const wwEl = document.getElementById('e-word-warn');
+            if (wwEl) wwEl.style.display = 'none';
+
+            const entropyFill  = document.getElementById('entropy-fill');
+            const entropyLabel = document.getElementById('entropy-label');
+            if (entropyFill)  { entropyFill.style.width = '0%'; entropyFill.style.background = 'var(--muted2)'; }
+            if (entropyLabel) { entropyLabel.textContent = '–'; entropyLabel.style.color = 'var(--muted)'; }
+
+            E.cfDnaScore = 0; E.boundaryPauses = 0; E.midWordPauses = 0;
+            E.nlsCorrelation = 0; E.flowPulseScore = 0;
+            E.microDriftIndex = 0; E.biologicalEntropy = 0;
+            E.smdScore = 0; E.tripleLockScore = 0;
+
+            ['triple-lock-score','tl-cfdna','tl-nls','tl-smd'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '–';
+            });
         }
     });
+
     ta.addEventListener('keydown', editorKeyDown);
+
     document.getElementById('doc-title-input')?.addEventListener('input', editorCheckSave);
+
     if (!window._visibilityListenerAdded) {
         window._visibilityListenerAdded = true;
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && E.sessionStart) {
                 E.focusSwitches++;
-                document.getElementById('s-focus').textContent = E.focusSwitches;
-                document.getElementById('sidebar-focus').textContent = E.focusSwitches;
+                const sfEl = document.getElementById('s-focus');
+                if (sfEl) sfEl.textContent = E.focusSwitches;
+                const sbfEl = document.getElementById('sidebar-focus');
+                if (sbfEl) sbfEl.textContent = E.focusSwitches;
             }
         });
     }
+
     const storedTempId = localStorage.getItem('humano_temp_doc_id');
     if (storedTempId && currentUser) {
         E.tempDocId = storedTempId;
     }
+
     initPulseCanvas();
     startAutosaveTimer();
     startTlFlushTimer();
     checkDraftsOnEditorOpen();
+
     if (!window._selectionListenerAdded) {
         window._selectionListenerAdded = true;
         document.addEventListener('selectionchange', function () {
@@ -4527,31 +4587,47 @@ function editorInit() {
     }
 }
 
-// Kalibrációs modal ellenőrző függvény
-// Kalibrációs modal ellenőrző függvény
-async function checkCalibrationModal() {
-    console.log('Kalibráció ellenőrzés...');
-    if (!currentUser) return;
-    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+
+async function checkAndShowCalibrationReminder() {
+    // Ne mutasd ha a felhasználó letiltotta
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-    
+
+    // Ne mutasd ha nincs bejelentkezett felhasználó
+    if (!currentUser) return;
+
+    // Ne mutasd ha az editor oldal már nem aktív
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+
+    // Ne mutasd ha valamelyik másik modal már nyitva van
+    if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
+
     try {
-        const { data } = await db
+        const { data, error } = await db
             .from('typing_profiles')
             .select('id')
-            .eq('user_id', currentUser.id);
-        
+            .eq('user_id', currentUser.id)
+            .limit(1);
+
+        if (error) {
+            console.warn('Kalibráció ellenőrzési hiba:', error.message);
+            return;
+        }
+
+        // Ha nincs kalibrációs profil → megmutatjuk az emlékeztetőt
         if (!data || data.length === 0) {
-            console.log('Nincs kalibráció - modal megnyitása');
             const modal = document.getElementById('cal-reminder-modal');
             if (modal) {
                 modal.classList.add('open');
+                console.log('✅ Kalibrációs emlékeztető megnyitva');
+            } else {
+                console.warn('⚠️ cal-reminder-modal nem található a DOM-ban');
             }
         }
     } catch (e) {
-        console.log('Hiba:', e);
+        console.warn('Kalibráció ellenőrzési kivétel:', e);
     }
 }
+
 
 
 function editorKeyDown(e) {
@@ -5615,41 +5691,45 @@ function hideBiometricConsentModal() {
 
 // Elutasítás kezelése
 function handleConsentDecline() {
-  hideBiometricConsentModal();
-  showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
-  showPage('landing');
+    hideBiometricConsentModal();
+    showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
+    showPage('landing');
 }
+
 
 
 
 
 // Elfogadás kezelése
 async function handleConsentAccept() {
-  const btn = document.getElementById('consent-accept-btn');
-  if (btn) { 
-    btn.disabled = true; 
-    btn.textContent = '⏳ Rögzítés...'; 
-  }
-
-  try {
-    await ConsentManager.record('keystroke_dynamics');
-    hideBiometricConsentModal();
-    showToast('✅ Beleegyezés rögzítve');
-    
-    // Editor inicializálása
-    if (typeof editorInit === 'function') editorInit();
-    
-    // Kalibráció ellenőrzése 1.5 másodperc múlva
-    setTimeout(checkCalibrationModal, 1500);
-    
-  } catch (err) {
-    showToast('❌ Hiba: ' + err.message);
-    if (btn) { 
-      btn.disabled = false; 
-      btn.textContent = '✦ Elfogadom'; 
+    const btn = document.getElementById('consent-accept-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Rögzítés...';
     }
-  }
+
+    try {
+        await ConsentManager.record('keystroke_dynamics');
+        hideBiometricConsentModal();
+        showToast('✅ Beleegyezés rögzítve');
+
+        // 2. LÉPÉS: Editor inicializálása (consent megvan)
+        editorInit();
+
+        // 3. LÉPÉS: Kalibráció ellenőrzése
+        setTimeout(() => {
+            checkAndShowCalibrationReminder();
+        }, 800);
+
+    } catch (err) {
+        showToast('❌ Hiba: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✦ Elfogadom';
+        }
+    }
 }
+
 
 
 // ─────────────────────────────────────────────────────────────
