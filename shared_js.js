@@ -1432,7 +1432,8 @@ function editorCheckSave() {
 
 function updateEditorTimer() {
     if (!E.sessionStart) return;
-    const elapsed = Math.floor((Date.now() - E.sessionStart) / 1000);
+    if (document.hidden) return;
+    const elapsed = Math.floor((Date.now() - E.sessionStart - (E.totalPausedMs || 0)) / 1000);
     const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const s = (elapsed % 60).toString().padStart(2, '0');
     const el = document.getElementById('sidebar-time');
@@ -1979,7 +1980,8 @@ function editorClear() {
         cfDnaScore: 0, boundaryPauses: 0, midWordPauses: 0,
         nlsCorrelation: 0, flowPulseScore: 0,
         microDriftIndex: 0, biologicalEntropy: 0,
-        smdScore: 0, tripleLockScore: 0
+        smdScore: 0, tripleLockScore: 0,
+        totalPausedMs: 0, _pauseStart: null
     });
     
     typedChars = 0;
@@ -2018,7 +2020,15 @@ function editorClear() {
         const el = document.getElementById(id);
         if (el) el.textContent = '–';
     });
+
+    // Hitelesítés gomb visszaállítása
+    const btn = document.getElementById('btn-save');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '🔒 Hitelesítés & Mentés';
+    }
 }
+
 
 function allowPaste() {
     pasteAllowed = true;
@@ -2079,35 +2089,34 @@ function editorInit() {
 
     ta.addEventListener('drop', e => e.preventDefault());
     
-  ta.addEventListener('paste', e => {
-    if (!pasteAllowed) {
-        e.preventDefault();
-        const text = e.clipboardData.getData('text/plain');
-        const html = e.clipboardData.getData('text/html');
-        pendingPasteText = text;
-        pendingPasteHtml = html;
-        const modal = document.getElementById('paste-modal');
-        if (modal) {
-            const check = document.getElementById('paste-consent-check');
-            if (check) check.checked = false;
-            const btn = document.getElementById('paste-confirm-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.style.opacity = '.5';
-                btn.style.cursor = 'not-allowed';
+    ta.addEventListener('paste', e => {
+        if (!pasteAllowed) {
+            e.preventDefault();
+            const text = e.clipboardData.getData('text/plain');
+            const html = e.clipboardData.getData('text/html');
+            pendingPasteText = text;
+            pendingPasteHtml = html;
+            const modal = document.getElementById('paste-modal');
+            if (modal) {
+                const check = document.getElementById('paste-consent-check');
+                if (check) check.checked = false;
+                const btn = document.getElementById('paste-confirm-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+                modal.style.display = 'flex';
+                modal.classList.add('open');
             }
-            modal.style.display = 'flex';
-            modal.classList.add('open');
+            return;
         }
-        return;
-    }
-
-    const text = e.clipboardData.getData('text/plain');
-    pastedChars += text.length;
-    typedChars = Math.max(0, typedChars - text.length);
-    updatePasteRatio();
-    tlRecord('paste');
-});
+        const text = e.clipboardData.getData('text/plain');
+        pastedChars += text.length;
+        typedChars = Math.max(0, typedChars - text.length);
+        updatePasteRatio();
+        tlRecord('paste');
+    });
 
     ta.addEventListener('input', () => {
         editorUpdateStats();
@@ -2124,12 +2133,19 @@ function editorInit() {
     if (!window._visibilityListenerAdded) {
         window._visibilityListenerAdded = true;
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && E.sessionStart) {
+            if (!E.sessionStart) return;
+            if (document.hidden) {
+                E._pauseStart = Date.now();
                 E.focusSwitches++;
                 const sfEl = document.getElementById('s-focus');
                 const sbfEl = document.getElementById('sidebar-focus');
                 if (sfEl) sfEl.textContent = E.focusSwitches;
                 if (sbfEl) sbfEl.textContent = E.focusSwitches;
+            } else {
+                if (E._pauseStart) {
+                    E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+                    E._pauseStart = null;
+                }
             }
         });
     }
@@ -2151,8 +2167,8 @@ function editorInit() {
     initPulseCanvas();
     startAutosaveTimer();
     startTlFlushTimer();
-   startTipRotation();
-   updatePasteRatio();
+    startTipRotation();
+    updatePasteRatio();
 }
 
 async function startEditorFlow() {
@@ -2609,13 +2625,17 @@ function autoSaveDraft() {
         saveDraftIndex(idx);
 
         const snack = document.getElementById('autosave-snack');
-if (snack) {
-    const timeEl = document.getElementById('autosave-time');
-    if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
-    snack.style.opacity = '1';
-    clearTimeout(snack._hideTimer);
-    snack._hideTimer = setTimeout(() => { snack.style.opacity = '0'; }, 3000);
-}
+        if (snack) {
+            const timeEl = document.getElementById('autosave-time');
+            if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+            snack.style.display = 'flex';
+            snack.style.opacity = '1';
+            clearTimeout(snack._hideTimer);
+            snack._hideTimer = setTimeout(() => {
+                snack.style.opacity = '0';
+                setTimeout(() => { snack.style.display = 'none'; }, 400);
+            }, 3000);
+        }
     } catch (e) {
         console.error('❌ Hiba mentéskor:', e);
     }
@@ -4010,14 +4030,16 @@ function shareCopyClipboard() {
 function copyVerifyLink(docId) {
     const id = docId || E.certDocId || document.getElementById('cert-id-val')?.textContent;
     if (!id || id === '–') { showToast('Nincs dokumentum azonosító!'); return; }
-    copyToClipboard(`https://humano-hu.vercel.app/verify/${id}`);
-    showToast('🔗 Link másolva!');
+    const url = `https://humano-hu.vercel.app/verify/${id}`;
+    copyToClipboard(url);
+    showToast('🔗 Megosztási link másolva! → ' + url);
 }
 
 function copyId() {
     const id = document.getElementById('cert-id-val')?.textContent;
+    if (!id || id === '–') { showToast('Nincs ID!'); return; }
     copyToClipboard(id);
-    showToast('📋 ID másolva!');
+    showToast('📋 DOC ID másolva: ' + id);
 }
 
 function openReadPage() {
@@ -4027,7 +4049,12 @@ function openReadPage() {
 
 function copyBadgeCode() {
     const code = document.getElementById('badge-html-code')?.textContent;
-    if (code && code !== '–') { copyToClipboard(code); showToast('🏷️ Badge kód másolva!'); }
+    if (code && code !== '–') {
+        copyToClipboard(code);
+        showToast('🏷️ Badge HTML kód másolva a vágólapra!');
+    } else {
+        showToast('❌ Nincs badge kód!');
+    }
 }
 
 function copyVerifyBadgeCode() {
@@ -4257,10 +4284,17 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         return;
     }
 
+    // Username lekérése
+    let displayAuthor = author;
+    if (currentUser) {
+        const { data: profile } = await db.from('profiles').select('username').eq('id', currentUser.id).single();
+        if (profile?.username) displayAuthor = profile.username;
+    }
+
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const W = 210, H = 297;
-    const PL = 14, PR = 14;
+    const PL = 18, PR = 18;
     const CW = W - PL - PR;
 
     const humanLabel = processData?.humanCategory || ((processData?.humanIndex ?? '-') + '%');
@@ -4273,56 +4307,53 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     const smdScore = processData?.smdScore ?? 0;
     const tripleLockScore = processData?.tripleLockScore ?? 0;
 
+    // Háttér
     pdf.setFillColor(6, 6, 8);
     pdf.rect(0, 0, W, H, 'F');
-    
     pdf.setDrawColor(100, 80, 30);
     pdf.setLineWidth(0.3);
     pdf.rect(5, 5, W - 10, H - 10);
-    
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.6);
     pdf.rect(8, 8, W - 16, H - 16);
 
+    // Fejléc
     pdf.setTextColor(201, 168, 76);
-    pdf.setFontSize(22);
+    pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('HUMANO', W / 2, 21, { align: 'center' });
-    
+    pdf.text('HUMANO', W / 2, 20, { align: 'center' });
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(138, 106, 26);
-    pdf.text('AZ EMBERI ALKOTAS DIGITALIS HITELESITOJE', W / 2, 27, { align: 'center' });
-    
-    pdf.setFontSize(9);
+    pdf.text('AZ EMBERI ALKOTAS DIGITALIS HITELESITOJE', W / 2, 26, { align: 'center' });
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(240, 208, 112);
-    pdf.text('KELETKEZÉSI NAPLÓ – TANÚSÍTVÁNY', W / 2, 33, { align: 'center' });
-    
+    pdf.text('KELETKEZESI NAPLO – TANUSITVANY', W / 2, 32, { align: 'center' });
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.4);
-    pdf.line(PL, 37, W - PR, 37);
+    pdf.line(PL, 36, W - PR, 36);
 
     let y = 40;
-    
+
+    // DOC ID box
     pdf.setFillColor(22, 22, 42);
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.5);
-    pdf.roundedRect(PL, y, CW, 14, 2, 2, 'FD');
-    
+    pdf.roundedRect(PL, y, CW, 13, 2, 2, 'FD');
     pdf.setTextColor(138, 106, 26);
     pdf.setFontSize(5);
     pdf.setFont('helvetica', 'normal');
     pdf.text('DOKUMENTUM AZONOSITO', W / 2, y + 4, { align: 'center' });
-    
     pdf.setTextColor(201, 168, 76);
-    pdf.setFontSize(11);
+    pdf.setFontSize(10);
     pdf.setFont('courier', 'bold');
-    pdf.text(docId || '-', W / 2, y + 11, { align: 'center' });
-    y += 17;
+    pdf.text(docId || '-', W / 2, y + 10, { align: 'center' });
+    y += 16;
 
+    // URL
     pdf.setTextColor(100, 80, 30);
-    pdf.setFontSize(5.5);
+    pdf.setFontSize(5);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Ellenorzesi URL: https://humano-hu.vercel.app/verify/' + (docId || ''), W / 2, y, { align: 'center' });
     y += 5;
@@ -4332,59 +4363,80 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     pdf.line(PL, y, W - PR, y);
     y += 4;
 
+    // Meta adatok 2x2 grid
     const meta = [
-        ['SZOVEG CIME', title || '-'],
-        ['SZERZO', author || '-'],
-        ['HITELESITES DATUMA', fmtDate(createdAt) || createdAt || '-'],
-        ['OTS STATUSZ', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : otsStatus === 'pending' ? 'Feldolgozas folyamatban' : '-'],
+        ['SZOVEG CIME', String(title || '-').substring(0, 34)],
+        ['SZERZO', String(displayAuthor || '-').substring(0, 34)],
+        ['HITELESITES DATUMA', fmtDate(createdAt) || '-'],
+        ['OTS STATUSZ', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : 'Feldolgozas folyamatban'],
     ];
-    
+
+    const bColW = CW / 2 - 1;
     meta.forEach(([label, value], i) => {
         const col = i % 2;
         const row = Math.floor(i / 2);
         const x = col === 0 ? PL : W / 2 + 1;
-        const bw = CW / 2 - 1;
-        const by = y + row * 17;
-        
+        const by = y + row * 16;
+
         pdf.setFillColor(16, 16, 26);
-        pdf.rect(x, by, bw, 15, 'F');
-        
+        pdf.rect(x, by, bColW, 14, 'F');
         pdf.setTextColor(100, 80, 30);
         pdf.setFontSize(5);
         pdf.setFont('helvetica', 'normal');
         pdf.text(label, x + 3, by + 4);
-        
         pdf.setTextColor(232, 217, 160);
-        pdf.setFontSize(7.5);
+        pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(String(value).substring(0, 36), x + 3, by + 11);
+        pdf.text(String(value), x + 3, by + 10);
     });
-    
-    y += 37;
+    y += 35;
 
     pdf.setDrawColor(100, 80, 30);
     pdf.setLineWidth(0.2);
     pdf.line(PL, y, W - PR, y);
     y += 4;
 
+    // Biometrikus adatok
     pdf.setFillColor(16, 16, 26);
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.4);
-    pdf.roundedRect(PL, y, CW, 22, 2, 2, 'FD');
-    
+    pdf.roundedRect(PL, y, CW, 20, 2, 2, 'FD');
     pdf.setTextColor(201, 168, 76);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'bold');
     pdf.text('BIOMETRIKUS ADATOK', PL + 4, y + 5);
 
     const bio = [
-        ['Leutes', processData?.keystrokeCount ?? '-'],
-        ['Torles', processData?.deletionCount ?? '-'],
-        ['Szunet', processData?.pauseCount ?? '-'],
-        ['Ablakvaltas', processData?.focusSwitches ?? '-'],
+        ['Leutes', String(processData?.keystrokeCount ?? '-')],
+        ['Torles', String(processData?.deletionCount ?? '-')],
+        ['Szunet', String(processData?.pauseCount ?? '-')],
+        ['Ablakvaltas', String(processData?.focusSwitches ?? '-')],
         ['Ritmus', humanLabel],
         ['Iras ideje', processData?.sessionDurationMs ? Math.round(processData.sessionDurationMs / 60000) + ' perc' : '-'],
     ];
+    const bw = CW / bio.length;
+    bio.forEach(([lbl, val], i) => {
+        const bx = PL + i * bw + bw / 2;
+        pdf.setTextColor(240, 208, 112);
+        pdf.setFontSize(String(val).length > 6 ? 5 : 7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(String(val), bx, y + 12, { align: 'center' });
+        pdf.setTextColor(100, 80, 30);
+        pdf.setFontSize(4.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(lbl, bx, y + 17, { align: 'center' });
+    });
+    y += 24;
+
+    // Triple-Lock
+    pdf.setFillColor(16, 16, 26);
+    pdf.setDrawColor(201, 168, 76);
+    pdf.setLineWidth(0.5);
+    pdf.roundedRect(PL, y, CW, 17, 2, 2, 'FD');
+    pdf.setTextColor(201, 168, 76);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TRIPLE-LOCK KOGNITIV JELENLÉT', W / 2, y + 5, { align: 'center' });
 
     const tripleLock = [
         ['CF-DNA', cfDnaScore + '/100'],
@@ -4392,57 +4444,25 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         ['SMD', smdScore + '/100'],
         ['Kognitiv', tripleLockScore + '/100'],
     ];
-
-    const bColW = CW / bio.length;
-    bio.forEach(([lbl, val], i) => {
-        const bx = PL + i * bColW + bColW / 2;
-        const fontSize = String(val).length > 6 ? 5.5 : 7;
-        
-        pdf.setTextColor(240, 208, 112);
-        pdf.setFontSize(fontSize);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(String(val), bx, y + 13, { align: 'center' });
-        
-        pdf.setTextColor(100, 80, 30);
-        pdf.setFontSize(5);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(lbl, bx, y + 19, { align: 'center' });
-    });
-    
-    y += 26;
-
-    pdf.setFillColor(16, 16, 26);
-    pdf.setDrawColor(201, 168, 76);
-    pdf.setLineWidth(0.5);
-    pdf.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
-    
-    pdf.setTextColor(201, 168, 76);
-    pdf.setFontSize(6);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('TRIPLE-LOCK KOGNITIV JELENLÉT', W / 2, y + 5, { align: 'center' });
-    
-    const tColW = CW / tripleLock.length;
+    const tw = CW / tripleLock.length;
     tripleLock.forEach(([lbl, val], i) => {
-        const tx = PL + i * tColW + tColW / 2;
-        
+        const tx = PL + i * tw + tw / 2;
         pdf.setTextColor(240, 208, 112);
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
         pdf.text(String(val), tx, y + 11, { align: 'center' });
-        
         pdf.setTextColor(100, 80, 30);
-        pdf.setFontSize(5);
+        pdf.setFontSize(4.5);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(lbl, tx, y + 16, { align: 'center' });
+        pdf.text(lbl, tx, y + 15.5, { align: 'center' });
     });
-    
-    y += 22;
+    y += 21;
 
+    // Szöveg összetétel
     pdf.setFillColor(16, 16, 26);
     pdf.setDrawColor(100, 80, 30);
     pdf.setLineWidth(0.3);
-    pdf.roundedRect(PL, y, CW, 18, 2, 2, 'FD');
-    
+    pdf.roundedRect(PL, y, CW, 17, 2, 2, 'FD');
     pdf.setTextColor(201, 168, 76);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'bold');
@@ -4454,54 +4474,39 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         ['Entropia', entropyPct + '%'],
         ['Entropia CV', entropyCV.toFixed(2)],
     ];
-    
-    const cColW = CW / compose.length;
+    const cw2 = CW / compose.length;
     compose.forEach(([lbl, val], i) => {
-        const cx = PL + i * cColW + cColW / 2;
-        
+        const cx = PL + i * cw2 + cw2 / 2;
         pdf.setTextColor(240, 208, 112);
-        pdf.setFontSize(8);
+        pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
         pdf.text(String(val), cx, y + 11, { align: 'center' });
-        
         pdf.setTextColor(100, 80, 30);
-        pdf.setFontSize(5);
+        pdf.setFontSize(4.5);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(lbl, cx, y + 16, { align: 'center' });
+        pdf.text(lbl, cx, y + 15.5, { align: 'center' });
     });
-
-    const barX = PL + 4, barY = y + 13, barW = CW / 2 - 8, barH = 2;
-    
-    pdf.setFillColor(30, 30, 50);
-    pdf.rect(barX, barY, barW, barH, 'F');
-    
-    pdf.setFillColor(74, 184, 112);
-    pdf.rect(barX, barY, barW * (typedPct / 100), barH, 'F');
-    
-    y += 22;
+    y += 21;
 
     pdf.setDrawColor(100, 80, 30);
     pdf.setLineWidth(0.2);
     pdf.line(PL, y, W - PR, y);
     y += 4;
 
+    // SHA-256
     pdf.setTextColor(100, 80, 30);
     pdf.setFontSize(5.5);
     pdf.setFont('helvetica', 'normal');
     pdf.text('SHA-256 KRIPTOGRAFIAI LENYOMAT', PL, y + 3);
-    y += 5;
-    
+    y += 6;
     pdf.setFillColor(13, 17, 23);
     pdf.rect(PL, y, CW, 10, 'F');
-    
     pdf.setTextColor(166, 214, 255);
     pdf.setFontSize(5.5);
     pdf.setFont('courier', 'normal');
-    
     const h = hash || '-';
     pdf.text(h.substring(0, 64), PL + 3, y + 4);
     if (h.length > 64) pdf.text(h.substring(64), PL + 3, y + 8.5);
-    
     y += 14;
 
     pdf.setDrawColor(100, 80, 30);
@@ -4509,97 +4514,75 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     pdf.line(PL, y, W - PR, y);
     y += 4;
 
+    // Pulzusgrafikon
     const pulseData = (processData?.pulseDataPoints?.length > 1) ? processData.pulseDataPoints : (E?.pulseHistory?.length > 1 ? E.pulseHistory : null);
 
     if (pulseData && pulseData.length > 1) {
         pdf.setFillColor(16, 16, 26);
         pdf.setDrawColor(201, 168, 76);
         pdf.setLineWidth(0.4);
-        pdf.roundedRect(PL, y, CW, 36, 2, 2, 'FD');
-        
+        pdf.roundedRect(PL, y, CW, 32, 2, 2, 'FD');
         pdf.setTextColor(201, 168, 76);
         pdf.setFontSize(6);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('GEPELESI SPEKTRUM – GONDOLKODASI GORBE', W / 2, y + 6, { align: 'center' });
+        pdf.text('GEPELESI SPEKTRUM – GONDOLKODASI GORBE', W / 2, y + 5, { align: 'center' });
 
         const pCvs = document.createElement('canvas');
-        pCvs.width = 600;
-        pCvs.height = 60;
+        pCvs.width = 600; pCvs.height = 55;
         const pCtx = pCvs.getContext('2d');
-        
         pCtx.fillStyle = '#101018';
-        pCtx.fillRect(0, 0, 600, 60);
-        
+        pCtx.fillRect(0, 0, 600, 55);
         const pMax = Math.max(...pulseData, 10);
-        pCtx.strokeStyle = 'rgba(201,168,76,0.1)';
-        pCtx.lineWidth = 1;
-        
-        [15, 30, 45].forEach(g => {
-            pCtx.beginPath();
-            pCtx.moveTo(0, g);
-            pCtx.lineTo(600, g);
-            pCtx.stroke();
-        });
-        
+
         pCtx.beginPath();
-        pCtx.moveTo(0, 60);
+        pCtx.moveTo(0, 55);
         pulseData.forEach((v, i) => {
             const x = (i / (pulseData.length - 1)) * 600;
-            const py = 60 - (v / pMax) * 52;
+            const py = 55 - (v / pMax) * 48;
             pCtx.lineTo(x, py);
         });
-        pCtx.lineTo(600, 60);
+        pCtx.lineTo(600, 55);
         pCtx.closePath();
-        
-        const fg = pCtx.createLinearGradient(0, 0, 0, 60);
+        const fg = pCtx.createLinearGradient(0, 0, 0, 55);
         fg.addColorStop(0, 'rgba(201,168,76,0.3)');
         fg.addColorStop(1, 'rgba(201,168,76,0)');
         pCtx.fillStyle = fg;
         pCtx.fill();
-        
+
         pCtx.beginPath();
         pulseData.forEach((v, i) => {
             const x = (i / (pulseData.length - 1)) * 600;
-            const py = 60 - (v / pMax) * 52;
+            const py = 55 - (v / pMax) * 48;
             i === 0 ? pCtx.moveTo(x, py) : pCtx.lineTo(x, py);
         });
         pCtx.strokeStyle = '#c9a84c';
         pCtx.lineWidth = 2;
         pCtx.stroke();
-        
-        pdf.addImage(pCvs.toDataURL('image/png'), 'PNG', PL + 2, y + 8, CW - 4, 17);
-        y += 28;
 
-        const longestPauseSec = (() => {
-            const pev = (processData?.events || E?.events || []).filter(e => e.type === 'pause');
-            return pev.length ? Math.round(Math.max(...pev.map(p => p.duration || 0)) / 1000) : 0;
-        })();
-        
+        pdf.addImage(pCvs.toDataURL('image/png'), 'PNG', PL + 2, y + 8, CW - 4, 14);
+        y += 25;
+
         const pStats = [
-            ['Leütések', String(processData?.keystrokeCount ?? E?.keys ?? '-')],
-            ['Javítások', String(processData?.deletionCount ?? E?.dels ?? '-')],
-            ['Szünetek', String(processData?.pauseCount ?? E?.pauses ?? '-')],
-            ['Legh. szünet', longestPauseSec > 0 ? longestPauseSec + 'mp' : '-'],
+            ['Leütések', String(processData?.keystrokeCount ?? '-')],
+            ['Javítások', String(processData?.deletionCount ?? '-')],
+            ['Szünetek', String(processData?.pauseCount ?? '-')],
             ['Ritmus', humanLabel],
             ['Entropia', entropyPct + '%'],
+            ['Gepelt', typedPct + '%'],
         ];
-        
         const psW = CW / pStats.length;
         pStats.forEach(([lbl, val], i) => {
             const px = PL + i * psW + psW / 2;
-            const fs = String(val).length > 6 ? 5 : 7;
-            
             pdf.setTextColor(240, 208, 112);
-            pdf.setFontSize(fs);
+            pdf.setFontSize(String(val).length > 6 ? 5 : 6.5);
             pdf.setFont('helvetica', 'bold');
-            pdf.text(val, px, y + 5, { align: 'center' });
-            
+            pdf.text(val, px, y + 4, { align: 'center' });
             pdf.setTextColor(100, 80, 30);
-            pdf.setFontSize(5);
+            pdf.setFontSize(4.5);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(lbl, px, y + 10, { align: 'center' });
+            pdf.text(lbl, px, y + 8, { align: 'center' });
         });
-        y += 14;
+        y += 12;
     }
 
     pdf.setDrawColor(100, 80, 30);
@@ -4607,98 +4590,88 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     pdf.line(PL, y, W - PR, y);
     y += 4;
 
+    // QR + Ellenőrzési adatok
     const verifyUrl = 'https://humano-hu.vercel.app/verify/' + (docId || '');
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(verifyUrl) + '&color=C9A84C&bgcolor=1a1a2e&margin=4&format=png';
-    const blockH = H - 20 - y;
+
+    const remainingH = H - 22 - y;
+    const qrColW = CW * 0.35;
+    const rxCol = PL + qrColW + 3;
+    const rw = CW - qrColW - 3;
 
     await new Promise(resolve => {
         const qrImg = new Image();
         qrImg.crossOrigin = 'anonymous';
         qrImg.onload = () => {
             const cvs = document.createElement('canvas');
-            cvs.width = 120;
-            cvs.height = 120;
+            cvs.width = 120; cvs.height = 120;
             cvs.getContext('2d').drawImage(qrImg, 0, 0, 120, 120);
 
-            const qrColW = CW * 0.38;
-            
             pdf.setFillColor(22, 22, 42);
             pdf.setDrawColor(100, 80, 30);
             pdf.setLineWidth(0.3);
-            pdf.roundedRect(PL, y, qrColW, blockH, 2, 2, 'FD');
-            
+            pdf.roundedRect(PL, y, qrColW, remainingH, 2, 2, 'FD');
             pdf.setTextColor(201, 168, 76);
-            pdf.setFontSize(5.5);
+            pdf.setFontSize(5);
             pdf.setFont('helvetica', 'bold');
             pdf.text('QR KOD – MOBIL ELLENORZES', PL + qrColW / 2, y + 5, { align: 'center' });
-            
-            const qrSize = Math.min(blockH - 14, 28);
-            const qrX = PL + qrColW / 2 - qrSize / 2;
-            pdf.addImage(cvs.toDataURL('image/png'), 'PNG', qrX, y + 7, qrSize, qrSize);
-            
-            pdf.setTextColor(100, 80, 30);
-            pdf.setFontSize(4.5);
-            pdf.setFont('helvetica', 'normal');
-            pdf.text('Szkeneld be az azonnali ellenorzeshez', PL + qrColW / 2, y + blockH - 3, { align: 'center' });
 
-            const rx = PL + qrColW + 3;
-            const rw = CW - qrColW - 3;
-            
+            const qrSize = Math.min(remainingH - 14, 26);
+            pdf.addImage(cvs.toDataURL('image/png'), 'PNG', PL + qrColW / 2 - qrSize / 2, y + 7, qrSize, qrSize);
+            pdf.setTextColor(100, 80, 30);
+            pdf.setFontSize(4);
+            pdf.text('Szkeneld be az ellenorzeshez', PL + qrColW / 2, y + remainingH - 3, { align: 'center' });
+
             pdf.setFillColor(16, 16, 26);
             pdf.setDrawColor(100, 80, 30);
             pdf.setLineWidth(0.3);
-            pdf.roundedRect(rx, y, rw, blockH, 2, 2, 'FD');
-            
+            pdf.roundedRect(rxCol, y, rw, remainingH, 2, 2, 'FD');
             pdf.setTextColor(201, 168, 76);
             pdf.setFontSize(5.5);
             pdf.setFont('helvetica', 'bold');
-            pdf.text('ELLENORZESI ADATOK', rx + rw / 2, y + 5, { align: 'center' });
-            
+            pdf.text('ELLENORZESI ADATOK', rxCol + rw / 2, y + 5, { align: 'center' });
+
             const lines = [
-                ['DOC ID', (docId || '-').substring(0, 26)],
-                ['Szerzo', (author || '-').substring(0, 26)],
+                ['DOC ID', (docId || '-').substring(0, 24)],
+                ['Szerzo', (displayAuthor || '-').substring(0, 24)],
                 ['Datum', fmtDate(createdAt) || '-'],
-                ['OTS', otsStatus === 'confirmed' ? 'Bitcoin blokklancra rogzitve' : 'Feldolgozas folyamatban'],
+                ['OTS', otsStatus === 'confirmed' ? 'BTC rogzitve' : 'Folyamatban'],
                 ['Ritmus', humanLabel],
-                ['Kezzel gepelt', typedPct + '%'],
+                ['Gepelt', typedPct + '%'],
                 ['Entropia', entropyPct + '%'],
             ];
-            
             lines.forEach(([lbl, val], i) => {
-                const ly = y + 13 + i * 5.5;
+                const ly = y + 13 + i * 5;
                 pdf.setTextColor(100, 80, 30);
-                pdf.setFontSize(5);
+                pdf.setFontSize(4.5);
                 pdf.setFont('helvetica', 'normal');
-                pdf.text(lbl + ':', rx + 3, ly);
-                
+                pdf.text(lbl + ':', rxCol + 3, ly);
                 pdf.setTextColor(200, 190, 160);
-                pdf.setFontSize(5.5);
+                pdf.setFontSize(5);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(String(val), rx + 24, ly);
+                pdf.text(String(val), rxCol + 22, ly);
             });
             resolve();
         };
         qrImg.onerror = () => {
             pdf.setFillColor(22, 22, 42);
-            pdf.roundedRect(PL, y, CW, blockH, 2, 2, 'FD');
-            
+            pdf.roundedRect(PL, y, CW, remainingH, 2, 2, 'FD');
             pdf.setTextColor(100, 80, 30);
             pdf.setFontSize(6);
-            pdf.text('QR: ' + verifyUrl, W / 2, y + blockH / 2, { align: 'center' });
+            pdf.text('QR: ' + verifyUrl, W / 2, y + remainingH / 2, { align: 'center' });
             resolve();
         };
         qrImg.src = qrUrl;
     });
 
+    // Lábléc
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.4);
     pdf.line(PL, H - 16, W - PR, H - 16);
-    
     pdf.setTextColor(100, 80, 30);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Ellenorzes: humano-hu.vercel.app · opentimestamps.org · SHA-256 · Bitcoin blokklánc', W / 2, H - 11, { align: 'center' });
-    
     pdf.setFontSize(5.5);
     pdf.text('Generalva: ' + new Date().toLocaleString('hu-HU'), W / 2, H - 6, { align: 'center' });
 
@@ -4815,18 +4788,25 @@ async function downloadSeal(docId) {
     if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
     showToast('⏳ Pecsét generálása...');
     
-    let author = currentUser?.email || '–';
+    let author = '–';
     let otsStatus = 'pending';
     let date = new Date().toLocaleDateString('hu-HU');
     
     const { data: doc } = await db.from('documents')
         .select('author_name, created_at, ots_receipt')
         .eq('doc_id', docId).single();
-    
+
     if (doc) {
-        author = doc.author_name || author;
         otsStatus = doc.ots_receipt ? 'confirmed' : 'pending';
         date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('hu-HU') : date;
+    }
+
+    // Username lekérése
+    if (currentUser) {
+        const { data: profile } = await db.from('profiles').select('username').eq('id', currentUser.id).single();
+        author = profile?.username || doc?.author_name || currentUser.email || '–';
+    } else if (doc?.author_name) {
+        author = doc.author_name;
     }
     
     const canvas = generateSealCanvas(docId, author, date, otsStatus, 400);
@@ -4841,15 +4821,18 @@ async function generateSmartImage(docId) {
     if (!docId || docId === '–') { showToast('❌ Nincs dokumentum azonosító!'); return; }
     showToast('⏳ Kép generálása...');
 
-    const { data: doc } = await db.from('documents')
-        .select('*')
-        .eq('doc_id', docId).single();
-        
+    const { data: doc } = await db.from('documents').select('*').eq('doc_id', docId).single();
     if (!doc) { showToast('❌ Dokumentum nem található!'); return; }
+
+    // Username lekérése
+    let displayAuthor = doc.author_name || '–';
+    if (currentUser) {
+        const { data: profile } = await db.from('profiles').select('username').eq('id', currentUser.id).single();
+        if (profile?.username) displayAuthor = profile.username;
+    }
 
     const pd = doc.process_data || {};
     const title = doc.title || 'Névtelen alkotás';
-    const author = doc.author_name || '–';
     const date = new Date(doc.created_at).toLocaleDateString('hu-HU');
     const hi = pd.humanIndex || 0;
     const content = (doc.content || '').replace(/<[^>]+>/g, '').trim();
@@ -4870,7 +4853,6 @@ async function generateSmartImage(docId) {
         const words = text.split(' ');
         const lines = [];
         let line = '';
-        
         for (const word of words) {
             const test = line ? line + ' ' + word : word;
             if (ctx.measureText(test).width > maxWidth && line) {
@@ -4885,9 +4867,6 @@ async function generateSmartImage(docId) {
     }
 
     const contentLines = wrapText(tempCtx, contentPreview, maxW);
-    const headerH = 200;
-    const titleH = 80;
-    const footerH = 200;
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -4896,7 +4875,6 @@ async function generateSmartImage(docId) {
 
     ctx.fillStyle = '#0c0a04';
     ctx.fillRect(0, 0, width, height);
-
     ctx.fillStyle = '#c9a84c';
     ctx.fillRect(0, 0, width, 4);
 
@@ -4913,9 +4891,9 @@ async function generateSmartImage(docId) {
     ctx.font = 'bold 22px monospace';
     ctx.fillText(`⚡ ${hi}% Human Score`, width / 2, 135);
 
-    ctx.fillStyle = '#666';
+    ctx.fillStyle = '#888';
     ctx.font = '18px monospace';
-    ctx.fillText(`${author} · ${date}`, width / 2, 170);
+    ctx.fillText(`${displayAuthor} · ${date}`, width / 2, 170);
 
     ctx.strokeStyle = '#c9a84c';
     ctx.lineWidth = 1;
@@ -4929,12 +4907,8 @@ async function generateSmartImage(docId) {
     ctx.textAlign = 'left';
     
     const titleLines = wrapText(ctx, title, maxW);
-    let y = headerH + 45;
-    
-    titleLines.forEach(line => {
-        ctx.fillText(line, padding, y);
-        y += 44;
-    });
+    let y = 245;
+    titleLines.forEach(line => { ctx.fillText(line, padding, y); y += 44; });
 
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
@@ -4946,7 +4920,7 @@ async function generateSmartImage(docId) {
 
     ctx.fillStyle = '#c8c0b0';
     ctx.font = '24px serif';
-    const maxBodyY = height - footerH - 20;
+    const maxBodyY = height - 220;
     
     for (const line of contentLines) {
         if (y + lineH > maxBodyY) {
@@ -4963,8 +4937,7 @@ async function generateSmartImage(docId) {
         y += lineH;
     }
 
-    const footerY = height - footerH;
-    
+    const footerY = height - 200;
     ctx.strokeStyle = '#c9a84c';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -6645,7 +6618,6 @@ async function editorSave() {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Hitelesítés...'; }
 
     try {
-        // ── 1. Adatok összegyűjtése ──────────────────────────────────
         const editor = document.getElementById('doc-content-area');
         const titleInput = document.getElementById('doc-title-input');
         const content = editor?.innerHTML || '';
@@ -6662,10 +6634,9 @@ async function editorSave() {
             return;
         }
 
-        // ── 2. Kredit ellenőrzés ─────────────────────────────────────
         const { data: profile } = await db
             .from('profiles')
-            .select('plan, monthly_credits, used_credits, trial_ends_at')
+            .select('plan, monthly_credits, used_credits, trial_ends_at, username')
             .eq('id', currentUser.id)
             .single();
 
@@ -6682,17 +6653,14 @@ async function editorSave() {
             return;
         }
 
-        // ── 3. SHA-256 hash ──────────────────────────────────────────
         if (btn) btn.textContent = '🔒 Hash számítás...';
         const hash = await sha256(plainText);
 
-        // ── 4. DOC ID generálás ──────────────────────────────────────
         const ts = Date.now().toString(36).toUpperCase();
         const userPrefix = (profile?.humano_id || currentUser.id).substring(4, 8).toUpperCase();
         const docId = `DOC-${userPrefix}-${ts}`;
 
-        // ── 5. Process data összeállítása ────────────────────────────
-        const sessionDurationMs = E.sessionStart ? Date.now() - E.sessionStart : 0;
+        const sessionDurationMs = E.sessionStart ? Date.now() - E.sessionStart - (E.totalPausedMs || 0) : 0;
         const totalChars = typedChars + pastedChars;
         const processData = {
             keystrokeCount: E.keys,
@@ -6722,7 +6690,6 @@ async function editorSave() {
             antiSpoofFlag: E.antiSpoof?.suspiciousFlag || false,
         };
 
-        // ── 6. Supabase mentés ───────────────────────────────────────
         if (btn) btn.textContent = '💾 Mentés...';
 
         const saveData = {
@@ -6741,47 +6708,32 @@ async function editorSave() {
             version: 1,
         };
 
-        // Parent doc verzió kezelés
         const parentDocId = editor?.dataset?.parentDocId;
         if (parentDocId) {
             saveData.parent_doc_id = parentDocId;
-            const { data: parentDoc } = await db
-                .from('documents')
-                .select('version')
-                .eq('doc_id', parentDocId)
-                .single();
+            const { data: parentDoc } = await db.from('documents').select('version').eq('doc_id', parentDocId).single();
             saveData.version = (parentDoc?.version || 1) + 1;
         }
 
         const saveFn = async () => {
             const { error } = await db.from('documents').insert(saveData);
             if (error) throw new Error(error.message);
-
-            // Kredit növelés
-            await db.from('profiles')
-                .update({ used_credits: used + 1 })
-                .eq('id', currentUser.id);
+            await db.from('profiles').update({ used_credits: used + 1 }).eq('id', currentUser.id);
         };
 
         if (!isOnline) {
             queueOrRun(saveFn);
-            showToast('📥 Offline – mentés sorba állítva, szinkronizálás kapcsolat után.');
+            showToast('📥 Offline – mentés sorba állítva.');
         } else {
             await saveFn();
         }
 
-        // ── 7. Timelapse flush ───────────────────────────────────────
         if (btn) btn.textContent = '⛓️ Blokklánc...';
         await flushTlBatch(docId);
-
-        // Temp doc ID törlése
         localStorage.removeItem('humano_temp_doc_id');
         E.tempDocId = null;
-
-        // ── 8. OTS időbélyeg ─────────────────────────────────────────
         tsaStamp(hash, docId).catch(() => {});
 
-        // ── 9. Cert panel megjelenítése ──────────────────────────────
         E.certDocId = docId;
         E.certTitle = title;
         E.certHash = hash;
@@ -6789,13 +6741,11 @@ async function editorSave() {
         const certPanel = document.getElementById('cert-panel');
         const certIdVal = document.getElementById('cert-id-val');
         const certHashVal = document.getElementById('cert-hash-val');
-
         if (certIdVal) certIdVal.textContent = docId;
         if (certHashVal) certHashVal.textContent = hash;
 
         updateCertPanel(docId, hash, new Date().toISOString(), false, true);
 
-        // Beillesztés arány megjelenítése a cert panelen
         if (pastedChars > 0) {
             const certPasteRatio = document.getElementById('cert-paste-ratio');
             const certTypedPct = document.getElementById('cert-typed-pct');
@@ -6807,11 +6757,9 @@ async function editorSave() {
 
         if (certPanel) certPanel.style.display = 'block';
 
-        // Timelapse widget megjelenítése
         const tlWidget = document.getElementById('tl-widget');
         if (tlWidget) tlWidget.style.display = 'block';
 
-        // Publikált megosztás megjelenítése
         if (isPublished) {
             const shareSection = document.getElementById('share-published-section');
             if (shareSection) {
@@ -6820,12 +6768,26 @@ async function editorSave() {
             }
         }
 
-        // Piszkozat törlése
         clearCurrentDraft();
 
-        // AI Act disclaimer
-        setTimeout(() => checkAndShowAiActDisclaimer(docId), 2000);
+        // Időszámláló nullázása hitelesítés után
+        clearInterval(E.timerInterval);
+        E.timerInterval = null;
+        E.sessionStart = null;
+        E.totalPausedMs = 0;
+        E._pauseStart = null;
+        const sidebarTime = document.getElementById('sidebar-time');
+        if (sidebarTime) sidebarTime.textContent = '00:00';
 
+        // Hitelesítés gomb végleg inaktív marad
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '✅ Hitelesítve';
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+
+        setTimeout(() => checkAndShowAiActDisclaimer(docId), 2000);
         certPanel?.scrollIntoView({ behavior: 'smooth' });
         showToast('✦ Szöveg hitelesítve! DOC ID: ' + docId);
         trackEvent('Document_Certified', { doc_id: docId, plan });
@@ -6833,10 +6795,11 @@ async function editorSave() {
     } catch (err) {
         console.error('editorSave hiba:', err);
         showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
-    } finally {
         if (btn) {
             btn.disabled = false;
             btn.textContent = '🔒 Hitelesítés & Mentés';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
             editorCheckSave();
         }
     }
