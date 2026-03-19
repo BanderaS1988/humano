@@ -5722,6 +5722,9 @@ async function handleConsentAccept() {
         hideBiometricConsentModal();
         showToast('✅ Beleegyezés rögzítve');
 
+        // Átváltás az editor oldalra
+        showPage('editor');
+
         // Editor inicializálása
         const editorEl = document.getElementById('doc-content-area');
         if (editorEl && !editorEl.dataset.initialized) {
