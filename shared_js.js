@@ -1190,48 +1190,68 @@ async function checkCalibrationAge() {
 }
 
 async function checkAndShowCalibrationReminder() {
-
-  // AZONNALI ELLENŐRZÉS - ezt kiírja a konzolra
     console.log('checkAndShowCalibrationReminder lefutott');
-    alert('checkAndShowCalibrationReminder lefutott - ellenőrizd a konzolt');
-   
-    // Ne jelenjen meg, ha a user kérte, hogy ne mutassa többé
-    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-    if (!currentUser) return;
-
-    // Ne jelenjen meg, ha a biometrikus modal még nyitva van
+    
+    // Ellenőrizzük a localStorage tiltást
+    const skipForever = localStorage.getItem('humano_cal_skip_forever');
+    console.log('humano_cal_skip_forever:', skipForever);
+    if (skipForever === '1') {
+        console.log('Kihagyva: localStorage tiltja');
+        return;
+    }
+    
+    if (!currentUser) {
+        console.log('Kihagyva: nincs currentUser');
+        return;
+    }
+    
+    // Ellenőrizzük a biometrikus modalt
     const consentModal = document.getElementById('biometric-consent-modal');
-    if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
-
-    // Csak az editor oldalon jelenjen meg
-    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
-
+    if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) {
+        console.log('Kihagyva: biometrikus modal nyitva van');
+        return;
+    }
+    
+    // Ellenőrizzük, hogy az editor oldalon vagyunk-e
+    const editorPage = document.getElementById('page-editor')?.classList.contains('active');
+    console.log('Editor oldal aktív:', editorPage);
+    if (!editorPage) {
+        console.log('Kihagyva: nem az editor oldalon vagyunk');
+        return;
+    }
+    
     try {
-        // Ellenőrizzük, van-e már kalibrációs profilja
+        console.log('Lekérdezem a typing_profiles táblát...');
         const { data, error } = await db
             .from('typing_profiles')
             .select('id')
             .eq('user_id', currentUser.id)
             .limit(1);
-
+            
+        console.log('Válasz:', { data, error });
+        
         if (error) {
             console.error('Kalibráció ellenőrzési hiba:', error);
             return;
         }
         
-        // Ha van már profil, ne jelenjen meg
-        if (data && data.length > 0) return;
-
+        if (data && data.length > 0) {
+            console.log('Van már kalibrációs profil, nem jelenítjük meg');
+            return;
+        }
+        
         // Minden feltétel teljesül, megjelenítjük a modalt
+        console.log('Minden feltétel OK, megjelenítem a modalt');
         const modal = document.getElementById('cal-reminder-modal');
         if (!modal) {
             console.error('Kalibrációs modal nem található!');
             return;
         }
-
+        
+        console.log('Modal megtalálva, megjelenítés...');
         modal.style.display = 'flex';
         modal.classList.add('open');
-        console.log('Kalibrációs modal megjelenítve');
+        console.log('Modal megjelenítve');
 
     } catch (e) {
         console.warn('checkAndShowCalibrationReminder hiba:', e);
