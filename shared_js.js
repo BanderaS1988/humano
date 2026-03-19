@@ -1264,13 +1264,17 @@ function goToCalibration() {
         modal.classList.remove('open');
         modal.style.display = 'none';
     }
-    showPage('calibration');
+    showToast('✦ Átirányítás a kalibrációs oldalra...');
+    setTimeout(() => showPage('calibration'), 500);
 }
 
 function skipCalibrationReminder() {
     const checkbox = document.getElementById('cal-dont-show-again');
     if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
+        showToast('✅ Kalibrációs emlékeztető végleg elrejtve');
+    } else {
+        showToast('👌 Kalibráció kihagyva – később a Dashboardon is elvégezheted');
     }
 
     const modal = document.getElementById('cal-reminder-modal');
