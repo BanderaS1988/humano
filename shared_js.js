@@ -1443,7 +1443,8 @@ function updatePasteRatio() {
     const bar = document.getElementById('paste-ratio-bar');
     if (!bar) return;
 
-    if (pastedChars === 0 || total === 0) {
+    // Mindig mutassuk, ha már van bármilyen tartalom
+    if (total === 0) {
         bar.style.display = 'none';
         return;
     }
@@ -1455,7 +1456,7 @@ function updatePasteRatio() {
     const typedPctEl = document.getElementById('typed-pct');
     const pastedPctEl = document.getElementById('pasted-pct');
     const typedBarEl = document.getElementById('typed-bar');
-    
+
     if (typedPctEl) typedPctEl.textContent = tPct + '%';
     if (pastedPctEl) pastedPctEl.textContent = pPct + '%';
     if (typedBarEl) typedBarEl.style.width = tPct + '%';
