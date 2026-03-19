@@ -675,12 +675,15 @@ function _onSectionActivated(hash) {
     if (hash === 'roadmap') loadFeatureVotes();
     if (hash === 'publikaciok') loadPublikaciok();
     if (hash === 'editor') {
-        setTimeout(() => {
-            initPulseCanvas();
-            checkDraftsOnEditorOpen();
-            // NE hívjuk meg az editorInit-et itt, mert azt a startEditorFlow hívja
-        }, 200);
-    }
+    setTimeout(() => {
+        initPulseCanvas();
+        checkDraftsOnEditorOpen();
+        // Ha már van aktív session, indítsd újra a timert
+        if (E.sessionStart && !E.timerInterval) {
+            E.timerInterval = setInterval(updateEditorTimer, 1000);
+        }
+    }, 200);
+}
 }
 
 function _loadPageFromHash() {
