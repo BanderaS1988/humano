@@ -1997,6 +1997,22 @@ function allowPaste() {
     showToast('📋 Beillesztés engedélyezve.');
 }
 
+function confirmPasteModal() {
+    const check = document.getElementById('paste-consent-check');
+    if (!check?.checked) return;
+    document.getElementById('paste-modal').classList.remove('open');
+    document.getElementById('paste-modal').style.display = 'none';
+    allowPaste();
+}
+
+function denyPasteModal() {
+    document.getElementById('paste-modal').classList.remove('open');
+    document.getElementById('paste-modal').style.display = 'none';
+    pendingPasteText = '';
+    pendingPasteHtml = '';
+    showToast('📋 Beillesztés visszautasítva.');
+}
+
 function editorInit() {
     const ta = document.getElementById('doc-content-area');
     if (!ta) return;
@@ -6594,6 +6610,8 @@ window.calSkip = calSkip;
 window.startEditorFlow = startEditorFlow;
 window.editorClear = editorClear;
 window.allowPaste = allowPaste;
+window.confirmPasteModal = confirmPasteModal;
+window.denyPasteModal = denyPasteModal;
 window.savePulseImage = savePulseImage;
 window.fmt = fmt;
 window.insertLink = insertLink;
