@@ -984,7 +984,7 @@ textarea.form-control {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--r);
-    color: var(--text);
+    color: #ffffff;
     font-size: .97rem;
     line-height: 2;
     padding: 2rem;
