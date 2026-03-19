@@ -2023,15 +2023,29 @@ function editorInit() {
     ta.addEventListener('drop', e => e.preventDefault());
     
     ta.addEventListener('paste', e => {
-        if (!pasteAllowed) {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-            const html = e.clipboardData.getData('text/html');
-            pendingPasteText = text;
-            pendingPasteHtml = html;
-            document.getElementById('e-paste-warn').style.display = 'flex';
-            return;
+    if (!pasteAllowed) {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        const html = e.clipboardData.getData('text/html');
+        pendingPasteText = text;
+        pendingPasteHtml = html;
+        // Modal megnyitása
+        const modal = document.getElementById('paste-modal');
+        if (modal) {
+            // Checkbox visszaállítása
+            const check = document.getElementById('paste-consent-check');
+            if (check) check.checked = false;
+            const btn = document.getElementById('paste-confirm-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '.5';
+                btn.style.cursor = 'not-allowed';
+            }
+            modal.style.display = 'flex';
+            modal.classList.add('open');
         }
+        return;
+    }
         
         pastedChars += e.clipboardData.getData('text/plain').length;
         updatePasteRatio();
