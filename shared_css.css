@@ -760,7 +760,21 @@ textarea.form-control {
     .hero-trust-item span:first-child {
         color: var(--gold)
     }
+/* Add this to your shared_css.css file */
+#cal-reminder-modal {
+    z-index: 9999 !important;
+    pointer-events: none;
+}
 
+#cal-reminder-modal .modal-box {
+    position: relative;
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+#nav {
+    z-index: 1000;
+}
 
 /* ─── STATS SÁV ─────────────────────────────────────────────── */
 .stats-strip {
