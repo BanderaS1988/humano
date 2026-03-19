@@ -6881,7 +6881,11 @@ async function editorSave() {
     }
 }
 
-
+function closeTlModal() {
+    document.getElementById('tl-modal').classList.remove('open');
+    timelapseStopPlay();
+}
+window.closeTlModal = closeTlModal;
 
 /* ============================================================
    GLOBÁLIS FÜGGVÉNYEK – Window objektumra kötés
