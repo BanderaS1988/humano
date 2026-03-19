@@ -2005,9 +2005,30 @@ function allowPaste() {
 function confirmPasteModal() {
     const check = document.getElementById('paste-consent-check');
     if (!check?.checked) return;
+    
     document.getElementById('paste-modal').classList.remove('open');
     document.getElementById('paste-modal').style.display = 'none';
-    allowPaste();
+    
+    pasteAllowed = true;
+    document.getElementById('e-paste-warn') && (document.getElementById('e-paste-warn').style.display = 'none');
+    
+    // Beillesztett szöveg karaktereinek megszámlálása
+    if (pendingPasteText) {
+        pastedChars += pendingPasteText.length;
+        updatePasteRatio();
+        
+        // Szöveg beillesztése az editorba
+        const editor = document.getElementById('doc-content-area');
+        if (editor) {
+            editor.focus();
+            document.execCommand('insertText', false, pendingPasteText);
+        }
+        
+        pendingPasteText = '';
+        pendingPasteHtml = '';
+    }
+    
+    showToast('📋 Beillesztés engedélyezve – arány rögzítve.');
 }
 
 function denyPasteModal() {
