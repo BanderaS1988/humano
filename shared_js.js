@@ -5477,7 +5477,7 @@ async function loadPublikaciok() {
     renderPublikaciok(allPublikaciok);
 }
 
-function filterPublikáaciok() {
+function filterPublikaciok() {
     const search = document.getElementById('pub-search')?.value?.toLowerCase() || '';
     const sort = document.getElementById('pub-sort')?.value || 'newest';
 
