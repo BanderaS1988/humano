@@ -246,6 +246,7 @@ let antiBotCheckCount = 0;
 
 let typedChars = 0;
 let pastedChars = 0;
+let inactivityTimer = null;
 let pasteEvents = [];
 let pasteAllowed = false;
 let pendingPasteText = '';
@@ -1592,6 +1593,14 @@ function drawPulse() {
     window.pulseCtx.fillText(isAILike ? 'BOT-LIKE' : (isHumanLike ? 'VERIFIED HUMAN' : 'ANALYZING...'), 10, 20);
 }
 
+function calcPulseVal(interval) {
+    const clampedInterval = Math.min(interval, 4000);
+    const normalized = Math.min(clampedInterval / 2000, 1);
+    const pulseVal = Math.max(5, Math.min(95, (1 - normalized) * 90 + 5));
+    const noise = (Math.random() - 0.5) * 8;
+    return Math.max(3, Math.min(100, pulseVal + noise));
+}
+
 function savePulseImage() {
     const canvas = document.getElementById('pulse-canvas');
     if (!canvas || E.pulseHistory.length < 10) { showToast('⏳ Előbb írj legalább 10 leütést!'); return; }
@@ -1827,35 +1836,24 @@ function editorKeyDown(e) {
             return;
         }
         
-        E.keys++;
-        typedChars++;
-        updatePasteRatio();
-        
-        const interval = E.lastKey ? now - E.lastKey : 150;
-        E.events.push({ type: 'key', ts: now, interval });
-        if (E.events.length > 2000) E.events = E.events.slice(-1000);
-        
-        const clampedInterval = Math.min(interval, 4000);
-        function calcPulseVal(interval) {
-    const clampedInterval = Math.min(interval, 4000);
-    // Természetesebb skála: rövid interval = magas érték (gyors gépelés)
-    // hosszú interval = alacsony érték (lassú/szünet)
-    const normalized = Math.min(clampedInterval / 2000, 1);
-    const pulseVal = Math.max(5, Math.min(95, (1 - normalized) * 90 + 5));
-    // Kis véletlenszerű zaj az emberi hatásért
-    const noise = (Math.random() - 0.5) * 8;
-    return Math.max(3, Math.min(100, pulseVal + noise));
-}
+    E.keys++;
+typedChars++;
+updatePasteRatio();
 
-        E.pulseHistory.push(pulseVal);
-        if (E.pulseHistory.length > 60) E.pulseHistory.shift();
-        
-        drawPulse();
-        editorRhythm();
-        editorCalcHumanIndex();
-        tlRecord('insert', e.key);
-        checkTlFlush();
-    }
+const interval = E.lastKey ? now - E.lastKey : 150;
+E.events.push({ type: 'key', ts: now, interval });
+if (E.events.length > 2000) E.events = E.events.slice(-1000);
+
+const pulseVal = calcPulseVal(interval);
+E.pulseHistory.push(pulseVal);
+if (E.pulseHistory.length > 60) E.pulseHistory.shift();
+
+drawPulse();
+editorRhythm();
+editorCalcHumanIndex();
+tlRecord('insert', e.key);
+checkTlFlush();
+}
     
     // Anti-spoof ellenőrzés
     if (!E.antiSpoof) {
