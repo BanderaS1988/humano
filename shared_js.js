@@ -6009,8 +6009,6 @@ window.updateAppealStatus              = updateAppealStatus;
 window.checkAndShowAiActDisclaimer     = checkAndShowAiActDisclaimer;
 window.startEditorFlow                 = startEditorFlow;
 window.checkAndShowCalibrationReminder = checkAndShowCalibrationReminder;
-window.goToCalibration                 = goToCalibration;
-window.skipCalibrationReminder         = skipCalibrationReminder;
 
 
 
