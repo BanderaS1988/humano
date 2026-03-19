@@ -2619,12 +2619,13 @@ function autoSaveDraft() {
         saveDraftIndex(idx);
 
         const snack = document.getElementById('autosave-snack');
-        if (snack) {
-            document.getElementById('autosave-text').textContent = 'Piszkozat mentve';
-            snack.classList.add('show');
-            clearTimeout(snack._hideTimer);
-            snack._hideTimer = setTimeout(() => snack.classList.remove('show'), 3000);
-        }
+if (snack) {
+    const timeEl = document.getElementById('autosave-time');
+    if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+    snack.style.opacity = '1';
+    clearTimeout(snack._hideTimer);
+    snack._hideTimer = setTimeout(() => { snack.style.opacity = '0'; }, 3000);
+}
     } catch (e) {
         console.error('❌ Hiba mentéskor:', e);
     }
