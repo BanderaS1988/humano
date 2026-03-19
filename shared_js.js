@@ -4716,7 +4716,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
                 ['Gepelt', typedPct + '%'],
                 ['Entropia', entropyPct + '%'],
             ];
-            lines.forEach(([lbl, val], i) => {
+          lines.forEach(([lbl, val], i) => {
                 const ly = y + 13 + i * 4.5;
                 pdf.setTextColor(100, 80, 30);
                 pdf.setFontSize(4);
@@ -4726,10 +4726,9 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
                 pdf.setFontSize(4.5);
                 pdf.setFont('helvetica', 'bold');
                 pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
-               resolve();
             });
-            
-
+            resolve();
+        };
         qrImg.onerror = () => {
             pdf.setFillColor(22, 22, 42);
             pdf.roundedRect(PL, y, CW, remainingH, 2, 2, 'FD');
@@ -4740,7 +4739,6 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         };
         qrImg.src = qrUrl;
     });
-
     // Lábléc
     pdf.setDrawColor(201, 168, 76);
     pdf.setLineWidth(0.4);
