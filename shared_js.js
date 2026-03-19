@@ -4726,8 +4726,9 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
                 pdf.setFontSize(4.5);
                 pdf.setFont('helvetica', 'bold');
                 pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
+               resolve();
             });
-            resolve();
+            
 
         qrImg.onerror = () => {
             pdf.setFillColor(22, 22, 42);
