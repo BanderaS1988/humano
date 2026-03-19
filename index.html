@@ -2825,7 +2825,10 @@ function openTripleLockInfo() {
   
 </script>
 
-<!-- ═══ PASTE MODAL ═══ -->
+<!-- ═══════════════════════════════════════════════════════════
+     PASTE MODAL
+     Megjelenik ha a felhasználó beillesztést próbál az editorban.
+     ═══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="paste-modal" style="z-index:9500">
   <div class="modal-box" style="max-width:480px;text-align:center">
     <div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>
@@ -2851,7 +2854,9 @@ function openTripleLockInfo() {
 
 <script>
 
-// ── BEILLESZTETT SZÖVEG BEÍRÁSA AZ EDITORBA ──
+/* ─────────────────────────────────────────────────────────────
+   1. PASTE – Beillesztett szöveg kezelése az editorban
+   ───────────────────────────────────────────────────────────── */
 function insertPastedContent(text) {
     if (!text) return;
     const span = document.createElement('span');
@@ -2870,7 +2875,6 @@ function insertPastedContent(text) {
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // Üres textNode a span után, hogy a gépelt szöveg ne örökölje a stílust
         const textNode = document.createTextNode('\u200B');
         range.insertNode(textNode);
         range.setStartAfter(textNode);
@@ -2881,7 +2885,6 @@ function insertPastedContent(text) {
         document.getElementById('doc-content-area').appendChild(span);
     }
 
-    // ÚJ: pastedChars növelés + arány frissítés
     pastedChars += text.length;
     pasteEvents.push({ chars: text.length, ts: Date.now() });
     updatePasteRatio();
@@ -2894,41 +2897,44 @@ function insertPastedContent(text) {
 }
 
 
-// ── MODAL: ELFOGAD ──
+/* ─────────────────────────────────────────────────────────────
+   2. PASTE MODAL – Elfogad / Elutasít gombok
+   ───────────────────────────────────────────────────────────── */
 function confirmPaste() {
-  pasteAllowed = true;
-  document.getElementById('paste-modal').classList.remove('open');
-  insertPastedContent(pendingPasteText);
-  pendingPasteText = '';
-  pendingPasteHtml = '';
-  showToast('📋 Beillesztve – az arány megjelenik a tanúsítványon.');
+    pasteAllowed = true;
+    document.getElementById('paste-modal').classList.remove('open');
+    insertPastedContent(pendingPasteText);
+    pendingPasteText = '';
+    pendingPasteHtml = '';
+    showToast('📋 Beillesztve – az arány megjelenik a tanúsítványon.');
 }
 
-// ── MODAL: ELUTASÍT ──
 function denyPaste() {
-  pendingPasteText = '';
-  pendingPasteHtml = '';
-  document.getElementById('paste-modal').classList.remove('open');
-  showToast('✕ Beillesztés elutasítva – csak a kézzel gépelt szöveg kerül hitelesítésre.');
+    pendingPasteText = '';
+    pendingPasteHtml = '';
+    document.getElementById('paste-modal').classList.remove('open');
+    showToast('✕ Beillesztés elutasítva – csak a kézzel gépelt szöveg kerül hitelesítésre.');
 }
 
-// ══ INICIALIZÁLÁS ══
+
+/* ─────────────────────────────────────────────────────────────
+   3. EDITOR PASTE/CUT/DROP LISTENER INICIALIZÁLÁS
+   FONTOS: ez csak egyszer fut le, DOMContentLoaded-ben.
+   Az editorInit() NEM csinálja meg újra ezeket!
+   ───────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
     const editor = document.getElementById('doc-content-area');
     if (!editor) return;
 
-    // Reset
-    typedChars  = 0;
-    pastedChars = 0;
-    pasteEvents = [];
+    typedChars   = 0;
+    pastedChars  = 0;
+    pasteEvents  = [];
     pasteAllowed = false;
 
-    // PASTE
     editor.addEventListener('paste', function (e) {
         e.preventDefault();
         const text = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
         if (!text.trim()) return;
-
         if (pasteAllowed) {
             insertPastedContent(text);
         } else {
@@ -2937,68 +2943,69 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // CUT
     editor.addEventListener('cut', function () {
         showToast('✂️ Kivágás – a törölt karakterek a javítás-számlálóba kerülnek.');
     });
 
-    // DROP tiltás
     editor.addEventListener('drop', function (e) {
         e.preventDefault();
         showToast('🚫 Fogd-és-ejtés nem engedélyezett.');
     });
 
-    // ESC bezárja a paste modalt
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && document.getElementById('paste-modal')?.classList.contains('open')) {
+        if (e.key === 'Escape' &&
+            document.getElementById('paste-modal')?.classList.contains('open')) {
             denyPaste();
         }
     });
 });
 
 
-
+/* ─────────────────────────────────────────────────────────────
+   4. EDITOR MENTÉS – Hitelesítés & Mentés gomb logikája
+   ───────────────────────────────────────────────────────────── */
 async function editorSave() {
     if (!currentUser) { showToast('❌ Be kell jelentkezni!'); return; }
-    const title     = document.getElementById('doc-title-input')?.value?.trim();
-    const category  = document.getElementById('doc-category')?.value || null;
-    const content   = document.getElementById('doc-content-area')?.innerHTML || '';
+
+    const title    = document.getElementById('doc-title-input')?.value?.trim();
+    const category = document.getElementById('doc-category')?.value || null;
+    const content  = document.getElementById('doc-content-area')?.innerHTML || '';
     const plainText = document.getElementById('doc-content-area')?.innerText || '';
+
     if (!title) { showToast('❌ Add meg a szöveg címét!'); return; }
     if (plainText.trim().split(/\s+/).filter(Boolean).length < 100) {
         showToast('❌ Minimum 100 szó szükséges!'); return;
     }
+
     const btn = document.getElementById('btn-save');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
+
     try {
         const hash = await sha256(plainText);
         const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
         if (!profile) throw new Error('Profil nem található');
-        // ÚJ:
-const plan     = profile.plan || 'free';
-const used     = profile.used_credits || 0;
-const limit    = profile.monthly_credits ?? getPlanMonthlyLimit(plan);
-const unlimited = isPlanUnlimited(plan);
-if (!unlimited && used >= limit) {
-    showToast('❌ Havi keret elérve!');
-    openPricingContact('free_limit');
-    if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
-    return;
-}
+
+        const plan      = profile.plan || 'free';
+        const used      = profile.used_credits || 0;
+        const limit     = profile.monthly_credits ?? getPlanMonthlyLimit(plan);
+        const unlimited = isPlanUnlimited(plan);
+
+        if (!unlimited && used >= limit) {
+            showToast('❌ Havi keret elérve!');
+            openPricingContact('free_limit');
+            if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
+            return;
+        }
+
         const ts    = Date.now().toString(36).toUpperCase();
         const docId = `DOC-${profile.humano_id?.split('-')[1] || 'HMN'}-${ts}`;
+
         const intervals = E.events
             .filter(e => e.type === 'key')
             .map(e => e.interval)
             .filter(v => v && v > 0 && v < 10000);
-        const meanMs = intervals.length
-            ? Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length)
-            : 0;
-        const stddevMs = intervals.length
-            ? Math.round(Math.sqrt(
-                intervals.reduce((s, v) => s + Math.pow(v - meanMs, 2), 0) / intervals.length
-              ))
-            : 0;
+        const meanMs   = intervals.length ? Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length) : 0;
+        const stddevMs = intervals.length ? Math.round(Math.sqrt(intervals.reduce((s, v) => s + Math.pow(v - meanMs, 2), 0) / intervals.length)) : 0;
 
         const processData = {
             keystrokeCount:    E.keys,
@@ -3017,43 +3024,43 @@ if (!unlimited && used >= limit) {
             events:            E.events.slice(-100),
             typedChars,
             pastedChars,
-            typedPct:    Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
-            pastedPct:   Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
-            pasteEvents: pasteEvents.length,
-           entropyCV:         E.entropyCV        || 0,
-            entropyPct:        E.entropyPct       || 0,
-            cfDnaScore:        E.cfDnaScore       || 0,
-            boundaryPauses:    E.boundaryPauses   || 0,
-            midWordPauses:     E.midWordPauses     || 0,
-            nlsCorrelation:    E.nlsCorrelation   || 0,
-            flowPulseScore:    E.flowPulseScore   || 0,
-            microDriftIndex:   E.microDriftIndex  || 0,
-            biologicalEntropy: E.biologicalEntropy || 0,
-            smdScore:          E.smdScore         || 0,
-            tripleLockScore:   E.tripleLockScore  || 0,
+            typedPct:          Math.round((typedChars  / Math.max(1, typedChars + pastedChars)) * 100),
+            pastedPct:         Math.round((pastedChars / Math.max(1, typedChars + pastedChars)) * 100),
+            pasteEvents:       pasteEvents.length,
+            entropyCV:         E.entropyCV         || 0,
+            entropyPct:        E.entropyPct         || 0,
+            cfDnaScore:        E.cfDnaScore         || 0,
+            boundaryPauses:    E.boundaryPauses     || 0,
+            midWordPauses:     E.midWordPauses       || 0,
+            nlsCorrelation:    E.nlsCorrelation     || 0,
+            flowPulseScore:    E.flowPulseScore     || 0,
+            microDriftIndex:   E.microDriftIndex    || 0,
+            biologicalEntropy: E.biologicalEntropy  || 0,
+            smdScore:          E.smdScore           || 0,
+            tripleLockScore:   E.tripleLockScore    || 0,
         };
 
-        const isPublic      = document.getElementById('doc-is-public')?.checked || false;
-const isPublished   = document.getElementById('doc-is-published')?.checked || false;
-const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim() || null;
-      
+        const isPublic     = document.getElementById('doc-is-public')?.checked    || false;
+        const isPublished  = document.getElementById('doc-is-published')?.checked  || false;
+        const publishedUrl = document.getElementById('doc-published-url')?.value?.trim() || null;
+
         const { error } = await queueOrRun(() => db.from('documents').insert({
-            doc_id:       docId,
+            doc_id:        docId,
             title,
             category,
             content,
             hash,
-            author_id:    currentUser.id,
-            author_name:  profile.username || currentUser.email,
+            author_id:     currentUser.id,
+            author_name:   profile.username || currentUser.email,
             is_public:     isPublic,
             is_published:  isPublished,
-          published_url:  publishedUrl,
-            process_data: processData,
-            saved_at:     new Date().toISOString(),
-            created_at:   new Date().toISOString(),
-            ots_pending:  true,
-            version:      1,
-         }));
+            published_url: publishedUrl,
+            process_data:  processData,
+            saved_at:      new Date().toISOString(),
+            created_at:    new Date().toISOString(),
+            ots_pending:   true,
+            version:       1,
+        }));
         if (error) throw error;
 
         await db.from('profiles').update({ used_credits: used + 1 }).eq('id', currentUser.id);
@@ -3061,9 +3068,7 @@ const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim(
         // Timelapse flush
         const prevTempId = E.tempDocId;
         E.certDocId = docId;
-
         if (E.tlBatch.length > 0) await flushTlBatch(docId);
-
         if (prevTempId) {
             const { error: tlError } = await db
                 .from('timelapse_events')
@@ -3076,7 +3081,7 @@ const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim(
         localStorage.removeItem('humano_temp_doc_id');
         clearCurrentDraft();
 
-        // Cert panel
+        // Cert panel frissítése
         document.getElementById('cert-id-val').textContent   = docId;
         document.getElementById('cert-hash-val').textContent = hash;
         document.getElementById('cert-panel').style.display  = 'block';
@@ -3085,18 +3090,18 @@ const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim(
 
         // Paste ratio a cert panelen
         if (pastedChars > 0) {
-            const total = typedChars + pastedChars;
-            const tPct  = Math.round((typedChars / total) * 100);
-            const pPct  = 100 - tPct;
+            const total    = typedChars + pastedChars;
+            const tPct     = Math.round((typedChars / total) * 100);
+            const pPct     = 100 - tPct;
             const certRatio  = document.getElementById('cert-paste-ratio');
             const certTyped  = document.getElementById('cert-typed-pct');
             const certPasted = document.getElementById('cert-pasted-pct');
-            if (certRatio)  certRatio.style.display = 'block';
-            if (certTyped)  certTyped.textContent   = tPct + '%';
-            if (certPasted) certPasted.textContent  = pPct + '%';
+            if (certRatio)  certRatio.style.display  = 'block';
+            if (certTyped)  certTyped.textContent    = tPct + '%';
+            if (certPasted) certPasted.textContent   = pPct + '%';
         }
 
-        // OTS
+        // OTS indítása
         document.getElementById('cert-ots-badge').textContent    = '⛓️ OpenTimestamps – feldolgozás folyamatban...';
         document.getElementById('btn-ots-refresh').style.display = 'inline-flex';
         tsaStamp(hash, docId);
@@ -3105,80 +3110,66 @@ const publishedUrl  = document.getElementById('doc-published-url')?.value?.trim(
         const tlWidget = document.getElementById('tl-widget');
         const tlInput  = document.getElementById('timelapse-doc-input');
         if (tlWidget && tlInput) {
-            tlInput.value = docId;
+            tlInput.value          = docId;
             tlWidget.style.display = 'block';
         }
 
+        // Alkotói Jelenlét összehasonlítás
+        try {
+            const { data: profiles } = await db
+                .from('typing_profiles')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .eq('profile_type', 'composition');
 
-// ── Alkotói Jelenlét összehasonlítás ──
-try {
-    const { data: profiles } = await db
-        .from('typing_profiles')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('profile_type', 'composition');
+            if (profiles && profiles.length > 0) {
+                const baseline        = profiles[0];
+                const currentFeatures = calExtractFeatures(
+                    E.events
+                        .filter(e => e.type === 'key' || e.type === 'delete')
+                        .map(e => ({ type: e.type === 'key' ? 'key' : 'delete', ts: e.ts, interval: e.interval }))
+                );
+                const distance = calProfileDistance(currentFeatures, baseline);
 
-    if (profiles && profiles.length > 0) {
-        const baseline = profiles[0];
-        const currentFeatures = calExtractFeatures(
-            E.events.filter(e => e.type === 'key' || e.type === 'delete')
-                .map(e => ({ type: e.type === 'key' ? 'key' : 'delete', ts: e.ts, interval: e.interval }))
-        );
-        const distance = calProfileDistance(currentFeatures, baseline);
+                let trustLevel, trustColor, trustLabel;
+                if (distance < 0.25) {
+                    trustLevel = 'platinum'; trustColor = '#e8f4ff'; trustLabel = '💎 Platina – tökéletes egyezés a profiloddal';
+                } else if (distance < 0.5) {
+                    trustLevel = 'gold';    trustColor = 'var(--gold)'; trustLabel = '⭐ Arany – erős egyezés a profiloddal';
+                } else if (distance < 0.75) {
+                    trustLevel = 'silver';  trustColor = '#c0c0c0'; trustLabel = '🥈 Ezüst – közepes egyezés a profiloddal';
+                } else {
+                    trustLevel = 'bronze';  trustColor = '#cd7f32'; trustLabel = '🥉 Bronz – gyenge egyezés a profiloddal';
+                }
 
-        // 0 = tökéletes egyezés, 1+ = nagy eltérés
-        let trustLevel, trustColor, trustLabel;
-        if (distance < 0.25) {
-            trustLevel = 'platinum';
-            trustColor = '#e8f4ff';
-            trustLabel = '💎 Platina – tökéletes egyezés a profiloddal';
-        } else if (distance < 0.5) {
-            trustLevel = 'gold';
-            trustColor = 'var(--gold)';
-            trustLabel = '⭐ Arany – erős egyezés a profiloddal';
-        } else if (distance < 0.75) {
-            trustLevel = 'silver';
-            trustColor = '#c0c0c0';
-            trustLabel = '🥈 Ezüst – közepes egyezés a profiloddal';
-        } else {
-            trustLevel = 'bronze';
-            trustColor = '#cd7f32';
-            trustLabel = '🥉 Bronz – gyenge egyezés a profiloddal';
+                await db.from('documents')
+                    .update({ trust_level: trustLevel, trust_distance: distance })
+                    .eq('doc_id', docId);
+
+                const badge = document.getElementById('cert-trust-badge');
+                if (badge) {
+                    badge.style.display     = 'inline-flex';
+                    badge.style.color       = trustColor;
+                    badge.style.borderColor = trustColor;
+                    badge.textContent       = trustLabel;
+                }
+            }
+        } catch (err) {
+            console.warn('Alkotói Jelenlét hiba:', err);
         }
 
-        // Mentés a documents táblába
-        await db.from('documents')
-            .update({ trust_level: trustLevel, trust_distance: distance })
-            .eq('doc_id', docId);
-
-        // Megjelenítés a cert-panelen
-        const badge = document.getElementById('cert-trust-badge');
-        if (badge) {
-            badge.style.display = 'inline-flex';
-            badge.style.color = trustColor;
-            badge.style.borderColor = trustColor;
-            badge.textContent = trustLabel;
-        }
-    }
-} catch (err) {
-    console.warn('Alkotói Jelenlét hiba:', err);
-}
-      
         showToast('✅ Szöveg hitelesítve és mentve!');
+        updateShareButtons(docId, title);
 
-      // Megosztás gombok frissítése
-updateShareButtons(docId, title);
+        const isPublishedChecked = document.getElementById('doc-is-published')?.checked;
+        if (isPublishedChecked) {
+            const shareSection = document.getElementById('share-published-section');
+            if (shareSection) shareSection.style.display = 'block';
+        }
 
-// Ha publikálva van, megjelenik a megosztás szekció
-const isPublishedChecked = document.getElementById('doc-is-published')?.checked;
-if (isPublishedChecked) {
-    const shareSection = document.getElementById('share-published-section');
-    if (shareSection) shareSection.style.display = 'block';
-}
-      const targetEmail = document.getElementById('target-email-input')?.value?.trim();
-if (targetEmail) {
-    setTimeout(() => openSendEmailModal(), 1000);
-}
+        const targetEmail = document.getElementById('target-email-input')?.value?.trim();
+        if (targetEmail) setTimeout(() => openSendEmailModal(), 1000);
+
         await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
         if (btn) btn.textContent = '✅ Hitelesítve';
 
@@ -3189,7 +3180,10 @@ if (targetEmail) {
     }
 }
 
- // Élő entitás modal kezelők
+
+/* ─────────────────────────────────────────────────────────────
+   5. ÉLŐ ENTITÁS – Signal modal kezelők
+   ───────────────────────────────────────────────────────────── */
 document.getElementById('add-signal-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('add-signal-modal'))
         document.getElementById('add-signal-modal').classList.remove('open');
@@ -3213,9 +3207,10 @@ async function submitAddSignal() {
     }
     document.getElementById('add-signal-modal').classList.remove('open');
     document.getElementById('signal-question').value = '';
-    document.getElementById('signal-source').value = '';
-    document.getElementById('signal-url').value = '';
+    document.getElementById('signal-source').value   = '';
+    document.getElementById('signal-url').value      = '';
 }
+
 </script>
 
 
@@ -3402,8 +3397,5 @@ function resumeFromInactivity() {
     showToast('▶ Folytatás – a szünet ideje nem számít bele.');
 }
 </script>
-
 </body>
 </html>
-  
-
