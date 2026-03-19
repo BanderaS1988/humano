@@ -2602,94 +2602,19 @@
 <script src="/living_entity.js"></script>
 <script src="/edu.js"></script>
 
-<!-- =====================================================================
-     BEÉPÍTETT JAVASCRIPT (KIZÁRÓLAG A KÖZVETLENÜL FUTÓ/INICIALIZÁLÓ KÓD)
-     ===================================================================== -->
 <script>
-  // Inicializáló függvények, eseménykezelők, amelyek közvetlenül futnak DOM load után
   document.addEventListener('DOMContentLoaded', function() {
-    // Router inicializálás (ha van ilyen függvény)
-    if (typeof initRouter === 'function') initRouter();
-    
-    // Auth állapot ellenőrzés
-    if (typeof checkAuth === 'function') checkAuth();
-    
-    // Editor inicializálás ha az editor oldal aktív
-    if (document.getElementById('page-editor')?.classList.contains('active')) {
-      if (typeof editorInit === 'function') editorInit();
-    }
-    
-    // ESC billentyű kezelés a modálok bezárásához
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay.open').forEach(modal => {
-          modal.classList.remove('open');
-        });
-      }
-    });
-    
-    // Hamburger menü kezelés
-    document.getElementById('hamburger-btn')?.addEventListener('click', function() {
-      document.getElementById('nav-links').classList.toggle('open');
-    });
-  });
-
-  document.addEventListener('change', function(e) {
-    if (e.target.id === 'paste-consent-check') {
+    document.addEventListener('change', function(e) {
+      if (e.target.id === 'paste-consent-check') {
         const btn = document.getElementById('paste-confirm-btn');
         if (btn) {
-            btn.disabled = !e.target.checked;
-            btn.style.opacity = e.target.checked ? '1' : '.5';
-            btn.style.cursor = e.target.checked ? 'pointer' : 'not-allowed';
+          btn.disabled = !e.target.checked;
+          btn.style.opacity = e.target.checked ? '1' : '.5';
+          btn.style.cursor = e.target.checked ? 'pointer' : 'not-allowed';
         }
-    }
-});
-
-  // Segédfüggvények a modalok kezeléséhez
-  function closeInfoModal() {
-    document.getElementById('info-modal')?.classList.remove('open');
-  }
-
-  function closeSendModal() {
-    document.getElementById('send-modal')?.classList.remove('open');
-  }
-
-  function closeSocialModal() {
-    document.getElementById('social-modal')?.classList.remove('open');
-  }
-
-  function closeMediaModal() {
-    document.getElementById('media-modal')?.classList.remove('open');
-  }
-
-  function closeTlModal() {
-    document.getElementById('tl-modal')?.classList.remove('open');
-  }
-
-  // Inaktivitás kezelő függvények (ha nincsenek a shared JS-ben)
-  function resumeFromInactivity() {
-    document.getElementById('inactivity-modal').classList.remove('open');
-    document.getElementById('inactivity-modal').style.display = 'none';
-    if (typeof window.resumeFromInactivity === 'function') {
-      window.resumeFromInactivity();
-    }
-  }
-
-
-  // Paste modal kezelés
-  function confirmPaste() {
-    document.getElementById('paste-modal').classList.remove('open');
-    if (typeof window.confirmPaste === 'function') {
-      window.confirmPaste();
-    }
-  }
-
-  function denyPaste() {
-    document.getElementById('paste-modal').classList.remove('open');
-    if (typeof window.denyPaste === 'function') {
-      window.denyPaste();
-    }
-  }
+      }
+    });
+  });
 </script>
 </body>
 </html>
