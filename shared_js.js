@@ -219,29 +219,18 @@ async function startEditorFlow() {
         return;
     }
 
-    // 1. LÉPÉS: Consent ellenőrzése
     const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
 
     if (!hasConsent) {
-        // Nincs consent → megmutatjuk a modalt és megállunk.
-        // A folyamat a handleConsentAccept()-ben folytatódik.
         showBiometricConsentModal();
         return;
     }
 
-    // 2. LÉPÉS: Consent megvan → Editor inicializálása
     editorInit();
 
-    // 3. LÉPÉS: Kalibráció ellenőrzése
-    // typeof guard: az index.html script blokkjai később töltődnek
-    // be mint a shared_js.js, ezért ellenőrizzük hogy létezik-e már
     setTimeout(() => {
-        if (typeof checkAndShowCalibrationReminder === 'function') {
-            checkAndShowCalibrationReminder();
-        } else {
-            console.warn('⚠️ checkAndShowCalibrationReminder még nem elérhető');
-        }
-    }, 800);
+        checkAndShowCalibrationReminder();
+    }, 1000);
 }
 
 
@@ -4629,16 +4618,8 @@ function editorInit() {
 
 
 async function checkAndShowCalibrationReminder() {
-    // Ne mutasd ha a felhasználó letiltotta
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-
-    // Ne mutasd ha nincs bejelentkezett felhasználó
     if (!currentUser) return;
-
-    // Ne mutasd ha az editor oldal már nem aktív
-    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
-
-    // Ne mutasd ha valamelyik másik modal már nyitva van
     if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
 
     try {
@@ -4648,24 +4629,12 @@ async function checkAndShowCalibrationReminder() {
             .eq('user_id', currentUser.id)
             .limit(1);
 
-        if (error) {
-            console.warn('Kalibráció ellenőrzési hiba:', error.message);
-            return;
-        }
+        if (error || !data || data.length > 0) return;
 
-        // Ha nincs kalibrációs profil → megmutatjuk az emlékeztetőt
-        if (!data || data.length === 0) {
-            const modal = document.getElementById('cal-reminder-modal');
-            if (modal) {
-                modal.classList.add('open');
-                console.log('✅ Kalibrációs emlékeztető megnyitva');
-            } else {
-                console.warn('⚠️ cal-reminder-modal nem található a DOM-ban');
-            }
-        }
-    } catch (e) {
-        console.warn('Kalibráció ellenőrzési kivétel:', e);
-    }
+        const modal = document.getElementById('cal-reminder-modal');
+        if (modal) modal.classList.add('open');
+
+    } catch (e) { /* silent */ }
 }
 
 
