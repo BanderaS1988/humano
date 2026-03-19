@@ -1325,8 +1325,17 @@ function resetInactivityTimer() {
         if (E.sessionStart) {
             const modal = document.getElementById('inactivity-modal');
             if (modal) {
+                // Előző számláló leállítása ha volt
+                if (window._inactivityInterval) {
+                    clearInterval(window._inactivityInterval);
+                    window._inactivityInterval = null;
+                }
+                // Számláló visszaállítása
+                const durEl = document.getElementById('inactivity-duration');
+                if (durEl) durEl.textContent = '0:00';
+                
                 modal.style.display = 'flex';
-                // Számláló indítása
+                
                 let secs = 0;
                 window._inactivityInterval = setInterval(() => {
                     secs++;
@@ -1337,7 +1346,7 @@ function resetInactivityTimer() {
                 }, 1000);
             }
         }
-    }, 2 * 60 * 1000); // 2 perc
+    }, 2 * 60 * 1000);
 }
 
 function resumeFromInactivity() {
