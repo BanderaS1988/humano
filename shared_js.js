@@ -1192,20 +1192,18 @@ async function checkCalibrationAge() {
 async function checkAndShowCalibrationReminder() {
     console.log('checkAndShowCalibrationReminder lefutott');
     
-    // Ellenőrizzük a végleges tiltást
     const skipForever = localStorage.getItem('humano_cal_skip_forever');
     console.log('humano_cal_skip_forever:', skipForever);
     if (skipForever === '1') {
-        console.log('Kihagyva: véglegesen tiltva');
+        console.log('Kihagyva: localStorage tiltja');
         return;
     }
     
-    // Ellenőrizzük a 3 perces kihagyást
     const lastSkip = localStorage.getItem('humano_cal_last_skip');
     if (lastSkip) {
         const elapsed = Date.now() - parseInt(lastSkip);
-        if (elapsed < 3 * 60 * 1000) { // 3 perc
-            console.log('Kihagyva: 3 percen belül már kihagyta');
+        if (elapsed < 3 * 60 * 1000) {
+            console.log('Kihagyva: 3 percen belül kihagyta');
             return;
         }
     }
@@ -1215,14 +1213,12 @@ async function checkAndShowCalibrationReminder() {
         return;
     }
     
-    // Ellenőrizzük a biometrikus modalt
     const consentModal = document.getElementById('biometric-consent-modal');
     if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) {
         console.log('Kihagyva: biometrikus modal nyitva van');
         return;
     }
     
-    // Ellenőrizzük, hogy az editor oldalon vagyunk-e
     const editorPage = document.getElementById('page-editor')?.classList.contains('active');
     console.log('Editor oldal aktív:', editorPage);
     if (!editorPage) {
@@ -1250,7 +1246,6 @@ async function checkAndShowCalibrationReminder() {
             return;
         }
         
-        // Minden feltétel teljesül, megjelenítjük a modalt
         console.log('Minden feltétel OK, megjelenítem a modalt');
         const modal = document.getElementById('cal-reminder-modal');
         if (!modal) {
@@ -1274,9 +1269,10 @@ function goToCalibration() {
         modal.classList.remove('open');
         modal.style.display = 'none';
     }
-    showToast('✦ Kalibrációs felület – hamarosan elérhető!');
-    setTimeout(() => showPage('dashboard'), 500);
+    showToast('✦ Átirányítás a kalibrációs oldalra...');
+    setTimeout(() => showPage('calibration'), 500);
 }
+
 function skipCalibrationReminder() {
     const checkbox = document.getElementById('cal-dont-show-again');
     
