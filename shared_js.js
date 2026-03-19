@@ -275,10 +275,7 @@ let fvCounts = {};
 let fvVoted = JSON.parse(localStorage.getItem('humano_fv_voted') || '{}');
 
 
-mouseEvents: [],
-mouseCV: 0,
-mouseDriftIndex: 0,
-mouseScore: 0,
+,
 
 const E = {
     // Események és számlálók
@@ -350,7 +347,7 @@ const E = {
     },
     
     // Session
-    sessionBreaks: 0
+    sessionBreaks: 0,
 
     // Egér dinamika
     mouseEvents: [],
