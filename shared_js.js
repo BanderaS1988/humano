@@ -3293,16 +3293,18 @@ async function deleteDoc(id) {
     const { data: doc } = await db.from('documents').select('doc_id,title,author_id,author_name,hash,ots_receipt').eq('doc_id', id).single();
     
     if (doc?.hash) {
-        await db.from('deleted_docs').insert({
-            doc_id: doc.doc_id,
-            title: doc.title,
-            author_id: doc.author_id,
-            author_name: doc.author_name,
-            hash: doc.hash,
-            ots_receipt: doc.ots_receipt || null,
-            deleted_at: new Date().toISOString()
-        }).catch(() => {});
-    }
+    const { error: insertError } = await db.from('deleted_docs').insert({
+        doc_id: doc.doc_id,
+        title: doc.title,
+        author_id: doc.author_id,
+        author_name: doc.author_name,
+        hash: doc.hash,
+        ots_receipt: doc.ots_receipt || null,
+        deleted_at: new Date().toISOString()
+    });
+    // ha nem sikerül beírni a deleted_docs-ba, nem baj, megyünk tovább
+    if (insertError) console.warn('deleted_docs mentési hiba:', insertError);
+}
     
     await db.from('documents').delete().eq('doc_id', id).eq('author_id', currentUser.id);
     allUserDocs = allUserDocs.filter(d => d.doc_id !== id);
