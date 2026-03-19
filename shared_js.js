@@ -5722,8 +5722,14 @@ async function handleConsentAccept() {
         hideBiometricConsentModal();
         showToast('✅ Beleegyezés rögzítve');
 
-        editorInit();
+        // Editor inicializálása
+        const editorEl = document.getElementById('doc-content-area');
+        if (editorEl && !editorEl.dataset.initialized) {
+            editorInit();
+            editorEl.dataset.initialized = 'true';
+        }
 
+        // Kalibrációs modal ellenőrzése 1 másodperc múlva
         setTimeout(() => {
             checkAndShowCalibrationReminder();
         }, 1000);
