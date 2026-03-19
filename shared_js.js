@@ -1232,8 +1232,6 @@ function skipCalibrationReminder() {
 /* ─── 7. EDITOR ────────────────────────────────────────────────────── */
 // editorInit, editorKeyDown, editorUpdateStats, timer, rhythm, humanIndex számítás
 
-let inactivityTimer = null;
-
 function resetInactivityTimer() {
     if (inactivityTimer) clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
