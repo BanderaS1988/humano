@@ -680,7 +680,7 @@ function _onSectionActivated(hash) {
     if (hash === 'roadmap') loadFeatureVotes();
     if (hash === 'publikaciok') loadPublikaciok();
     if (hash === 'editor') {
-    setTimeout(() => {
+    setTimeout(async () => {
         initPulseCanvas();
         checkDraftsOnEditorOpen();
 
@@ -693,8 +693,10 @@ function _onSectionActivated(hash) {
                 E.timerInterval = setInterval(updateEditorTimer, 1000);
             }
             editorSetStatus('recording');
-        } else {
-            startEditorFlow();
+        } else if (!window._editorFlowStarted) {
+            window._editorFlowStarted = true;
+            await startEditorFlow();
+            setTimeout(() => { window._editorFlowStarted = false; }, 1000);
         }
     }, 200);
 }
@@ -2017,6 +2019,10 @@ function editorClear() {
     
     clearInterval(E.timerInterval);
     
+    // Flag reset – új session indítható
+    window._editorInitDone = false;
+    window._editorFlowStarted = false;
+    
     Object.assign(E, {
         events: [], keys: 0, dels: 0, pauses: 0, focusSwitches: 0,
         warns: 0, repeatKeys: 0, sessionStart: null, lastKey: null,
@@ -2066,7 +2072,6 @@ function editorClear() {
         if (el) el.textContent = '–';
     });
 
-    // Hitelesítés gomb visszaállítása
     const btn = document.getElementById('btn-save');
     if (btn) {
         btn.disabled = true;
