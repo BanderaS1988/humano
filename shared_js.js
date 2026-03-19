@@ -4717,7 +4717,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
     ['Entropia', entropyPct + '%'],
 ];
 lines.forEach(([lbl, val], i) => {
-    const ly = y + 13 + i * 4.5; // 5 helyett 4.5 - szorosabb sorok
+    const ly = y + 13 + i * 4.5;
     pdf.setTextColor(100, 80, 30);
     pdf.setFontSize(4);
     pdf.setFont('helvetica', 'normal');
