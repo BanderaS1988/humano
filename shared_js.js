@@ -4717,15 +4717,15 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
                 ['Entropia', entropyPct + '%'],
             ];
             lines.forEach(([lbl, val], i) => {
-                const ly = y + 13 + i * 5;
+                const ly = y + 13 + i * 4.5;
                 pdf.setTextColor(100, 80, 30);
-                pdf.setFontSize(4.5);
+                pdf.setFontSize(4);
                 pdf.setFont('helvetica', 'normal');
                 pdf.text(lbl + ':', rxCol + 3, ly);
                 pdf.setTextColor(200, 190, 160);
-                pdf.setFontSize(5);
+                pdf.setFontSize(4.5);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(String(val), rxCol + 22, ly);
+                pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
             });
             resolve();
 
