@@ -6860,6 +6860,7 @@ window.togglePreview = togglePreview;
 window.togglePublic = togglePublic;
 window.togglePublish = togglePublish;
 window.editorSave = editorSave;
+window.openTlModal = openUnifiedTimelapse;
 
 // Média
 window.openMediaModal = openMediaModal;
