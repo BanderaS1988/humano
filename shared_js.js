@@ -1275,10 +1275,8 @@ function goToCalibration() {
         modal.style.display = 'none';
     }
     showToast('✦ Kalibrációs felület – hamarosan elérhető!');
-    // Amíg nincs kalibrációs oldal, a dashboardra küldjük
     setTimeout(() => showPage('dashboard'), 500);
 }
-
 function skipCalibrationReminder() {
     const checkbox = document.getElementById('cal-dont-show-again');
     
