@@ -1257,6 +1257,7 @@ async function checkAndShowCalibrationReminder() {
         modal.style.display = 'flex';
         modal.classList.add('open');
         console.log('Modal megjelenítve');
+
     } catch (e) {
         console.warn('checkAndShowCalibrationReminder hiba:', e);
     }
@@ -1282,15 +1283,13 @@ function skipCalibrationReminder() {
         localStorage.setItem('humano_cal_last_skip', Date.now().toString());
         showToast('👌 3 perc múlva újra emlékeztetünk');
     }
-    
+
     const modal = document.getElementById('cal-reminder-modal');
     if (modal) {
         modal.classList.remove('open');
         modal.style.display = 'none';
     }
 }
-
-// Globálissá tesszük, hogy az onclick attribútumok megtalálják őket
 
 
 /* ─── 7. EDITOR ────────────────────────────────────────────────────── */
