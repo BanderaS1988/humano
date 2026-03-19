@@ -2096,6 +2096,7 @@ function editorInit() {
     startAutosaveTimer();
     startTlFlushTimer();
    startTipRotation();
+   updatePasteRatio();
 }
 
 async function startEditorFlow() {
