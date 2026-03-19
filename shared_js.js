@@ -1812,14 +1812,17 @@ function editorKeyDown(e) {
     }
     
     if (e.key === 'Backspace' || e.key === 'Delete') {
-        E.dels++;
-        document.getElementById('s-dels').textContent = E.dels;
-        document.getElementById('sidebar-dels').textContent = E.dels;
+    E.dels++;
+    // Arányosan vonja le - ha több beillesztett van, abból vonjon le
+    if (pastedChars > 0) {
+        pastedChars = Math.max(0, pastedChars - 1);
+    } else {
         typedChars = Math.max(0, typedChars - 1);
-        updatePasteRatio();
-        tlRecord('delete');
-        checkTlFlush();
     }
+    updatePasteRatio();
+    tlRecord('delete');
+    checkTlFlush();
+}
     else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.repeat) {
             E.warns++;
@@ -2023,17 +2026,15 @@ function editorInit() {
 
     ta.addEventListener('drop', e => e.preventDefault());
     
-    ta.addEventListener('paste', e => {
+  ta.addEventListener('paste', e => {
     if (!pasteAllowed) {
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
         const html = e.clipboardData.getData('text/html');
         pendingPasteText = text;
         pendingPasteHtml = html;
-        // Modal megnyitása
         const modal = document.getElementById('paste-modal');
         if (modal) {
-            // Checkbox visszaállítása
             const check = document.getElementById('paste-consent-check');
             if (check) check.checked = false;
             const btn = document.getElementById('paste-confirm-btn');
@@ -2047,11 +2048,13 @@ function editorInit() {
         }
         return;
     }
-        
-        pastedChars += e.clipboardData.getData('text/plain').length;
-        updatePasteRatio();
-        tlRecord('paste');
-    });
+
+    const text = e.clipboardData.getData('text/plain');
+    pastedChars += text.length;
+    typedChars = Math.max(0, typedChars - text.length);
+    updatePasteRatio();
+    tlRecord('paste');
+});
 
     ta.addEventListener('input', () => {
         editorUpdateStats();
