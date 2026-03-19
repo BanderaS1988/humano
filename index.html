@@ -2598,22 +2598,6 @@
     }
   }
 
-  // Kalibrációs modal kezelés
-  function goToCalibration() {
-    closeCalReminder();
-    showPage('calibration');
-  }
-
-  function skipCalibrationReminder() {
-    closeCalReminder();
-    if (document.getElementById('cal-dont-show-again').checked) {
-      localStorage.setItem('humano_cal_reminder_hidden', 'true');
-    }
-  }
-
-  function closeCalReminder() {
-    document.getElementById('cal-reminder-modal').classList.remove('open');
-  }
 
   // Paste modal kezelés
   function confirmPaste() {
