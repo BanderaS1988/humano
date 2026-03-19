@@ -6272,7 +6272,58 @@ async function submitPricingForm(e) {
 
 /* ─── 29. INICIALIZÁLÁS (DOMContentLoaded) ──────────────────────── */
 
+// Segédfüggvény a modalok megvárásához
+function waitForModal(modalId, timeout = 3000) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        const checkInterval = setInterval(() => {
+            if (document.getElementById(modalId)) {
+                clearInterval(checkInterval);
+                resolve();
+            } else if (Date.now() - startTime > timeout) {
+                clearInterval(checkInterval);
+                console.warn(`Modal ${modalId} not found after ${timeout}ms`);
+                reject(new Error(`Modal ${modalId} not loaded`));
+            }
+        }, 100);
+    });
+}
+
+// Segédfüggvény az összes modal megvárásához
+async function waitForAllModals() {
+    const modalIds = [
+        'paste-modal',
+        'biometric-consent-modal',
+        'cal-reminder-modal',
+        'inactivity-modal',
+        'tl-modal',
+        'pulse-info-modal',
+        'send-modal',
+        'info-modal',
+        'social-modal',
+        'antibot-modal',
+        'draft-modal',
+        'media-modal',
+        'add-signal-modal'
+    ];
+    
+    console.log('Waiting for modals to load...');
+    const results = await Promise.allSettled(
+        modalIds.map(id => waitForModal(id, 5000))
+    );
+    
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed > 0) {
+        console.warn(`${failed} modals failed to load, but continuing...`);
+    } else {
+        console.log('All modals loaded successfully');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    // Először várjuk meg a modalokat
+    await waitForAllModals();
+    
     if (!navigator.onLine) {
         const banner = document.getElementById('offline-banner');
         if (banner) banner.style.display = 'block';
