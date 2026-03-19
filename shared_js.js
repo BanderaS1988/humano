@@ -174,6 +174,45 @@ function _onSectionActivated(hash) {
 }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   KALIBRÁCIÓS EMLÉKEZTETŐ – shared_js.js-be kerül
+   (NEM az index.html script blokkjába!)
+   ───────────────────────────────────────────────────────────── */
+
+async function checkAndShowCalibrationReminder() {
+    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+    if (!currentUser) return;
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+    if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
+
+    try {
+        const { data, error } = await db
+            .from('typing_profiles')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .limit(1);
+
+        if (error || (data && data.length > 0)) return;
+
+        const modal = document.getElementById('cal-reminder-modal');
+        if (modal) modal.classList.add('open');
+
+    } catch (e) { /* silent */ }
+}
+
+function goToCalibration() {
+    document.getElementById('cal-reminder-modal')?.classList.remove('open');
+    showPage('calibration');
+}
+
+function skipCalibrationReminder() {
+    if (document.getElementById('cal-dont-show-again')?.checked) {
+        localStorage.setItem('humano_cal_skip_forever', '1');
+    }
+    document.getElementById('cal-reminder-modal')?.classList.remove('open');
+}
+
+
 async function startEditorFlow() {
     if (!currentUser) {
         showPage('auth');
@@ -5982,6 +6021,8 @@ window.updateAppealStatus              = updateAppealStatus;
 window.checkAndShowAiActDisclaimer     = checkAndShowAiActDisclaimer;
 window.startEditorFlow                 = startEditorFlow;
 window.checkAndShowCalibrationReminder = checkAndShowCalibrationReminder;
+window.goToCalibration                 = goToCalibration;
+window.skipCalibrationReminder         = skipCalibrationReminder;
 
 
 
