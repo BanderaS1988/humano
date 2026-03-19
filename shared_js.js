@@ -688,8 +688,15 @@ function toggleNav() {
 }
 
 function requireAuth(page) {
-    if (!currentUser) { showPage('auth'); return; }
+    if (!currentUser) { 
+        showPage('auth'); 
+        return; 
+    }
     showPage(page);
+    if (page === 'editor') {
+        // Kis késleltetéssel hívjuk, hogy a DOM biztosan betöltődjön
+        setTimeout(() => startEditorFlow(), 100);
+    }
 }
 
 async function updateNavAuth(user) {
@@ -1972,15 +1979,24 @@ async function startEditorFlow() {
         return;
     }
 
+    // Megvárjuk a beleegyezés ellenőrzését
     const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
 
     if (!hasConsent) {
-        showBiometricConsentModal();
+        // Biztosítjuk, hogy a modal létezik a DOM-ban
+        const modal = document.getElementById('biometric-consent-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('open');
+        } else {
+            console.error('Biometrikus modal nem található!');
+            showToast('❌ Rendszerhiba, próbáld újra!');
+        }
         return;
     }
 
+    // Ha van beleegyezés, inicializáljuk az editort
     editorInit();
-
     setTimeout(() => {
         checkAndShowCalibrationReminder();
     }, 1000);
