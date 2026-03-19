@@ -636,7 +636,6 @@ function _showSection(hash) {
     const editorWasActive = document.getElementById('page-editor')?.classList.contains('active');
     
     if (editorWasActive && hash !== 'editor') {
-        // Elhagyják az editort – számláló megáll, pauseStart feljegyezve
         clearInterval(E.timerInterval);
         E.timerInterval = null;
         if (E.sessionStart && !E._pauseStart) {
