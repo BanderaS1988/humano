@@ -5461,7 +5461,7 @@ async function loadPublikaciok() {
     renderPublikaciok(allPublikaciok);
 }
 
-function filterPublikációk() {
+function filterPublikáaciok() {
     const search = document.getElementById('pub-search')?.value?.toLowerCase() || '';
     const sort = document.getElementById('pub-sort')?.value || 'newest';
 
@@ -6977,7 +6977,7 @@ window.castVote = castVote;
 
 // Publikációk
 window.loadPublikaciok = loadPublikaciok;
-window.filterPublikációk = filterPublikációk;
+window.filterPublikaciok = filterPublikaciok;
 window.toggleLike = toggleLike;
 window.openPublikacio = openPublikacio;
 
