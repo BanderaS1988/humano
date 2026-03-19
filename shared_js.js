@@ -166,14 +166,12 @@ function _onSectionActivated(hash) {
     if (hash === 'publikaciok')    loadPublikaciok();
 
     if (hash === 'editor') {
-        // Kis delay hogy a DOM teljesen renderelődjön
-        setTimeout(() => {
-            initPulseCanvas();
-            checkDraftsOnEditorOpen();
-            // EGYETLEN belépési pont – ez kezeli a consent + init + kalibráció sorrendet
-            startEditorFlow();
-        }, 200);
-    }
+    setTimeout(() => {
+        initPulseCanvas();
+        checkDraftsOnEditorOpen();
+        startEditorFlow();
+    }, 200);
+}
 }
 
 async function startEditorFlow() {
@@ -5204,9 +5202,7 @@ async function openPublikacio(docId) {
 
 /* ─── 27. INICIALIZÁLÁS ─────────────────────────────────────── */
 
-async function checkCalibration() {
-  return;
-}
+
 
 async function checkCalibrationAge() {
     if (!currentUser) return;
@@ -5644,29 +5640,7 @@ const ConsentManager = {
 
 
 
-// EDITOR BETÖLTÉS – Consent ellenőrzéssel + kalibrációs modal
-async function loadEditorWithConsentCheck() {
-  if (!currentUser) {
-    showPage('auth');
-    return;
-  }
 
-  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
-
-  if (!hasConsent) {
-    showBiometricConsentModal();
-    return;
-  }
-
-  // Ha van consent, inicializáljuk az editort
-  if (typeof editorInit === 'function') editorInit();
-  
-  // ITT A HIBA: ezt a setTimeout-ot ki kell venni, mert:
-  // 1. Ha a consent megvolt, a checkCalibrationModal már lefutott az editorInit-ben
-  // 2. Ha a consent nem volt meg, akkor itt nem fut le
-}
-
-// Elfogadás kezelése
 
 
 // ─────────────────────────────────────────────────────────────
