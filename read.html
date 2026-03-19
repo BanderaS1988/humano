@@ -4,22 +4,41 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title id="page-title">HUMANO – Publikáció</title>
-<meta name="description" id="page-desc" content="Hitelesített emberi tartalom – HUMANO"/>
-<meta property="og:title" id="og-title" content="HUMANO – Publikáció"/>
-<meta property="og:description" id="og-desc" content="Hitelesített emberi tartalom – HUMANO"/>
-<meta property="og:image" content="https://humano-hu.vercel.app/og-image.png"/>
-<meta property="og:type" content="article"/>
-<meta property="og:url" id="og-url" content="https://humano-hu.vercel.app"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" id="tw-title" content="HUMANO – Publikáció"/>
-<meta name="twitter:description" id="tw-desc" content="Hitelesített emberi tartalom – HUMANO"/>
-<meta name="twitter:image" content="https://humano-hu.vercel.app/og-image.png"/>
+  <meta name="description" id="page-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+  <meta property="og:title" id="og-title" content="HUMANO – Publikáció"/>
+  <meta property="og:description" id="og-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+  <meta property="og:image" content="https://humano-hu.vercel.app/og-image.png"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:url" id="og-url" content="https://humano-hu.vercel.app"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" id="tw-title" content="HUMANO – Publikáció"/>
+  <meta name="twitter:description" id="tw-desc" content="Hitelesített emberi tartalom – HUMANO"/>
+  <meta name="twitter:image" content="https://humano-hu.vercel.app/og-image.png"/>
   <link rel="stylesheet" href="shared_css.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    article {
+      animation: fadeIn .4s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
 <nav id="nav">
-  <div class="nav-logo gt" onclick="window.location='/'">✦ HUMANO</div>
+  <div class="nav-logo" onclick="window.location='/'" style="cursor:pointer">
+    <img src="/humano-logo.png" alt="HUMANO" style="height:44px;display:block">
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-outline btn-sm" onclick="window.location='/#auth'">Belépés</button>
+  </div>
 </nav>
 
 <div style="max-width:760px;margin:4rem auto;padding:0 2rem">
