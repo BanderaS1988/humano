@@ -4727,6 +4727,7 @@ lines.forEach(([lbl, val], i) => {
     pdf.setFont('helvetica', 'bold');
     pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
 });
+resolve();
         qrImg.onerror = () => {
             pdf.setFillColor(22, 22, 42);
             pdf.roundedRect(PL, y, CW, remainingH, 2, 2, 'FD');
