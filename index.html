@@ -3258,16 +3258,20 @@ async function submitAddSignal() {
 // ── Kalibrációs emlékeztető logika ──
 
 function goToCalibration() {
-  document.getElementById('cal-reminder-modal').classList.remove('open');
-  showPage('calibration');
+    const modal = document.getElementById('cal-reminder-modal');
+    if (modal) modal.classList.remove('open');
+    showPage('calibration');
 }
 
+
 function skipCalibrationReminder() {
-  const dontShow = document.getElementById('cal-dont-show-again')?.checked;
-  if (dontShow) localStorage.setItem('humano_cal_skip_forever', '1');
-  document.getElementById('cal-reminder-modal').classList.remove('open');
-  if (typeof editorInit === 'function') editorInit();
+    const dontShow = document.getElementById('cal-dont-show-again')?.checked;
+    if (dontShow) localStorage.setItem('humano_cal_skip_forever', '1');
+    const modal = document.getElementById('cal-reminder-modal');
+    if (modal) modal.classList.remove('open');
+    // NEM hívunk semmi mást – az editorInit már lefutott!
 }
+
 
 async function checkCalibrationBeforeEditor() {
   // Ne mutasd többé checkbox esetén skip
