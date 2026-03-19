@@ -3258,83 +3258,57 @@ async function submitAddSignal() {
 // ── Kalibrációs emlékeztető logika ──
 
 function goToCalibration() {
-    const modal = document.getElementById('cal-reminder-modal');
-    if (modal) modal.classList.remove('open');
+    document.getElementById('cal-reminder-modal')?.classList.remove('open');
     showPage('calibration');
 }
 
 
+
 function skipCalibrationReminder() {
-    const dontShow = document.getElementById('cal-dont-show-again')?.checked;
-    if (dontShow) localStorage.setItem('humano_cal_skip_forever', '1');
-    const modal = document.getElementById('cal-reminder-modal');
-    if (modal) modal.classList.remove('open');
-    // NEM hívunk semmi mást – az editorInit már lefutott!
-}
-
-
-async function checkCalibrationBeforeEditor() {
-  // Ne mutasd többé checkbox esetén skip
-  if (localStorage.getItem('humano_cal_skip_forever') === '1') return false;
-
-  if (!currentUser) return false;
-
-  try {
-    const { data, error } = await db
-      .from('typing_profiles')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .limit(1);
-
-    if (error) return false;
-    if (data && data.length > 0) return false; // már kalibrált
-
-    return true; // nincs kalibráció → mutasd a modalt
-  } catch (e) {
-    return false;
-  }
-}
-
-// Az eredeti requireAuth('editor') hívást kiegészítjük.
-// Felülírjuk a showPage függvényt úgy, hogy editor esetén ellenőriz.
-const _origShowPage = typeof showPage === 'function' ? showPage : null;
-
-// MutationObserver figyeli, mikor válik aktívvá az editor oldal
-const _calObserver = new MutationObserver(async (mutations) => {
-  for (const m of mutations) {
-    if (
-      m.target.id === 'page-editor' &&
-      m.target.classList.contains('active')
-    ) {
-      const shouldShow = await checkCalibrationBeforeEditor();
-      if (shouldShow) {
-        // Kis késleltetés, hogy az editor teljesen betöltsön
-        setTimeout(() => {
-          document.getElementById('cal-reminder-modal').classList.add('open');
-        }, 600);
-      }
+    if (document.getElementById('cal-dont-show-again')?.checked) {
+        localStorage.setItem('humano_cal_skip_forever', '1');
     }
-  }
-});
+    document.getElementById('cal-reminder-modal')?.classList.remove('open');
+}
+
+
+
+async function checkAndShowCalibrationReminder() {
+    if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+    if (!currentUser) return;
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
+    if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
+
+    try {
+        const { data, error } = await db
+            .from('typing_profiles')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .limit(1);
+
+        if (error || (data && data.length > 0)) return;
+
+        const modal = document.getElementById('cal-reminder-modal');
+        if (modal) modal.classList.add('open');
+
+    } catch (e) { /* silent */ }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
-  const editorPage = document.getElementById('page-editor');
-  if (editorPage) {
-    _calObserver.observe(editorPage, {
-      attributes: true,
-      attributeFilter: ['class']
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' &&
+            document.getElementById('cal-reminder-modal')?.classList.contains('open')) {
+            skipCalibrationReminder();
+        }
     });
-  }
+    document.getElementById('cal-reminder-modal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('cal-reminder-modal')) {
+            skipCalibrationReminder();
+        }
+    });
+});
 
-  // ESC bezárja
-  document.addEventListener('keydown', (e) => {
-    if (
-      e.key === 'Escape' &&
-      document.getElementById('cal-reminder-modal')?.classList.contains('open')
-    ) {
-      skipCalibrationReminder();
-    }
-  });
 
   // Háttérre kattintva bezár
   document.getElementById('cal-reminder-modal')?.addEventListener('click', (e) => {
