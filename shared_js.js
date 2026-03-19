@@ -275,7 +275,7 @@ let fvCounts = {};
 let fvVoted = JSON.parse(localStorage.getItem('humano_fv_voted') || '{}');
 
 
-,
+
 
 const E = {
     // Események és számlálók
