@@ -5673,7 +5673,6 @@ function handleConsentDecline() {
 
 
 
-// Elfogadás kezelése
 async function handleConsentAccept() {
     const btn = document.getElementById('consent-accept-btn');
     if (btn) {
@@ -5686,15 +5685,51 @@ async function handleConsentAccept() {
         hideBiometricConsentModal();
         showToast('✅ Beleegyezés rögzítve');
 
-        // 2. LÉPÉS: Editor inicializálása (consent megvan)
         editorInit();
 
-        // 3. LÉPÉS: Kalibráció ellenőrzése
-        setTimeout(() => {
-            checkAndShowCalibrationReminder();
-        }, 800);
+        // Kalibráció ellenőrzése – hosszabb delay hogy az editorInit biztosan lefusson
+        setTimeout(async () => {
+            console.log('🔍 Kalibráció ellenőrzés indul...');
+
+            if (localStorage.getItem('humano_cal_skip_forever') === '1') {
+                console.log('⏭ Kalibráció skip forever – kihagyva');
+                return;
+            }
+            if (!currentUser) {
+                console.log('❌ Nincs bejelentkezett user');
+                return;
+            }
+
+            try {
+                const { data, error } = await db
+                    .from('typing_profiles')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .limit(1);
+
+                console.log('📊 Kalibráció adat:', data, 'hiba:', error);
+
+                if (error) return;
+
+                if (!data || data.length === 0) {
+                    console.log('✅ Nincs kalibráció – modal nyitása');
+                    const modal = document.getElementById('cal-reminder-modal');
+                    if (modal) {
+                        modal.classList.add('open');
+                        console.log('✅ cal-reminder-modal megnyitva');
+                    } else {
+                        console.warn('⚠️ cal-reminder-modal NEM TALÁLHATÓ a DOM-ban!');
+                    }
+                } else {
+                    console.log('✅ Van kalibráció – nem kell modal');
+                }
+            } catch (e) {
+                console.warn('❌ Kalibráció ellenőrzési hiba:', e);
+            }
+        }, 1000);
 
     } catch (err) {
+        console.error('❌ Consent rögzítési hiba:', err);
         showToast('❌ Hiba: ' + err.message);
         if (btn) {
             btn.disabled = false;
