@@ -3288,8 +3288,19 @@ async function newVersion(parentDocId) {
         document.getElementById('e-word-warn').style.display = 'none';
         
         clearInterval(E.timerInterval);
-        Object.assign(E, { events: [], keys: 0, dels: 0, pauses: 0, focusSwitches: 0, warns: 0, sessionStart: null, lastKey: null, certDocId: null, certTitle: null, certHash: null, pulseHistory: [] });
-        
+  Object.assign(E, {
+        events: [], keys: 0, dels: 0, pauses: 0, focusSwitches: 0,
+        warns: 0, repeatKeys: 0, sessionStart: null, lastKey: null,
+        certDocId: null, certTitle: null, certHash: null, pulseHistory: [],
+        tlBatch: [], tempDocId: null,
+        cfDnaScore: 0, boundaryPauses: 0, midWordPauses: 0,
+        nlsCorrelation: 0, flowPulseScore: 0,
+        microDriftIndex: 0, biologicalEntropy: 0,
+        smdScore: 0, tripleLockScore: 0,
+        totalPausedMs: 0, _pauseStart: null,
+        mouseEvents: [], mouseCV: 0, mouseDriftIndex: 0,
+        mouseScore: 0, mouseClicks: 0, mouseSpeeds: []
+    });        
         editorSetStatus('idle');
         editorUpdateStats();
         editorCheckSave();
