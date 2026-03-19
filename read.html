@@ -14,13 +14,40 @@
   <meta name="twitter:title" id="tw-title" content="HUMANO – Publikáció"/>
   <meta name="twitter:description" id="tw-desc" content="Hitelesített emberi tartalom – HUMANO"/>
   <meta name="twitter:image" content="https://humano-hu.vercel.app/og-image.png"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <link rel="stylesheet" href="shared_css.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --surface2: #13131a;
+      --surface3: #1a1a24;
+      --border: rgba(255,255,255,.08);
+      --text: #f0ece4;
+      --muted: #7a7080;
+      --muted2: #4a4555;
+      --gold: #c9a84c;
+      --gold2: #f0d070;
+      --gold3: #a07830;
+      --gold4: rgba(201,168,76,.2);
+      --success: #4ab870;
+      --danger: #e05555;
+      --r: 12px;
+      --r-sm: 8px;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
     body {
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      font-family: 'Outfit', sans-serif;
     }
     article {
       animation: fadeIn .4s ease;
@@ -32,6 +59,7 @@
   </style>
 </head>
 <body>
+
 <nav id="nav">
   <div class="nav-logo" onclick="window.location='/'" style="cursor:pointer">
     <img src="/humano-logo.png" alt="HUMANO" style="height:44px;display:block">
@@ -55,10 +83,10 @@
                  margin-bottom:.75rem;line-height:1.3" id="r-title"></h1>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <span style="font-size:.85rem;color:var(--muted)" id="r-author"></span>
-<a id="r-published-url" href="#" target="_blank" 
-   style="display:none;font-size:.82rem;color:var(--gold);text-decoration:none">
-   🔗 Megjelent itt →
-</a>
+        <a id="r-published-url" href="#" target="_blank"
+           style="display:none;font-size:.82rem;color:var(--gold);text-decoration:none">
+           🔗 Megjelent itt →
+        </a>
         <span style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);
                      border-radius:20px;padding:.2rem .75rem;font-size:.78rem;
                      color:var(--gold)" id="r-human-score"></span>
@@ -110,7 +138,7 @@
       </div>
       <div id="r-comments-list" style="margin-bottom:1rem"></div>
       <div id="r-comment-form">
-        <textarea id="r-comment-input" class="form-control" 
+        <textarea id="r-comment-input" class="form-control"
                   style="min-height:80px;margin-bottom:.5rem"
                   placeholder="Írj hozzászólást..."></textarea>
         <button class="btn btn-gold btn-sm" onclick="submitComment()">
@@ -142,8 +170,8 @@ const db = createClient(
   'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so'
 );
 
-let readDocId   = null;
-let readLiked   = false;
+let readDocId = null;
+let readLiked = false;
 
 async function loadReadPage() {
     const loadingEl = document.getElementById('read-loading');
@@ -168,22 +196,18 @@ async function loadReadPage() {
         return;
     }
 
-    // Megtekintés rögzítése
     await db.from('doc_views').insert({ doc_id: docId });
 
-    // Lájkok
     const { count: likeCount } = await db
         .from('doc_likes')
         .select('*', { count: 'exact', head: true })
         .eq('doc_id', docId);
 
-    // Megtekintések
     const { count: viewCount } = await db
         .from('doc_views')
         .select('*', { count: 'exact', head: true })
         .eq('doc_id', docId);
 
-    // Saját lájk
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) {
         const { data: myLike } = await db
@@ -195,82 +219,71 @@ async function loadReadPage() {
         readLiked = !!myLike;
     }
 
-    // Megjelenítés
-    loadingEl.style.display  = 'none';
+    loadingEl.style.display = 'none';
     document.getElementById('read-content').style.display = 'block';
 
     const pd = doc.process_data || {};
 
     const pageTitle = `${doc.title || 'Publikáció'} – HUMANO`;
-const pageDesc  = `${doc.author_name || 'Szerző'} hitelesített cikke – ${pd.humanIndex || 0}% Human Score | HUMANO`;
-const pageUrl   = `https://humano-hu.vercel.app/read/${docId}`;
+    const pageDesc  = `${doc.author_name || 'Szerző'} hitelesített cikke – ${pd.humanIndex || 0}% Human Score | HUMANO`;
+    const pageUrl   = `https://humano-hu.vercel.app/read/${docId}`;
 
-document.title = pageTitle;
-document.getElementById('page-desc').content  = pageDesc;
-document.getElementById('og-title').content   = pageTitle;
-document.getElementById('og-desc').content    = pageDesc;
-document.getElementById('og-url').content     = pageUrl;
-document.getElementById('tw-title').content   = pageTitle;
-document.getElementById('tw-desc').content    = pageDesc;
+    document.title = pageTitle;
+    document.getElementById('page-desc').content = pageDesc;
+    document.getElementById('og-title').content  = pageTitle;
+    document.getElementById('og-desc').content   = pageDesc;
+    document.getElementById('og-url').content    = pageUrl;
+    document.getElementById('tw-title').content  = pageTitle;
+    document.getElementById('tw-desc').content   = pageDesc;
+
     document.getElementById('r-date').textContent = new Date(doc.created_at)
         .toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('r-title').textContent   = doc.title || 'Névtelen';
-    document.getElementById('r-author').textContent  = '✍️ ' + (doc.author_name || '–');
-  const pubUrlEl = document.getElementById('r-published-url');
-if (doc.published_url && pubUrlEl) {
-    pubUrlEl.href        = doc.published_url;
-    pubUrlEl.style.display = 'inline';
-    pubUrlEl.textContent = '🔗 Megjelent itt: ' + doc.published_url;
-}
-    document.getElementById('r-human-score').textContent = `⚡ ${pd.humanIndex || 0}% Human Score`;
-    document.getElementById('r-body').innerHTML      = doc.content || '';
-    document.getElementById('r-hash').textContent    = doc.hash || '–';
-    document.getElementById('r-like-count').textContent = likeCount || 0;
-    document.getElementById('r-view-count').textContent = viewCount || 0;
+    document.getElementById('r-title').textContent  = doc.title || 'Névtelen';
+    document.getElementById('r-author').textContent = '✍️ ' + (doc.author_name || '–');
 
-    // Lájk gomb
+    const pubUrlEl = document.getElementById('r-published-url');
+    if (doc.published_url && pubUrlEl) {
+        pubUrlEl.href         = doc.published_url;
+        pubUrlEl.style.display = 'inline';
+        pubUrlEl.textContent  = '🔗 Megjelent itt: ' + doc.published_url;
+    }
+
+    document.getElementById('r-human-score').textContent    = `⚡ ${pd.humanIndex || 0}% Human Score`;
+    document.getElementById('r-body').innerHTML              = doc.content || '';
+    document.getElementById('r-hash').textContent           = doc.hash || '–';
+    document.getElementById('r-like-count').textContent     = likeCount || 0;
+    document.getElementById('r-view-count').textContent     = viewCount || 0;
+
     updateLikeBtn();
 
-    // Biometrikus adatok
     const BIO = [
-        { label: 'Leütések',     val: pd.keystrokeCount },
-        { label: 'Javítások',    val: pd.deletionCount },
-        { label: 'Szünetek',     val: pd.pauseCount },
-        { label: 'Humán Index',  val: pd.humanIndex ? pd.humanIndex + '%' : null },
-        { label: 'Írási idő',    val: pd.sessionDurationMs ? Math.round(pd.sessionDurationMs / 60000) + ' perc' : null },
+        { label: 'Leütések',  val: pd.keystrokeCount },
+        { label: 'Javítások', val: pd.deletionCount },
+        { label: 'Szünetek',  val: pd.pauseCount },
+        { label: 'Humán Index', val: pd.humanIndex ? pd.humanIndex + '%' : null },
+        { label: 'Írási idő', val: pd.sessionDurationMs ? Math.round(pd.sessionDurationMs / 60000) + ' perc' : null },
     ];
     document.getElementById('r-biometric').innerHTML = BIO.map(b => `
-        <div style="background:var(--surface2);border-radius:var(--r-sm);
-                    padding:.65rem;text-align:center">
-            <div style="font-family:var(--font-display);font-size:1.3rem;
-                        font-weight:700;color:var(--gold)">${b.val ?? '–'}</div>
-            <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono);
-                        text-transform:uppercase;margin-top:.2rem">${b.label}</div>
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.65rem;text-align:center">
+            <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold)">${b.val ?? '–'}</div>
+            <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;margin-top:.2rem">${b.label}</div>
         </div>`).join('');
 
-    // OTS
     document.getElementById('r-ots').innerHTML = doc.ots_receipt
         ? '<span style="background:rgba(74,184,112,.1);border:1px solid rgba(74,184,112,.25);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:#4ab870">⛓️ Bitcoin blokkláncon rögzítve ✓</span>'
         : '<span style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:var(--r-sm);padding:.5rem 1rem;font-size:.82rem;color:var(--gold3)">⏳ Blokklánc rögzítés folyamatban</span>';
 
-    // Megosztás gombok
-    const readUrl = `https://humano-hu.vercel.app/share/${docId}`;
+    const readUrl   = `https://humano-hu.vercel.app/read/${docId}`;
     const shareText = encodeURIComponent(`${doc.title} – Hitelesített emberi tartalom\n${readUrl}`);
     document.getElementById('r-share-btns').innerHTML = `
-        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(readUrl)}" 
-           target="_blank" class="btn btn-outline btn-sm">Facebook</a>
-        <a href="https://twitter.com/intent/tweet?text=${shareText}" 
-           target="_blank" class="btn btn-outline btn-sm">Twitter/X</a>
-        <a href="https://wa.me/?text=${shareText}" 
-           target="_blank" class="btn btn-outline btn-sm">WhatsApp</a>
-        <a href="https://t.me/share/url?url=${encodeURIComponent(readUrl)}&text=${encodeURIComponent(doc.title)}" 
-           target="_blank" class="btn btn-outline btn-sm">Telegram</a>
-        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(readUrl)}" 
-           target="_blank" class="btn btn-outline btn-sm">LinkedIn</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(readUrl)}" target="_blank" class="btn btn-outline btn-sm">Facebook</a>
+        <a href="https://twitter.com/intent/tweet?text=${shareText}" target="_blank" class="btn btn-outline btn-sm">Twitter/X</a>
+        <a href="https://wa.me/?text=${shareText}" target="_blank" class="btn btn-outline btn-sm">WhatsApp</a>
+        <a href="https://t.me/share/url?url=${encodeURIComponent(readUrl)}&text=${encodeURIComponent(doc.title)}" target="_blank" class="btn btn-outline btn-sm">Telegram</a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(readUrl)}" target="_blank" class="btn btn-outline btn-sm">LinkedIn</a>
         <button class="btn btn-gold btn-sm" onclick="copyReadLink()">🔗 Link másolása</button>
     `;
 
-    // Kommentek betöltése
     loadComments();
 }
 
@@ -319,10 +332,8 @@ async function loadComments() {
     }
 
     el.innerHTML = data.map(c => `
-        <div style="background:var(--surface2);border-radius:var(--r-sm);
-                    padding:.75rem 1rem;margin-bottom:.5rem">
-            <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono);
-                        margin-bottom:.35rem">${c.username || 'Névtelen'} · ${new Date(c.created_at).toLocaleDateString('hu-HU')}</div>
+        <div style="background:var(--surface2);border-radius:var(--r-sm);padding:.75rem 1rem;margin-bottom:.5rem">
+            <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.35rem">${c.username || 'Névtelen'} · ${new Date(c.created_at).toLocaleDateString('hu-HU')}</div>
             <div style="font-size:.88rem;color:var(--text);line-height:1.7">${c.content}</div>
         </div>`).join('');
 }
@@ -331,7 +342,7 @@ async function submitComment() {
     const { data: { session } } = await db.auth.getSession();
     if (!session) { alert('Kommentáláshoz be kell jelentkezni!'); return; }
 
-    const input = document.getElementById('r-comment-input');
+    const input   = document.getElementById('r-comment-input');
     const content = input?.value?.trim();
     if (!content) return;
 
