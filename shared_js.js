@@ -274,9 +274,6 @@ const _tlTextCache = { idx: -1, text: '' };
 let fvCounts = {};
 let fvVoted = JSON.parse(localStorage.getItem('humano_fv_voted') || '{}');
 
-
-
-
 const E = {
     // Események és számlálók
     events: [],
