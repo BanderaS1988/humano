@@ -739,8 +739,10 @@ function requireAuth(page) {
         return;
     }
     showPage(page);
+    if (page === 'editor') {
+        setTimeout(() => startEditorFlow(), 100);
+    }
 }
-
 async function updateNavAuth(user) {
     const nu = document.getElementById('nav-user');
     const nb = document.getElementById('nav-auth-btn');
