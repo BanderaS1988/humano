@@ -1372,14 +1372,19 @@ function resetInactivityTimer() {
         if (E.sessionStart) {
             const modal = document.getElementById('inactivity-modal');
             if (modal) {
-                // Előző számláló leállítása ha volt
                 if (window._inactivityInterval) {
                     clearInterval(window._inactivityInterval);
                     window._inactivityInterval = null;
                 }
-                // Számláló visszaállítása
                 const durEl = document.getElementById('inactivity-duration');
                 if (durEl) durEl.textContent = '0:00';
+                
+                // Timer megállítása és pauseStart feljegyzése
+                clearInterval(E.timerInterval);
+                E.timerInterval = null;
+                if (!E._pauseStart) {
+                    E._pauseStart = Date.now();
+                }
                 
                 modal.style.display = 'flex';
                 
@@ -1395,6 +1400,7 @@ function resetInactivityTimer() {
         }
     }, 2 * 60 * 1000);
 }
+
 
 function resumeFromInactivity() {
     const modal = document.getElementById('inactivity-modal');
