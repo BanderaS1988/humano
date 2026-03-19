@@ -633,11 +633,15 @@ function showPage(page) {
 }
 
 function _showSection(hash) {
-    // Ha elhagyják az editor oldalt, állítsd le a számlálót
     const editorWasActive = document.getElementById('page-editor')?.classList.contains('active');
+    
     if (editorWasActive && hash !== 'editor') {
+        // Elhagyják az editort – számláló megáll, pauseStart feljegyezve
         clearInterval(E.timerInterval);
         E.timerInterval = null;
+        if (E.sessionStart && !E._pauseStart) {
+            E._pauseStart = Date.now();
+        }
     }
 
     document.getElementById('nav-links')?.classList.remove('open');
@@ -678,9 +682,19 @@ function _onSectionActivated(hash) {
     setTimeout(() => {
         initPulseCanvas();
         checkDraftsOnEditorOpen();
-        // Ha már van aktív session, indítsd újra a timert
-        if (E.sessionStart && !E.timerInterval) {
-            E.timerInterval = setInterval(updateEditorTimer, 1000);
+        
+        // Ha volt aktív session és el volt hagyva az oldal
+        if (E.sessionStart) {
+            // Pauze idő hozzáadása
+            if (E._pauseStart) {
+                E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+                E._pauseStart = null;
+            }
+            // Timer újraindítása
+            if (!E.timerInterval) {
+                E.timerInterval = setInterval(updateEditorTimer, 1000);
+            }
+            editorSetStatus('recording');
         }
     }, 200);
 }
@@ -2169,21 +2183,31 @@ function editorInit() {
     if (!window._visibilityListenerAdded) {
         window._visibilityListenerAdded = true;
         document.addEventListener('visibilitychange', () => {
-            if (!E.sessionStart) return;
-            if (document.hidden) {
-                E._pauseStart = Date.now();
-                E.focusSwitches++;
-                const sfEl = document.getElementById('s-focus');
-                const sbfEl = document.getElementById('sidebar-focus');
-                if (sfEl) sfEl.textContent = E.focusSwitches;
-                if (sbfEl) sbfEl.textContent = E.focusSwitches;
-            } else {
-                if (E._pauseStart) {
-                    E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
-                    E._pauseStart = null;
-                }
-            }
-        });
+    if (!E.sessionStart) return;
+    
+    // Csak akkor kezeljük ha az editor oldal aktív
+    const editorActive = document.getElementById('page-editor')?.classList.contains('active');
+    if (!editorActive) return;
+    
+    if (document.hidden) {
+        E._pauseStart = Date.now();
+        E.focusSwitches++;
+        clearInterval(E.timerInterval);
+        E.timerInterval = null;
+        const sfEl = document.getElementById('s-focus');
+        const sbfEl = document.getElementById('sidebar-focus');
+        if (sfEl) sfEl.textContent = E.focusSwitches;
+        if (sbfEl) sbfEl.textContent = E.focusSwitches;
+    } else {
+        if (E._pauseStart) {
+            E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+            E._pauseStart = null;
+        }
+        if (!E.timerInterval) {
+            E.timerInterval = setInterval(updateEditorTimer, 1000);
+        }
+    }
+});
     }
 
     if (!window._selectionListenerAdded) {
