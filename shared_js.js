@@ -847,10 +847,10 @@ function hideBiometricConsentModal() {
 
 async function handleConsentDecline() {
     hideBiometricConsentModal();
-    // Kiírjuk, hogy miért nem tud továbblépni
-    showToast('❌ A hitelesítési funkció használatához el kell fogadnod a biometrikus adatok kezelését.');
-    // Visszairányítjuk a főoldalra vagy a dashboardra
-    setTimeout(() => showPage('dashboard'), 1500);
+    // Egyszerű alert a biztos megjelenítésért
+    alert('❌ A hitelesítési funkció használatához el kell fogadnod a biometrikus adatok kezelését.');
+    // Visszairányítjuk a főoldalra
+    setTimeout(() => showPage('landing'), 500);
 }
 
 async function handleConsentAccept() {
@@ -863,8 +863,8 @@ async function handleConsentAccept() {
     try {
         await ConsentManager.record('keystroke_dynamics');
         hideBiometricConsentModal();
-        // Sikeres elfogadás után pozitív visszajelzés
-        showToast('✅ Biometrikus beleegyezés elfogadva – most már hitelesíthetsz!');
+        // Sikeres elfogadás után alert
+        alert('✅ Biometrikus beleegyezés elfogadva – most már hitelesíthetsz!');
         
         showPage('editor');
         
@@ -880,7 +880,7 @@ async function handleConsentAccept() {
 
     } catch (err) {
         console.error('❌ Consent rögzítési hiba:', err);
-        showToast('❌ Hiba: ' + err.message);
+        alert('❌ Hiba: ' + err.message);
         if (btn) {
             btn.disabled = false;
             btn.textContent = '✦ Elfogadom';
