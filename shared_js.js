@@ -5982,19 +5982,26 @@ async function checkAndShowAiActDisclaimer(docId) {
 // GLOBÁLIS FÜGGVÉNYEK – Window objektumra kötés
 // ─────────────────────────────────────────────────────────────
 
-window.ConsentManager = ConsentManager;
-window.loadEditorWithConsentCheck = loadEditorWithConsentCheck;
-window.showBiometricConsentModal = showBiometricConsentModal;
-window.hideBiometricConsentModal = hideBiometricConsentModal;
-window.handleConsentAccept = handleConsentAccept;
-window.handleConsentDecline = handleConsentDecline;
-window.submitAppeal = submitAppeal;
-window.loadConsentSettings = loadConsentSettings;
-window.revokeConsent = revokeConsent;
-window.reGrantConsent = reGrantConsent;
-window.loadAppeals = loadAppeals;
-window.updateAppealStatus = updateAppealStatus;
-window.checkAndShowAiActDisclaimer = checkAndShowAiActDisclaimer;
+
+
+window.ConsentManager                  = ConsentManager;
+window.loadEditorWithConsentCheck      = loadEditorWithConsentCheck;  // ha még bent van, különben töröld
+window.showBiometricConsentModal       = showBiometricConsentModal;
+window.hideBiometricConsentModal       = hideBiometricConsentModal;
+window.handleConsentAccept             = handleConsentAccept;
+window.handleConsentDecline            = handleConsentDecline;
+window.submitAppeal                    = submitAppeal;
+window.loadConsentSettings             = loadConsentSettings;
+window.revokeConsent                   = revokeConsent;
+window.reGrantConsent                  = reGrantConsent;
+window.loadAppeals                     = loadAppeals;
+window.updateAppealStatus              = updateAppealStatus;
+window.checkAndShowAiActDisclaimer     = checkAndShowAiActDisclaimer;
+// ↓ ÚJ – ide kerülnek:
+window.startEditorFlow                 = startEditorFlow;
+window.checkAndShowCalibrationReminder = checkAndShowCalibrationReminder;
+window.goToCalibration                 = goToCalibration;
+window.skipCalibrationReminder         = skipCalibrationReminder;
 
 
 
