@@ -1,3 +1,5 @@
+console.log('SHARED.JS BETÖLTÖTT');
+
 /* ============================================================
    HUMANO – shared.js (STRUKTURÁLT VERZIÓ)
    Mesterverzió 2026 – Minden egy helyen, áttekinthetően, hibátlanul
