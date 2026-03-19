@@ -1406,20 +1406,28 @@ function resumeFromInactivity() {
     const modal = document.getElementById('inactivity-modal');
     if (modal) modal.style.display = 'none';
     
-    // Számláló leállítása
     if (window._inactivityInterval) {
         clearInterval(window._inactivityInterval);
         window._inactivityInterval = null;
     }
+
+    // ✅ Szünet idejének hozzáadása
+    if (E._pauseStart) {
+        E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+        E._pauseStart = null;
+    }
+
+    // ✅ Timer újraindítása
+    if (E.sessionStart && !E.timerInterval) {
+        E.timerInterval = setInterval(updateEditorTimer, 1000);
+    }
     
-    // Ablakváltás növelése
     E.focusSwitches++;
     const sfEl = document.getElementById('s-focus');
     const sbfEl = document.getElementById('sidebar-focus');
     if (sfEl) sfEl.textContent = E.focusSwitches;
     if (sbfEl) sbfEl.textContent = E.focusSwitches;
     
-    // Timer reset
     resetInactivityTimer();
     showToast('▶ Folytatás – jó írást!');
 }
