@@ -184,20 +184,24 @@ async function startEditorFlow() {
     const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
 
     if (!hasConsent) {
-        // Megmutatjuk a consent modalt, és MEGÁLLUNK.
-        // A folyamat az "Elfogadom" gombra kattintás után folytatódik
-        // a handleConsentAccept() függvényen keresztül.
+        // Nincs consent → megmutatjuk a modalt és megállunk.
+        // A folyamat a handleConsentAccept()-ben folytatódik.
         showBiometricConsentModal();
         return;
     }
 
     // 2. LÉPÉS: Consent megvan → Editor inicializálása
-    // Az editorInit() NEM tartalmaz kalibrációs hívást!
     editorInit();
 
-    // 3. LÉPÉS: Kalibráció ellenőrzése (rövid delay az editor betöltése után)
+    // 3. LÉPÉS: Kalibráció ellenőrzése
+    // typeof guard: az index.html script blokkjai később töltődnek
+    // be mint a shared_js.js, ezért ellenőrizzük hogy létezik-e már
     setTimeout(() => {
-        checkAndShowCalibrationReminder();
+        if (typeof checkAndShowCalibrationReminder === 'function') {
+            checkAndShowCalibrationReminder();
+        } else {
+            console.warn('⚠️ checkAndShowCalibrationReminder még nem elérhető');
+        }
     }, 800);
 }
 
@@ -5685,46 +5689,16 @@ async function handleConsentAccept() {
         hideBiometricConsentModal();
         showToast('✅ Beleegyezés rögzítve');
 
+        // Editor inicializálása
         editorInit();
 
-        // Kalibráció ellenőrzése – hosszabb delay hogy az editorInit biztosan lefusson
-        setTimeout(async () => {
-            console.log('🔍 Kalibráció ellenőrzés indul...');
-
-            if (localStorage.getItem('humano_cal_skip_forever') === '1') {
-                console.log('⏭ Kalibráció skip forever – kihagyva');
-                return;
-            }
-            if (!currentUser) {
-                console.log('❌ Nincs bejelentkezett user');
-                return;
-            }
-
-            try {
-                const { data, error } = await db
-                    .from('typing_profiles')
-                    .select('id')
-                    .eq('user_id', currentUser.id)
-                    .limit(1);
-
-                console.log('📊 Kalibráció adat:', data, 'hiba:', error);
-
-                if (error) return;
-
-                if (!data || data.length === 0) {
-                    console.log('✅ Nincs kalibráció – modal nyitása');
-                    const modal = document.getElementById('cal-reminder-modal');
-                    if (modal) {
-                        modal.classList.add('open');
-                        console.log('✅ cal-reminder-modal megnyitva');
-                    } else {
-                        console.warn('⚠️ cal-reminder-modal NEM TALÁLHATÓ a DOM-ban!');
-                    }
-                } else {
-                    console.log('✅ Van kalibráció – nem kell modal');
-                }
-            } catch (e) {
-                console.warn('❌ Kalibráció ellenőrzési hiba:', e);
+        // Kalibráció ellenőrzése – typeof guard, mert az index.html
+        // script blokkjai később töltődnek be mint a shared_js.js
+        setTimeout(() => {
+            if (typeof checkAndShowCalibrationReminder === 'function') {
+                checkAndShowCalibrationReminder();
+            } else {
+                console.warn('⚠️ checkAndShowCalibrationReminder még nem elérhető');
             }
         }, 1000);
 
@@ -5737,7 +5711,6 @@ async function handleConsentAccept() {
         }
     }
 }
-
 
 
 // ─────────────────────────────────────────────────────────────
