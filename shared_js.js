@@ -752,6 +752,60 @@ function updateHeroCta(user) {
 /* ─── 6. KALIBRÁCIÓ ÉS CONSENT KEZELÉS ─────────────────────────────── */
 // ConsentManager, kalibrációs modal, checkAndShowCalibrationReminder
 
+function openEntropyInfo() {
+    openInfoModal(
+        '⚡ Ritmus-entrópia – Mi ez?',
+        `<p style="line-height:1.8;margin-bottom:1rem">A ritmus-entrópia a gépelési intervallumok <strong style="color:var(--gold)">változatosságát</strong> méri.</p>
+        <ul style="line-height:2;margin-left:1.25rem;color:var(--muted);font-size:.88rem">
+            <li><strong style="color:var(--text)">Alacsony entrópia</strong> – egyenletes, gépies ritmus → AI-ra utal</li>
+            <li><strong style="color:var(--text)">Közepes entrópia</strong> – vegyes ritmus, emberi jellegű</li>
+            <li><strong style="color:var(--text)">Magas entrópia</strong> – változatos, természetes emberi ritmus ✓</li>
+        </ul>
+        <p style="font-size:.82rem;color:var(--muted);margin-top:1rem">Az emberi agy gondolkodás közben természetesen változtatja a gépelési sebességet – ez mérhető és hamisíthatatlan.</p>`
+    );
+}
+
+function openTripleLockInfo() {
+    openInfoModal(
+        '💎 Triple-Lock Kognitív Jelenlét – Mi ez?',
+        `<p style="line-height:1.8;margin-bottom:1rem">Három független algoritmus méri párhuzamosan az emberi alkotás mélységét:</p>
+        <ul style="line-height:2;margin-left:1.25rem;color:var(--muted);font-size:.88rem">
+            <li><strong style="color:var(--gold)">🧠 CF-DNA – Gondolkodási szünetek</strong><br>
+            Mondathatárokon (.!?,) természetes szüneteket tart-e az alkotó?</li>
+            <li><strong style="color:var(--gold)">✍️ NLS – Alkotói hév</strong><br>
+            A szókomplexitás és gépelési sebesség korrelációja – hosszabb szavaknál lassul-e?</li>
+            <li><strong style="color:var(--gold)">🫀 SMD – Biológiai ritmus</strong><br>
+            Mikroingadozások a billentyűleütések között – az emberi kéz természetes tremora.</li>
+        </ul>
+        <p style="font-size:.82rem;color:var(--muted);margin-top:1rem">A három mutató együttes értéke adja a végső Kognitív Jelenlét pontszámot.</p>`
+    );
+}
+
+function openAppealDetail(appealId) {
+    openInfoModal(
+        '⚖️ Fellebbezés kezelése',
+        `<div style="display:flex;flex-direction:column;gap:.75rem">
+            <div class="form-group">
+                <label class="form-label">Státusz módosítása</label>
+                <select class="form-control" id="appeal-status-select">
+                    <option value="pending">Folyamatban</option>
+                    <option value="resolved">Megoldva</option>
+                    <option value="rejected">Elutasítva</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Admin megjegyzés</label>
+                <textarea class="form-control" id="appeal-admin-notes" style="min-height:80px" placeholder="Megjegyzés..."></textarea>
+            </div>
+            <button class="btn btn-gold" onclick="updateAppealStatus('${appealId}', document.getElementById('appeal-status-select').value, document.getElementById('appeal-admin-notes').value);closeInfoModal()">
+                ✦ Mentés
+            </button>
+        </div>`
+    );
+}
+
+
+
 const ConsentManager = {
     async hasActive(consentType = 'keystroke_dynamics') {
         if (!currentUser) return false;
@@ -1190,106 +1244,73 @@ async function checkCalibrationAge() {
 }
 
 async function checkAndShowCalibrationReminder() {
-    console.log('checkAndShowCalibrationReminder lefutott');
-    
     const skipForever = localStorage.getItem('humano_cal_skip_forever');
-    console.log('humano_cal_skip_forever:', skipForever);
-    if (skipForever === '1') {
-        console.log('Kihagyva: localStorage tiltja');
-        return;
-    }
-    
+    if (skipForever === '1') return;
+
     const lastSkip = localStorage.getItem('humano_cal_last_skip');
     if (lastSkip) {
         const elapsed = Date.now() - parseInt(lastSkip);
-        if (elapsed < 3 * 60 * 1000) {
-            console.log('Kihagyva: 3 percen belül kihagyta');
-            return;
-        }
+        if (elapsed < 2 * 60 * 1000) return; // 2 perc
     }
-    
-    if (!currentUser) {
-        console.log('Kihagyva: nincs currentUser');
-        return;
-    }
-    
+
+    if (!currentUser) return;
+
     const consentModal = document.getElementById('biometric-consent-modal');
-    if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) {
-        console.log('Kihagyva: biometrikus modal nyitva van');
-        return;
-    }
-    
+    if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
+
     const editorPage = document.getElementById('page-editor')?.classList.contains('active');
-    console.log('Editor oldal aktív:', editorPage);
-    if (!editorPage) {
-        console.log('Kihagyva: nem az editor oldalon vagyunk');
-        return;
-    }
-    
+    if (!editorPage) return;
+
     try {
-        console.log('Lekérdezem a typing_profiles táblát...');
         const { data, error } = await db
             .from('typing_profiles')
             .select('id')
             .eq('user_id', currentUser.id)
             .limit(1);
-            
-        console.log('Válasz:', { data, error });
-        
-        if (error) {
-            console.error('Kalibráció ellenőrzési hiba:', error);
-            return;
-        }
-        
-        if (data && data.length > 0) {
-            console.log('Van már kalibrációs profil, nem jelenítjük meg');
-            return;
-        }
-        
-        console.log('Minden feltétel OK, megjelenítem a modalt');
+
+        if (error) return;
+        if (data && data.length > 0) return;
+
         const modal = document.getElementById('cal-reminder-modal');
-        if (!modal) {
-            console.error('Kalibrációs modal nem található!');
-            return;
-        }
-        
-        console.log('Modal megtalálva, megjelenítés...');
+        if (!modal) return;
         modal.style.display = 'flex';
         modal.classList.add('open');
-        console.log('Modal megjelenítve');
-
     } catch (e) {
         console.warn('checkAndShowCalibrationReminder hiba:', e);
     }
 }
 
-// A shared_js.js-ben CSERE ezekre:
+
+
 
 function goToCalibration() {
     const modal = document.getElementById('cal-reminder-modal');
     if (modal) {
         modal.classList.remove('open');
-        modal.style.display = 'none'; 
+        modal.style.display = 'none';
     }
     showToast('✦ Átirányítás a kalibrációs oldalra...');
-    setTimeout(() => showPage('calibration'), 500);
+    setTimeout(() => showPage('calibration'), 300);
 }
+
 
 function skipCalibrationReminder() {
     const checkbox = document.getElementById('cal-dont-show-again');
-
     if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
         showToast('✅ Kalibrációs emlékeztető kikapcsolva');
     } else {
         localStorage.setItem('humano_cal_last_skip', Date.now().toString());
-        showToast('👌 Kihagyva – folytasd az írást!');
+        showToast('👌 Kihagyva – 2 perc múlva emlékeztetünk');
+        // 2 perc múlva újra megmutatja
+        setTimeout(() => {
+            checkAndShowCalibrationReminder();
+        }, 2 * 60 * 1000);
     }
-
     const modal = document.getElementById('cal-reminder-modal');
     if (modal) {
         modal.classList.remove('open');
-        modal.style.display = 'none';   
+        modal.style.display = 'none';
     }
 }
 
@@ -1761,8 +1782,14 @@ function editorKeyDown(e) {
     if (E.lastKey && (now - E.lastKey) > 3000) {
         E.pauses++;
         E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
-        document.getElementById('s-pauses').textContent = E.pauses;
-        document.getElementById('sidebar-pauses').textContent = E.pauses;
+        function updatePauseDisplay() {
+    const sp = document.getElementById('s-pauses');
+    const sbp = document.getElementById('sidebar-pauses');
+    if (sp) sp.textContent = E.pauses;
+    if (sbp) sbp.textContent = E.pauses;
+    updatePauseInsight();
+}
+
         updatePauseInsight();
         
         const pauseMs = now - E.lastKey;
@@ -1809,7 +1836,17 @@ function editorKeyDown(e) {
         if (E.events.length > 2000) E.events = E.events.slice(-1000);
         
         const clampedInterval = Math.min(interval, 4000);
-        const pulseVal = Math.min(100, Math.max(3, Math.pow(clampedInterval / 400, 0.55) * 100));
+        function calcPulseVal(interval) {
+    const clampedInterval = Math.min(interval, 4000);
+    // Természetesebb skála: rövid interval = magas érték (gyors gépelés)
+    // hosszú interval = alacsony érték (lassú/szünet)
+    const normalized = Math.min(clampedInterval / 2000, 1);
+    const pulseVal = Math.max(5, Math.min(95, (1 - normalized) * 90 + 5));
+    // Kis véletlenszerű zaj az emberi hatásért
+    const noise = (Math.random() - 0.5) * 8;
+    return Math.max(3, Math.min(100, pulseVal + noise));
+}
+
         E.pulseHistory.push(pulseVal);
         if (E.pulseHistory.length > 60) E.pulseHistory.shift();
         
@@ -2029,6 +2066,7 @@ function editorInit() {
     initPulseCanvas();
     startAutosaveTimer();
     startTlFlushTimer();
+   startTipRotation();
 }
 
 async function startEditorFlow() {
@@ -6512,6 +6550,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+
+
+
 /* ============================================================
    GLOBÁLIS FÜGGVÉNYEK – Window objektumra kötés
    ============================================================ */
@@ -6545,6 +6586,10 @@ window.goToCalibration = goToCalibration;
 window.skipCalibrationReminder = skipCalibrationReminder;
 window.calStep1Complete = calStep1Complete;
 window.calStep2Complete = calStep2Complete;
+window.openEntropyInfo = openEntropyInfo;
+window.openTripleLockInfo = openTripleLockInfo;
+window.openAppealDetail = openAppealDetail;
+
 window.calSkip = calSkip;
 
 // Editor
