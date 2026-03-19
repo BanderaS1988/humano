@@ -1192,12 +1192,22 @@ async function checkCalibrationAge() {
 async function checkAndShowCalibrationReminder() {
     console.log('checkAndShowCalibrationReminder lefutott');
     
-    // Ellenőrizzük a localStorage tiltást
+    // Ellenőrizzük a végleges tiltást
     const skipForever = localStorage.getItem('humano_cal_skip_forever');
     console.log('humano_cal_skip_forever:', skipForever);
     if (skipForever === '1') {
-        console.log('Kihagyva: localStorage tiltja');
+        console.log('Kihagyva: véglegesen tiltva');
         return;
+    }
+    
+    // Ellenőrizzük a 3 perces kihagyást
+    const lastSkip = localStorage.getItem('humano_cal_last_skip');
+    if (lastSkip) {
+        const elapsed = Date.now() - parseInt(lastSkip);
+        if (elapsed < 3 * 60 * 1000) { // 3 perc
+            console.log('Kihagyva: 3 percen belül már kihagyta');
+            return;
+        }
     }
     
     if (!currentUser) {
@@ -1264,19 +1274,20 @@ function goToCalibration() {
         modal.classList.remove('open');
         modal.style.display = 'none';
     }
-    showToast('✦ Átirányítás a kalibrációs oldalra...');
-    setTimeout(() => showPage('calibration'), 500);
+    showToast('✦ Kalibrációs felület – hamarosan elérhető!');
+    // Amíg nincs kalibrációs oldal, a dashboardra küldjük
+    setTimeout(() => showPage('dashboard'), 500);
 }
 
 function skipCalibrationReminder() {
-    // CSAK AKKOR rejti el végleg, ha a checkbox be van pipálva
     const checkbox = document.getElementById('cal-dont-show-again');
+    
     if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
         showToast('✅ Kalibrációs emlékeztető kikapcsolva');
     } else {
-        // Ha nincs bepipálva, akkor csak most nem jelenik meg, de később újra előjön
-        showToast('👌 Kalibráció kihagyva – legközelebb újra emlékeztetünk');
+        localStorage.setItem('humano_cal_last_skip', Date.now().toString());
+        showToast('👌 3 perc múlva újra emlékeztetünk');
     }
 
     const modal = document.getElementById('cal-reminder-modal');
