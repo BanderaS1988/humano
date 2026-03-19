@@ -1834,14 +1834,6 @@ function editorKeyDown(e) {
     if (E.lastKey && (now - E.lastKey) > 3000) {
         E.pauses++;
         E.events.push({ type: 'pause', ts: now, duration: now - E.lastKey });
-        function updatePauseDisplay() {
-    const sp = document.getElementById('s-pauses');
-    const sbp = document.getElementById('sidebar-pauses');
-    if (sp) sp.textContent = E.pauses;
-    if (sbp) sbp.textContent = E.pauses;
-    updatePauseInsight();
-}
-
         updatePauseInsight();
         
         const pauseMs = now - E.lastKey;
@@ -1854,17 +1846,16 @@ function editorKeyDown(e) {
     }
     
     if (e.key === 'Backspace' || e.key === 'Delete') {
-    E.dels++;
-    // Arányosan vonja le - ha több beillesztett van, abból vonjon le
-    if (pastedChars > 0) {
-        pastedChars = Math.max(0, pastedChars - 1);
-    } else {
-        typedChars = Math.max(0, typedChars - 1);
+        E.dels++;
+        if (pastedChars > 0) {
+            pastedChars = Math.max(0, pastedChars - 1);
+        } else {
+            typedChars = Math.max(0, typedChars - 1);
+        }
+        updatePasteRatio();
+        tlRecord('delete');
+        checkTlFlush();
     }
-    updatePasteRatio();
-    tlRecord('delete');
-    checkTlFlush();
-}
     else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.repeat) {
             E.warns++;
@@ -1882,26 +1873,25 @@ function editorKeyDown(e) {
             return;
         }
         
-    E.keys++;
-typedChars++;
-updatePasteRatio();
+        E.keys++;
+        typedChars++;
+        updatePasteRatio();
 
-const interval = E.lastKey ? now - E.lastKey : 150;
-E.events.push({ type: 'key', ts: now, interval });
-if (E.events.length > 2000) E.events = E.events.slice(-1000);
+        const interval = E.lastKey ? now - E.lastKey : 150;
+        E.events.push({ type: 'key', ts: now, interval });
+        if (E.events.length > 2000) E.events = E.events.slice(-1000);
 
-const pulseVal = calcPulseVal(interval);
-E.pulseHistory.push(pulseVal);
-if (E.pulseHistory.length > 60) E.pulseHistory.shift();
+        const pulseVal = calcPulseVal(interval);
+        E.pulseHistory.push(pulseVal);
+        if (E.pulseHistory.length > 60) E.pulseHistory.shift();
 
-drawPulse();
-editorRhythm();
-editorCalcHumanIndex();
-tlRecord('insert', e.key);
-checkTlFlush();
-}
+        drawPulse();
+        editorRhythm();
+        editorCalcHumanIndex();
+        tlRecord('insert', e.key);
+        checkTlFlush();
+    }
     
-    // Anti-spoof ellenőrzés
     if (!E.antiSpoof) {
         E.antiSpoof = {
             suspiciousPatterns: 0,
