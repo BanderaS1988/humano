@@ -6648,6 +6648,210 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+async function editorSave() {
+    if (!currentUser) { showPage('auth'); return; }
+
+    const btn = document.getElementById('btn-save');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Hitelesítés...'; }
+
+    try {
+        // ── 1. Adatok összegyűjtése ──────────────────────────────────
+        const editor = document.getElementById('doc-content-area');
+        const titleInput = document.getElementById('doc-title-input');
+        const content = editor?.innerHTML || '';
+        const plainText = editor?.innerText?.trim() || '';
+        const title = titleInput?.value?.trim() || 'Névtelen';
+        const isPublic = document.getElementById('doc-is-public')?.checked ?? true;
+        const isPublished = document.getElementById('doc-is-published')?.checked ?? false;
+        const category = document.getElementById('doc-category')?.value || '';
+        const publishedUrl = document.getElementById('doc-published-url')?.value?.trim() || null;
+
+        if (!plainText || E.keys < 30) {
+            showToast('❌ Túl kevés gépelési adat a hitelesítéshez!');
+            if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
+            return;
+        }
+
+        // ── 2. Kredit ellenőrzés ─────────────────────────────────────
+        const { data: profile } = await db
+            .from('profiles')
+            .select('plan, monthly_credits, used_credits, trial_ends_at')
+            .eq('id', currentUser.id)
+            .single();
+
+        const plan = profile?.plan || 'free';
+        const used = profile?.used_credits || 0;
+        const limit = profile?.monthly_credits ?? getPlanMonthlyLimit(plan);
+        const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+        const unlimited = isPlanUnlimited(plan) || trialActive;
+
+        if (!unlimited && used >= limit) {
+            showToast('❌ Elérted a havi hitelesítési keretet! Váltj magasabb csomagra.');
+            openPricingContact('free_limit');
+            if (btn) { btn.disabled = false; btn.textContent = '🔒 Hitelesítés & Mentés'; }
+            return;
+        }
+
+        // ── 3. SHA-256 hash ──────────────────────────────────────────
+        if (btn) btn.textContent = '🔒 Hash számítás...';
+        const hash = await sha256(plainText);
+
+        // ── 4. DOC ID generálás ──────────────────────────────────────
+        const ts = Date.now().toString(36).toUpperCase();
+        const userPrefix = (profile?.humano_id || currentUser.id).substring(4, 8).toUpperCase();
+        const docId = `DOC-${userPrefix}-${ts}`;
+
+        // ── 5. Process data összeállítása ────────────────────────────
+        const sessionDurationMs = E.sessionStart ? Date.now() - E.sessionStart : 0;
+        const totalChars = typedChars + pastedChars;
+        const processData = {
+            keystrokeCount: E.keys,
+            deletionCount: E.dels,
+            pauseCount: E.pauses,
+            focusSwitches: E.focusSwitches,
+            humanIndex: E.humanPct || 0,
+            humanCategory: E.humanCategory || '–',
+            humanCV: E.humanCV || 0,
+            rhythmWarnings: E.warns || 0,
+            sessionDurationMs,
+            pulseDataPoints: E.pulseHistory.slice(),
+            typedChars,
+            pastedChars,
+            typedPct: totalChars > 0 ? Math.round((typedChars / totalChars) * 100) : 100,
+            pastedPct: totalChars > 0 ? Math.round((pastedChars / totalChars) * 100) : 0,
+            entropyCV: E.entropyCV || 0,
+            entropyPct: E.entropyPct || 0,
+            cfDnaScore: E.cfDnaScore || 0,
+            flowPulseScore: E.flowPulseScore || 0,
+            smdScore: E.smdScore || 0,
+            tripleLockScore: E.tripleLockScore || 0,
+            confidence: E.confidence || 0,
+            confidenceLabel: E.confidenceLabel || '',
+            explanation: E.explanation || '',
+            sessionBreaks: E.sessionBreaks || 0,
+            antiSpoofFlag: E.antiSpoof?.suspiciousFlag || false,
+        };
+
+        // ── 6. Supabase mentés ───────────────────────────────────────
+        if (btn) btn.textContent = '💾 Mentés...';
+
+        const saveData = {
+            doc_id: docId,
+            title,
+            content,
+            hash,
+            author_id: currentUser.id,
+            author_name: profile?.username || currentUser.email,
+            is_public: isPublic,
+            is_published: isPublished,
+            category: category || null,
+            published_url: publishedUrl,
+            process_data: processData,
+            saved_at: new Date().toISOString(),
+            version: 1,
+        };
+
+        // Parent doc verzió kezelés
+        const parentDocId = editor?.dataset?.parentDocId;
+        if (parentDocId) {
+            saveData.parent_doc_id = parentDocId;
+            const { data: parentDoc } = await db
+                .from('documents')
+                .select('version')
+                .eq('doc_id', parentDocId)
+                .single();
+            saveData.version = (parentDoc?.version || 1) + 1;
+        }
+
+        const saveFn = async () => {
+            const { error } = await db.from('documents').insert(saveData);
+            if (error) throw new Error(error.message);
+
+            // Kredit növelés
+            await db.from('profiles')
+                .update({ used_credits: used + 1 })
+                .eq('id', currentUser.id);
+        };
+
+        if (!isOnline) {
+            queueOrRun(saveFn);
+            showToast('📥 Offline – mentés sorba állítva, szinkronizálás kapcsolat után.');
+        } else {
+            await saveFn();
+        }
+
+        // ── 7. Timelapse flush ───────────────────────────────────────
+        if (btn) btn.textContent = '⛓️ Blokklánc...';
+        await flushTlBatch(docId);
+
+        // Temp doc ID törlése
+        localStorage.removeItem('humano_temp_doc_id');
+        E.tempDocId = null;
+
+        // ── 8. OTS időbélyeg ─────────────────────────────────────────
+        tsaStamp(hash, docId).catch(() => {});
+
+        // ── 9. Cert panel megjelenítése ──────────────────────────────
+        E.certDocId = docId;
+        E.certTitle = title;
+        E.certHash = hash;
+
+        const certPanel = document.getElementById('cert-panel');
+        const certIdVal = document.getElementById('cert-id-val');
+        const certHashVal = document.getElementById('cert-hash-val');
+
+        if (certIdVal) certIdVal.textContent = docId;
+        if (certHashVal) certHashVal.textContent = hash;
+
+        updateCertPanel(docId, hash, new Date().toISOString(), false, true);
+
+        // Beillesztés arány megjelenítése a cert panelen
+        if (pastedChars > 0) {
+            const certPasteRatio = document.getElementById('cert-paste-ratio');
+            const certTypedPct = document.getElementById('cert-typed-pct');
+            const certPastedPct = document.getElementById('cert-pasted-pct');
+            if (certPasteRatio) certPasteRatio.style.display = 'block';
+            if (certTypedPct) certTypedPct.textContent = processData.typedPct + '%';
+            if (certPastedPct) certPastedPct.textContent = processData.pastedPct + '%';
+        }
+
+        if (certPanel) certPanel.style.display = 'block';
+
+        // Timelapse widget megjelenítése
+        const tlWidget = document.getElementById('tl-widget');
+        if (tlWidget) tlWidget.style.display = 'block';
+
+        // Publikált megosztás megjelenítése
+        if (isPublished) {
+            const shareSection = document.getElementById('share-published-section');
+            if (shareSection) {
+                shareSection.style.display = 'block';
+                updateShareButtons(docId, title);
+            }
+        }
+
+        // Piszkozat törlése
+        clearCurrentDraft();
+
+        // AI Act disclaimer
+        setTimeout(() => checkAndShowAiActDisclaimer(docId), 2000);
+
+        certPanel?.scrollIntoView({ behavior: 'smooth' });
+        showToast('✦ Szöveg hitelesítve! DOC ID: ' + docId);
+        trackEvent('Document_Certified', { doc_id: docId, plan });
+
+    } catch (err) {
+        console.error('editorSave hiba:', err);
+        showToast('❌ Hiba: ' + (err.message || 'Ismeretlen hiba'));
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔒 Hitelesítés & Mentés';
+            editorCheckSave();
+        }
+    }
+}
+
 
 
 /* ============================================================
@@ -6702,6 +6906,7 @@ window.insertImg = insertImg;
 window.togglePreview = togglePreview;
 window.togglePublic = togglePublic;
 window.togglePublish = togglePublish;
+window.editorSave = editorSave;
 
 // Média
 window.openMediaModal = openMediaModal;
