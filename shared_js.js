@@ -680,22 +680,24 @@ function _onSectionActivated(hash) {
     if (hash === 'roadmap') loadFeatureVotes();
     if (hash === 'publikaciok') loadPublikaciok();
     if (hash === 'editor') {
-        setTimeout(() => {
-            initPulseCanvas();
-            checkDraftsOnEditorOpen();
+    setTimeout(() => {
+        initPulseCanvas();
+        checkDraftsOnEditorOpen();
 
-            if (E.sessionStart) {
-                if (E._pauseStart) {
-                    E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
-                    E._pauseStart = null;
-                }
-                if (!E.timerInterval) {
-                    E.timerInterval = setInterval(updateEditorTimer, 1000);
-                }
-                editorSetStatus('recording');
+        if (E.sessionStart) {
+            if (E._pauseStart) {
+                E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+                E._pauseStart = null;
             }
-        }, 200);
-    }
+            if (!E.timerInterval) {
+                E.timerInterval = setInterval(updateEditorTimer, 1000);
+            }
+            editorSetStatus('recording');
+        } else {
+            startEditorFlow();
+        }
+    }, 200);
+}
 }
 
 function _loadPageFromHash() {
@@ -741,10 +743,8 @@ function requireAuth(page) {
         return;
     }
     showPage(page);
-    if (page === 'editor') {
-        setTimeout(() => startEditorFlow(), 100);
-    }
 }
+
 async function updateNavAuth(user) {
     const nu = document.getElementById('nav-user');
     const nb = document.getElementById('nav-auth-btn');
