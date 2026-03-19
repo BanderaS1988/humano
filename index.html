@@ -2615,6 +2615,17 @@
     });
   });
 
+  document.addEventListener('change', function(e) {
+    if (e.target.id === 'paste-consent-check') {
+        const btn = document.getElementById('paste-confirm-btn');
+        if (btn) {
+            btn.disabled = !e.target.checked;
+            btn.style.opacity = e.target.checked ? '1' : '.5';
+            btn.style.cursor = e.target.checked ? 'pointer' : 'not-allowed';
+        }
+    }
+});
+
   // Segédfüggvények a modalok kezeléséhez
   function closeInfoModal() {
     document.getElementById('info-modal')?.classList.remove('open');
