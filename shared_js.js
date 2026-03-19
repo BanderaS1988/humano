@@ -1269,12 +1269,14 @@ function goToCalibration() {
 }
 
 function skipCalibrationReminder() {
+    // CSAK AKKOR rejti el végleg, ha a checkbox be van pipálva
     const checkbox = document.getElementById('cal-dont-show-again');
     if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
-        showToast('✅ Kalibrációs emlékeztető végleg elrejtve');
+        showToast('✅ Kalibrációs emlékeztető kikapcsolva');
     } else {
-        showToast('👌 Kalibráció kihagyva – később a Dashboardon is elvégezheted');
+        // Ha nincs bepipálva, akkor csak most nem jelenik meg, de később újra előjön
+        showToast('👌 Kalibráció kihagyva – legközelebb újra emlékeztetünk');
     }
 
     const modal = document.getElementById('cal-reminder-modal');
