@@ -145,9 +145,13 @@ function showToast(msg) {
     const t = document.getElementById('humano-toast');
     if (!t) return;
     t.textContent = msg;
+    t.style.display = 'block';
     t.style.opacity = '1';
     clearTimeout(t._to);
-    t._to = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+    t._to = setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => { t.style.display = 'none'; }, 400);
+    }, 3000);
 }
 
 function getHumanoBadge(pct) {
