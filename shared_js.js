@@ -1263,11 +1263,13 @@ async function checkAndShowCalibrationReminder() {
     }
 }
 
+// A shared_js.js-ben CSERE ezekre:
+
 function goToCalibration() {
     const modal = document.getElementById('cal-reminder-modal');
     if (modal) {
         modal.classList.remove('open');
-        modal.style.display = 'none';
+        modal.style.display = 'none'; 
     }
     showToast('✦ Átirányítás a kalibrációs oldalra...');
     setTimeout(() => showPage('calibration'), 500);
@@ -1275,19 +1277,19 @@ function goToCalibration() {
 
 function skipCalibrationReminder() {
     const checkbox = document.getElementById('cal-dont-show-again');
-    
+
     if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
         showToast('✅ Kalibrációs emlékeztető kikapcsolva');
     } else {
         localStorage.setItem('humano_cal_last_skip', Date.now().toString());
-        showToast('👌 3 perc múlva újra emlékeztetünk');
+        showToast('👌 Kihagyva – folytasd az írást!');
     }
 
     const modal = document.getElementById('cal-reminder-modal');
     if (modal) {
         modal.classList.remove('open');
-        modal.style.display = 'none';
+        modal.style.display = 'none';   
     }
 }
 
