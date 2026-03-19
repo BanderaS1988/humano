@@ -174,10 +174,7 @@ function _onSectionActivated(hash) {
 }
 }
 
-/* ─────────────────────────────────────────────────────────────
-   KALIBRÁCIÓS EMLÉKEZTETŐ – shared_js.js-be kerül
-   (NEM az index.html script blokkjába!)
-   ───────────────────────────────────────────────────────────── */
+
 
 async function checkAndShowCalibrationReminder() {
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
@@ -200,19 +197,40 @@ async function checkAndShowCalibrationReminder() {
     } catch (e) { /* silent */ }
 }
 
+// ═══════════════════════════════════════════════════════════
+// 3. goToCalibration – "Kalibrálok most" gomb
+// ═══════════════════════════════════════════════════════════
 function goToCalibration() {
-    document.getElementById('cal-reminder-modal')?.classList.remove('open');
+    const modal = document.getElementById('cal-reminder-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+    }
     showPage('calibration');
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// 4. skipCalibrationReminder – "Kihagyom" gomb
+// ═══════════════════════════════════════════════════════════
 function skipCalibrationReminder() {
-    if (document.getElementById('cal-dont-show-again')?.checked) {
+    const checkbox = document.getElementById('cal-dont-show-again');
+    if (checkbox && checkbox.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
     }
-    document.getElementById('cal-reminder-modal')?.classList.remove('open');
+
+    const modal = document.getElementById('cal-reminder-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+    }
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// 1. startEditorFlow – ez hívódik az "Írás" gombra kattintáskor
+// ═══════════════════════════════════════════════════════════
 async function startEditorFlow() {
     if (!currentUser) {
         showPage('auth');
@@ -224,14 +242,18 @@ async function startEditorFlow() {
     if (!hasConsent) {
         showBiometricConsentModal();
         return;
+        // A consent elfogadása után a handleConsentAccept() hívja az editorInit()-et
+        // és a checkAndShowCalibrationReminder()-t – NEM kell ide is
     }
 
     editorInit();
 
+    // Várunk 1mp-et hogy a DOM teljesen felépüljön
     setTimeout(() => {
         checkAndShowCalibrationReminder();
     }, 1000);
 }
+
 
 
 
@@ -4617,10 +4639,22 @@ function editorInit() {
 }
 
 
+// ═══════════════════════════════════════════════════════════
+// 2. checkAndShowCalibrationReminder – a modal megjelenítője
+// ═══════════════════════════════════════════════════════════
 async function checkAndShowCalibrationReminder() {
+    // Ha már örökre kihagyta
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+
+    // Ha nincs bejelentkezve
     if (!currentUser) return;
-    if (document.getElementById('biometric-consent-modal')?.classList.contains('open')) return;
+
+    // Ha a biometric consent modal még nyitva van – ne zavarjuk meg
+    const consentModal = document.getElementById('biometric-consent-modal');
+    if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
+
+    // Ha az editor oldal nem aktív – ne mutassuk
+    if (!document.getElementById('page-editor')?.classList.contains('active')) return;
 
     try {
         const { data, error } = await db
@@ -4629,13 +4663,28 @@ async function checkAndShowCalibrationReminder() {
             .eq('user_id', currentUser.id)
             .limit(1);
 
-        if (error || !data || data.length > 0) return;
+        // Ha hiba → csendben kilép (ne blokkoljuk az írást)
+        if (error) return;
 
+        // Ha VAN már kalibrációs profil → nem kell a modal
+        if (data && data.length > 0) return;
+
+        // Ha NINCS profil → megjelenítjük a modalt
         const modal = document.getElementById('cal-reminder-modal');
-        if (modal) modal.classList.add('open');
+        if (!modal) {
+            console.warn('⚠️ cal-reminder-modal elem nem található a DOM-ban!');
+            return;
+        }
 
-    } catch (e) { /* silent */ }
+        // Biztosítjuk hogy látható legyen (inline style felülírhatja a CSS-t)
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+
+    } catch (e) {
+        console.warn('checkAndShowCalibrationReminder hiba:', e);
+    }
 }
+
 
 
 
@@ -5685,6 +5734,11 @@ function handleConsentDecline() {
 
 
 
+// ═══════════════════════════════════════════════════════════
+// 5. handleConsentAccept – consent elfogadás után fut
+//    (itt is kell a kalibráció-ellenőrzés, mert először
+//     a consent modal jelenik meg, nem az editor)
+// ═══════════════════════════════════════════════════════════
 async function handleConsentAccept() {
     const btn = document.getElementById('consent-accept-btn');
     if (btn) {
@@ -5697,17 +5751,10 @@ async function handleConsentAccept() {
         hideBiometricConsentModal();
         showToast('✅ Beleegyezés rögzítve');
 
-        // Editor inicializálása
         editorInit();
 
-        // Kalibráció ellenőrzése – typeof guard, mert az index.html
-        // script blokkjai később töltődnek be mint a shared_js.js
         setTimeout(() => {
-            if (typeof checkAndShowCalibrationReminder === 'function') {
-                checkAndShowCalibrationReminder();
-            } else {
-                console.warn('⚠️ checkAndShowCalibrationReminder még nem elérhető');
-            }
+            checkAndShowCalibrationReminder();
         }, 1000);
 
     } catch (err) {
