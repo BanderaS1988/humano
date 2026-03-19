@@ -678,25 +678,22 @@ function _onSectionActivated(hash) {
     if (hash === 'roadmap') loadFeatureVotes();
     if (hash === 'publikaciok') loadPublikaciok();
     if (hash === 'editor') {
-    setTimeout(() => {
-        initPulseCanvas();
-        checkDraftsOnEditorOpen();
-        
-        // Ha volt aktív session és el volt hagyva az oldal
-        if (E.sessionStart) {
-            // Pauze idő hozzáadása
-            if (E._pauseStart) {
-                E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
-                E._pauseStart = null;
+        setTimeout(() => {
+            initPulseCanvas();
+            checkDraftsOnEditorOpen();
+
+            if (E.sessionStart) {
+                if (E._pauseStart) {
+                    E.totalPausedMs = (E.totalPausedMs || 0) + (Date.now() - E._pauseStart);
+                    E._pauseStart = null;
+                }
+                if (!E.timerInterval) {
+                    E.timerInterval = setInterval(updateEditorTimer, 1000);
+                }
+                editorSetStatus('recording');
             }
-            // Timer újraindítása
-            if (!E.timerInterval) {
-                E.timerInterval = setInterval(updateEditorTimer, 1000);
-            }
-            editorSetStatus('recording');
-        }
-    }, 200);
-}
+        }, 200);
+    }
 }
 
 function _loadPageFromHash() {
@@ -705,12 +702,11 @@ function _loadPageFromHash() {
         'profile', 'verify-unified', 'pub-verify', 'roadmap',
         'about', 'supporters', 'faq', 'privacy', 'publikaciok'
     ];
-    
-    // URL path alapú routing (mobil/direct link)
+
     const path = window.location.pathname;
     const verifyMatch = path.match(/^\/verify\/(.+)$/);
     const readMatch = path.match(/^\/read\/(.+)$/);
-    
+
     if (verifyMatch) {
         const docId = verifyMatch[1];
         const vi = document.getElementById('v-input-unified');
@@ -719,13 +715,13 @@ function _loadPageFromHash() {
         setTimeout(() => doVerifyUnified(), 500);
         return;
     }
-    
+
     if (readMatch) {
         const docId = readMatch[1];
         openPubVerify(docId);
         return;
     }
-    
+
     const hash = window.location.hash.replace('#', '');
     _showSection(validHashes.includes(hash) ? hash : 'landing');
 }
@@ -738,15 +734,11 @@ function toggleNav() {
 }
 
 function requireAuth(page) {
-    if (!currentUser) { 
-        showPage('auth'); 
-        return; 
+    if (!currentUser) {
+        showPage('auth');
+        return;
     }
     showPage(page);
-    if (page === 'editor') {
-        // Kis késleltetéssel hívjuk, hogy a DOM biztosan betöltődjön
-        setTimeout(() => startEditorFlow(), 100);
-    }
 }
 
 async function updateNavAuth(user) {
