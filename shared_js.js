@@ -863,7 +863,6 @@ async function handleConsentAccept() {
     try {
         await ConsentManager.record('keystroke_dynamics');
         hideBiometricConsentModal();
-        // Sikeres elfogadás után alert
         alert('✅ Biometrikus beleegyezés elfogadva – most már hitelesíthetsz!');
         
         showPage('editor');
@@ -874,9 +873,10 @@ async function handleConsentAccept() {
             editorEl.dataset.initialized = 'true';
         }
         
-        setTimeout(() => {
-            checkAndShowCalibrationReminder();
-        }, 1000);
+        // Kalibrációs modal megjelenítése 1 másodperc után
+        setTimeout(async () => {
+            await checkAndShowCalibrationReminder();
+        }, 1500);
 
     } catch (err) {
         console.error('❌ Consent rögzítési hiba:', err);
@@ -888,39 +888,7 @@ async function handleConsentAccept() {
     }
 }
 
-async function handleConsentAccept() {
-    const btn = document.getElementById('consent-accept-btn');
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ Rögzítés...';
-    }
 
-    try {
-        await ConsentManager.record('keystroke_dynamics');
-        hideBiometricConsentModal();
-        showToast('✅ Beleegyezés rögzítve');
-
-        showPage('editor');
-
-        const editorEl = document.getElementById('doc-content-area');
-        if (editorEl && !editorEl.dataset.initialized) {
-            editorInit();
-            editorEl.dataset.initialized = 'true';
-        }
-
-        setTimeout(() => {
-            checkAndShowCalibrationReminder();
-        }, 1000);
-
-    } catch (err) {
-        console.error('❌ Consent rögzítési hiba:', err);
-        showToast('❌ Hiba: ' + err.message);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = '✦ Elfogadom';
-        }
-    }
-}
 
 async function loadConsentSettings() {
     const container = document.getElementById('consent-settings-container');
@@ -1222,29 +1190,43 @@ async function checkCalibrationAge() {
 }
 
 async function checkAndShowCalibrationReminder() {
+    // Ne jelenjen meg, ha a user kérte, hogy ne mutassa többé
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
     if (!currentUser) return;
 
+    // Ne jelenjen meg, ha a biometrikus modal még nyitva van
     const consentModal = document.getElementById('biometric-consent-modal');
     if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
 
+    // Csak az editor oldalon jelenjen meg
     if (!document.getElementById('page-editor')?.classList.contains('active')) return;
 
     try {
+        // Ellenőrizzük, van-e már kalibrációs profilja
         const { data, error } = await db
             .from('typing_profiles')
             .select('id')
             .eq('user_id', currentUser.id)
             .limit(1);
 
-        if (error) return;
+        if (error) {
+            console.error('Kalibráció ellenőrzési hiba:', error);
+            return;
+        }
+        
+        // Ha van már profil, ne jelenjen meg
         if (data && data.length > 0) return;
 
+        // Minden feltétel teljesül, megjelenítjük a modalt
         const modal = document.getElementById('cal-reminder-modal');
-        if (!modal) return;
+        if (!modal) {
+            console.error('Kalibrációs modal nem található!');
+            return;
+        }
 
         modal.style.display = 'flex';
         modal.classList.add('open');
+        console.log('Kalibrációs modal megjelenítve');
 
     } catch (e) {
         console.warn('checkAndShowCalibrationReminder hiba:', e);
