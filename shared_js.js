@@ -4708,27 +4708,25 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
             pdf.text('ELLENORZESI ADATOK', rxCol + rw / 2, y + 5, { align: 'center' });
 
             const lines = [
-                ['DOC ID', (docId || '-').substring(0, 24)],
-                ['Szerzo', (displayAuthor || '-').substring(0, 24)],
-                ['Datum', fmtDate(createdAt) || '-'],
-                ['OTS', otsStatus === 'confirmed' ? 'BTC rogzitve' : 'Folyamatban'],
-                ['Ritmus', humanLabel],
-                ['Gepelt', typedPct + '%'],
-                ['Entropia', entropyPct + '%'],
-            ];
-            lines.forEach(([lbl, val], i) => {
-                const ly = y + 13 + i * 5;
-                pdf.setTextColor(100, 80, 30);
-                pdf.setFontSize(4.5);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(lbl + ':', rxCol + 3, ly);
-                pdf.setTextColor(200, 190, 160);
-                pdf.setFontSize(5);
-                pdf.setFont('helvetica', 'bold');
-                pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
-            });
-            resolve();
-        };
+    ['DOC ID', (docId || '-').substring(0, 22)],
+    ['Szerzo', (displayAuthor || '-').substring(0, 22)],
+    ['Datum', fmtDate(createdAt) || '-'],
+    ['OTS', otsStatus === 'confirmed' ? 'BTC rogzitve' : 'Folyamatban'],
+    ['Ritmus', humanLabel],
+    ['Gepelt', typedPct + '%'],
+    ['Entropia', entropyPct + '%'],
+];
+lines.forEach(([lbl, val], i) => {
+    const ly = y + 13 + i * 4.5; // 5 helyett 4.5 - szorosabb sorok
+    pdf.setTextColor(100, 80, 30);
+    pdf.setFontSize(4);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(lbl + ':', rxCol + 3, ly);
+    pdf.setTextColor(200, 190, 160);
+    pdf.setFontSize(4.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
+});
         qrImg.onerror = () => {
             pdf.setFillColor(22, 22, 42);
             pdf.roundedRect(PL, y, CW, remainingH, 2, 2, 'FD');
