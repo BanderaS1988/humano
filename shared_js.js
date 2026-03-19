@@ -274,6 +274,12 @@ const _tlTextCache = { idx: -1, text: '' };
 let fvCounts = {};
 let fvVoted = JSON.parse(localStorage.getItem('humano_fv_voted') || '{}');
 
+
+mouseEvents: [],
+mouseCV: 0,
+mouseDriftIndex: 0,
+mouseScore: 0,
+
 const E = {
     // Események és számlálók
     events: [],
@@ -345,6 +351,17 @@ const E = {
     
     // Session
     sessionBreaks: 0
+
+    // Egér dinamika
+    mouseEvents: [],
+    mouseCV: 0,
+    mouseDriftIndex: 0,
+    mouseScore: 0,
+    mouseClicks: 0,
+    mouseLastX: 0,
+    mouseLastY: 0,
+    mouseLastTime: 0,
+    mouseSpeeds: []
 };
 
 /* ─── 4. SUPABASE ÉS AUTH ──────────────────────────────────────────── */
@@ -2243,6 +2260,7 @@ function editorInit() {
     startTlFlushTimer();
     startTipRotation();
     updatePasteRatio();
+   initMouseTracking();
 }
 
 async function startEditorFlow() {
@@ -2486,12 +2504,14 @@ async function editorCalcHumanIndex() {
     E.smdScore = smdScore;
 
     const baselineWeight = baselineScore > 0 ? 0.20 : 0;
-    const rawTripleLock = Math.round(
-        (cfDnaScore * (0.35 - baselineWeight / 3)) +
-        (flowPulseScore * (0.35 - baselineWeight / 3)) +
-        (smdScore * (0.30 - baselineWeight / 3)) +
-        (baselineScore * baselineWeight)
-    );
+const mouseWeight = E.mouseScore > 0 ? 0.15 : 0;
+const rawTripleLock = Math.round(
+    (cfDnaScore * (0.30 - baselineWeight / 3)) +
+    (flowPulseScore * (0.30 - baselineWeight / 3)) +
+    (smdScore * (0.25 - baselineWeight / 3)) +
+    (baselineScore * baselineWeight) +
+    (E.mouseScore * mouseWeight)
+);
 
     const weightedTripleLock = sampleSize < minSample
         ? Math.round(rawTripleLock * sampleWeight)
@@ -4328,6 +4348,8 @@ async function downloadPdfCert() {
     const processData = {
         keystrokeCount: E.keys,
         deletionCount: E.dels,
+        mouseScore: E.mouseScore || 0,
+        mouseCV: E.mouseCV || 0,
         pauseCount: E.pauses,
         focusSwitches: E.focusSwitches,
         humanIndex: E.humanPct || 0,
@@ -5193,6 +5215,84 @@ async function loadHallOfFame() {
                 </div>`;
     }).join('');
 }
+
+function initMouseTracking() {
+    if (!document.getElementById('doc-content-area')) return;
+    
+    let lastX = 0, lastY = 0, lastMouseTime = 0;
+    let speeds = [];
+    
+    document.getElementById('doc-content-area').addEventListener('mousemove', e => {
+        const now = Date.now();
+        if (lastMouseTime === 0) { lastX = e.clientX; lastY = e.clientY; lastMouseTime = now; return; }
+        
+        const dt = now - lastMouseTime;
+        if (dt < 10) return; // túl sűrű mintavétel kihagyása
+        
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const speed = dist / dt;
+        
+        // Micro-tremor mérés
+        const angle = Math.atan2(dy, dx);
+        
+        E.mouseEvents.push({
+            ts: now,
+            x: e.clientX,
+            y: e.clientY,
+            speed: parseFloat(speed.toFixed(3)),
+            angle: parseFloat(angle.toFixed(3)),
+            dt
+        });
+        
+        if (E.mouseEvents.length > 500) E.mouseEvents.shift();
+        
+        speeds.push(speed);
+        if (speeds.length > 50) speeds.shift();
+        
+        // CV számítás (változatosság)
+        if (speeds.length >= 20) {
+            const mean = speeds.reduce((a,b) => a+b, 0) / speeds.length;
+            const stddev = Math.sqrt(speeds.reduce((s,v) => s + Math.pow(v-mean,2), 0) / speeds.length);
+            E.mouseCV = parseFloat((stddev / (mean || 1)).toFixed(3));
+        }
+        
+        lastX = e.clientX;
+        lastY = e.clientY;
+        lastMouseTime = now;
+        
+        updateMouseScore();
+    });
+    
+    // Kattintás figyelő
+    document.getElementById('doc-content-area').addEventListener('click', e => {
+        E.mouseEvents.push({
+            ts: Date.now(),
+            type: 'click',
+            x: e.clientX,
+            y: e.clientY
+        });
+    });
+}
+
+function updateMouseScore() {
+    const cv = E.mouseCV;
+    
+    // Minél változatosabb a sebesség, annál emberibb
+    let score = 0;
+    if (cv < 0.2) score = 20;       // túl egyenletes = gépies
+    else if (cv < 0.5) score = 50;  // közepes
+    else if (cv < 1.0) score = 80;  // emberi
+    else score = 95;                 // nagyon változatos = intenzív
+    
+    E.mouseScore = score;
+    
+    // UI frissítés ha van mouse-score elem
+    const el = document.getElementById('mouse-score');
+    if (el) el.textContent = score + '/100';
+}
+
 
 async function downloadWhitePaperPdf() {
     if (!window.jspdf) {
