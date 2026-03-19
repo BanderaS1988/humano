@@ -633,10 +633,17 @@ function showPage(page) {
 }
 
 function _showSection(hash) {
+    // Ha elhagyják az editor oldalt, állítsd le a számlálót
+    const editorWasActive = document.getElementById('page-editor')?.classList.contains('active');
+    if (editorWasActive && hash !== 'editor') {
+        clearInterval(E.timerInterval);
+        E.timerInterval = null;
+    }
+
     document.getElementById('nav-links')?.classList.remove('open');
     document.getElementById('hamburger-btn')?.classList.remove('open');
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-    
+
     const el = document.getElementById('page-' + hash);
     if (el) {
         el.classList.add('active');
@@ -653,6 +660,7 @@ function _showSection(hash) {
         _onSectionActivated(hash);
     }
 }
+
 
 function _onSectionActivated(hash) {
     if (hash === 'dashboard') loadDashboard();
@@ -2649,23 +2657,28 @@ function autoSaveDraft() {
         if (idx.length > 5) idx = idx.slice(0, 5);
         saveDraftIndex(idx);
 
+        // Snack megjelenítése
         const snack = document.getElementById('autosave-snack');
         if (snack) {
             const timeEl = document.getElementById('autosave-time');
-            if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+            if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+
             snack.style.display = 'flex';
+            // Kényszerített újrarajzolás hogy az átmenet működjön
+            snack.offsetHeight;
             snack.style.opacity = '1';
+
             clearTimeout(snack._hideTimer);
             snack._hideTimer = setTimeout(() => {
                 snack.style.opacity = '0';
                 setTimeout(() => { snack.style.display = 'none'; }, 400);
             }, 3000);
         }
+
     } catch (e) {
         console.error('❌ Hiba mentéskor:', e);
     }
 }
-
 function startAutosaveTimer() {
     if (autosaveTimer) clearInterval(autosaveTimer);
     autosaveTimer = setInterval(autoSaveDraft, 10000);
