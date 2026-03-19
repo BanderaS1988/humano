@@ -3220,7 +3220,11 @@ async function submitAddSignal() {
 
 
   
-<!-- ═══ KALIBRÁCIÓS EMLÉKEZTETŐ MODAL ═══ -->
+<!-- ═══════════════════════════════════════════════════════════
+     KALIBRÁCIÓS EMLÉKEZTETŐ MODAL
+     Megjelenik ha a felhasználónak nincs még kalibrációs profilja.
+     A startEditorFlow() → checkAndShowCalibrationReminder() hívja.
+     ═══════════════════════════════════════════════════════════ -->
 
 <div class="modal-overlay" id="cal-reminder-modal" style="z-index:9700">
   <div class="modal-box" style="max-width:480px;text-align:center">
@@ -3255,15 +3259,18 @@ async function submitAddSignal() {
 </div>
 
 <script>
-// ── Kalibrációs emlékeztető logika ──
-
+/* ─────────────────────────────────────────────────────────────
+   1. NAVIGÁCIÓ – Kalibráció oldalra visz, modal bezárásával
+   ───────────────────────────────────────────────────────────── */
 function goToCalibration() {
     document.getElementById('cal-reminder-modal')?.classList.remove('open');
     showPage('calibration');
 }
 
 
-
+/* ─────────────────────────────────────────────────────────────
+   2. KIHAGYÁS – Modal bezárása, opcionálisan örökre tiltja
+   ───────────────────────────────────────────────────────────── */
 function skipCalibrationReminder() {
     if (document.getElementById('cal-dont-show-again')?.checked) {
         localStorage.setItem('humano_cal_skip_forever', '1');
@@ -3272,7 +3279,16 @@ function skipCalibrationReminder() {
 }
 
 
-
+/* ─────────────────────────────────────────────────────────────
+   3. ELLENŐRZÉS – Kell-e mutatni a kalibrációs modalt?
+   Hívja: handleConsentAccept() és startEditorFlow()
+   Feltételek:
+     - nincs "skip forever" flag
+     - be van jelentkezve a felhasználó
+     - az editor oldal aktív
+     - a consent modal nincs nyitva
+     - nincs még typing_profiles rekord az adatbázisban
+   ───────────────────────────────────────────────────────────── */
 async function checkAndShowCalibrationReminder() {
     if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
     if (!currentUser) return;
@@ -3295,6 +3311,9 @@ async function checkAndShowCalibrationReminder() {
 }
 
 
+/* ─────────────────────────────────────────────────────────────
+   4. ESEMÉNYKEZELŐK – ESC billentyű + háttérkattintás bezár
+   ───────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' &&
@@ -3302,20 +3321,12 @@ document.addEventListener('DOMContentLoaded', () => {
             skipCalibrationReminder();
         }
     });
+
     document.getElementById('cal-reminder-modal')?.addEventListener('click', (e) => {
         if (e.target === document.getElementById('cal-reminder-modal')) {
             skipCalibrationReminder();
         }
     });
-});
-
-
-  // Háttérre kattintva bezár
-  document.getElementById('cal-reminder-modal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('cal-reminder-modal')) {
-      skipCalibrationReminder();
-    }
-  });
 });
 </script>
 
