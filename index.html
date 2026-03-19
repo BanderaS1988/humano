@@ -507,18 +507,19 @@
             <span>Humán Index: <strong id="s-human">–</strong></span>
           </div>
 
-          <!-- Beillesztés arány sáv -->
-         <div id="paste-ratio-bar" style="display:none;margin-top:.5rem">
+         <!-- Beillesztés arány sáv -->
+<div id="paste-ratio-bar" style="display:none;margin-top:.5rem">
     <div style="display:flex;align-items:center;justify-content:space-between;font-size:.7rem;font-family:var(--font-mono);margin-bottom:.3rem">
         <span>✍️ Kézzel gépelt: <strong id="typed-pct" style="color:var(--success)">100%</strong></span>
-        <span>📋 Beillesztett: <strong id="pasted-pct" style="color:var(--gold3)">0%</strong></span>
+        <span>📋 Beillesztett: <strong id="pasted-pct" style="color:var(--gold)">0%</strong></span>
     </div>
     <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;position:relative">
-        <div id="typed-bar" style="height:100%;background:linear-gradient(90deg,var(--success),var(--gold));border-radius:3px;transition:width .4s ease;width:100%"></div>
+        <div id="typed-bar" style="height:100%;background:linear-gradient(90deg,var(--success),#2d8a50);border-radius:3px;transition:width .4s ease;width:100%"></div>
+        <div id="pasted-bar" style="height:100%;background:linear-gradient(90deg,#a07830,var(--gold));border-radius:3px;transition:width .4s ease;width:0%;position:absolute;right:0;top:0"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted2);margin-top:.25rem;font-family:var(--font-mono)">
-        <span>Emberi alkotás</span>
-        <span>Beillesztett tartalom</span>
+    <div style="display:flex;justify-content:space-between;font-size:.65rem;margin-top:.25rem;font-family:var(--font-mono)">
+        <span style="color:var(--success)">✍️ Emberi alkotás</span>
+        <span style="color:var(--gold)">📋 Beillesztett tartalom</span>
     </div>
 </div>
 
