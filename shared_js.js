@@ -1323,14 +1323,46 @@ function resetInactivityTimer() {
     if (inactivityTimer) clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
         if (E.sessionStart) {
-            E.focusSwitches++;
-            const sfEl = document.getElementById('s-focus');
-            const sbfEl = document.getElementById('sidebar-focus');
-            if (sfEl) sfEl.textContent = E.focusSwitches;
-            if (sbfEl) sbfEl.textContent = E.focusSwitches;
+            const modal = document.getElementById('inactivity-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                // Számláló indítása
+                let secs = 0;
+                window._inactivityInterval = setInterval(() => {
+                    secs++;
+                    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+                    const s = (secs % 60).toString().padStart(2, '0');
+                    const el = document.getElementById('inactivity-duration');
+                    if (el) el.textContent = `${m}:${s}`;
+                }, 1000);
+            }
         }
-    }, 300000);
+    }, 2 * 60 * 1000); // 2 perc
 }
+
+function resumeFromInactivity() {
+    const modal = document.getElementById('inactivity-modal');
+    if (modal) modal.style.display = 'none';
+    
+    // Számláló leállítása
+    if (window._inactivityInterval) {
+        clearInterval(window._inactivityInterval);
+        window._inactivityInterval = null;
+    }
+    
+    // Ablakváltás növelése
+    E.focusSwitches++;
+    const sfEl = document.getElementById('s-focus');
+    const sbfEl = document.getElementById('sidebar-focus');
+    if (sfEl) sfEl.textContent = E.focusSwitches;
+    if (sbfEl) sbfEl.textContent = E.focusSwitches;
+    
+    // Timer reset
+    resetInactivityTimer();
+    showToast('▶ Folytatás – jó írást!');
+}
+
+window.resumeFromInactivity = resumeFromInactivity;
 
 function editorSetStatus(s) {
     const dot = document.getElementById('e-dot');
