@@ -4725,7 +4725,7 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
                 pdf.setTextColor(200, 190, 160);
                 pdf.setFontSize(5);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(String(val), rxCol + 22, ly);
+                pdf.text(String(val), rxCol + 22, ly, { maxWidth: rw - 25 });
             });
             resolve();
         };
