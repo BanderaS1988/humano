@@ -845,10 +845,47 @@ function hideBiometricConsentModal() {
     setTimeout(() => { modal.style.display = 'none'; }, 300);
 }
 
-function handleConsentDecline() {
+async function handleConsentDecline() {
     hideBiometricConsentModal();
-    showToast('A hitelesítési funkció biometrikus beleegyezés nélkül nem elérhető.');
-    showPage('landing');
+    // Kiírjuk, hogy miért nem tud továbblépni
+    showToast('❌ A hitelesítési funkció használatához el kell fogadnod a biometrikus adatok kezelését.');
+    // Visszairányítjuk a főoldalra vagy a dashboardra
+    setTimeout(() => showPage('dashboard'), 1500);
+}
+
+async function handleConsentAccept() {
+    const btn = document.getElementById('consent-accept-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Rögzítés...';
+    }
+
+    try {
+        await ConsentManager.record('keystroke_dynamics');
+        hideBiometricConsentModal();
+        // Sikeres elfogadás után pozitív visszajelzés
+        showToast('✅ Biometrikus beleegyezés elfogadva – most már hitelesíthetsz!');
+        
+        showPage('editor');
+        
+        const editorEl = document.getElementById('doc-content-area');
+        if (editorEl && !editorEl.dataset.initialized) {
+            editorInit();
+            editorEl.dataset.initialized = 'true';
+        }
+        
+        setTimeout(() => {
+            checkAndShowCalibrationReminder();
+        }, 1000);
+
+    } catch (err) {
+        console.error('❌ Consent rögzítési hiba:', err);
+        showToast('❌ Hiba: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✦ Elfogadom';
+        }
+    }
 }
 
 async function handleConsentAccept() {
