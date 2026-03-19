@@ -4496,9 +4496,9 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         ['Entropia', entropyPct + '%'],
         ['Entropia CV', entropyCV.toFixed(2)],
     ];
-    const cw2 = CW / compose.length;
+    const cColW = CW / compose.length;
     compose.forEach(([lbl, val], i) => {
-        const cx = PL + i * cw2 + cw2 / 2;
+        const cx = PL + i * cColW + cColW / 2;
         pdf.setTextColor(240, 208, 112);
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
@@ -4509,12 +4509,10 @@ async function generatePdfCert(docId, title, author, hash, createdAt, otsStatus,
         pdf.text(lbl, cx, y + 15.5, { align: 'center' });
     });
     y += 21;
-
     pdf.setDrawColor(100, 80, 30);
     pdf.setLineWidth(0.2);
     pdf.line(PL, y, W - PR, y);
     y += 4;
-
     // SHA-256
     pdf.setTextColor(100, 80, 30);
     pdf.setFontSize(5.5);
