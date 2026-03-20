@@ -1546,7 +1546,6 @@ function checkSaveF() {
   const title = document.getElementById('doc-title-input')?.value?.trim() || '';
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
-  // JAVÍTVA: csak a valódi billentyűleütések számítanak interakciónak
   const ok = txt && title && fKeys >= 30 && wc >= 100;
   ['btn-save', 'btn-save-right'].forEach(id => {
     const btn = document.getElementById(id);
@@ -1556,7 +1555,6 @@ function checkSaveF() {
       if (!title) btn.title = 'Add meg a szöveg címét';
       else if (wc < 100) btn.title = `Még ${100 - wc} szó hiányzik`;
       else if (fKeys < 30) btn.title = 'Írj legalább 30 karaktert kézzel';
-      else btn.title = 'Írj vagy illessz be több szöveget';
     } else {
       btn.title = pastedCharsF > typedCharsF
         ? '⚠️ Főleg beillesztett szöveg – az arány megjelenik a tanúsítványban'
@@ -1564,6 +1562,7 @@ function checkSaveF() {
     }
   });
 }
+
 
 
 
@@ -2159,12 +2158,36 @@ function startAutosaveF() {
 
 
 // ── MENTÉS / HITELESÍTÉS ──
+// ── SAVE CHECK ──
+function checkSaveF() {
+  const area = document.getElementById('editor-area');
+  const title = document.getElementById('doc-title-input')?.value?.trim() || '';
+  const txt = area?.innerText?.trim() || '';
+  const wc = txt.split(/\s+/).filter(Boolean).length;
+  const ok = txt && title && fKeys >= 30 && wc >= 100;
+  ['btn-save', 'btn-save-right'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = !ok;
+    if (!ok) {
+      if (!title) btn.title = 'Add meg a szöveg címét';
+      else if (wc < 100) btn.title = `Még ${100 - wc} szó hiányzik`;
+      else if (fKeys < 30) btn.title = 'Írj legalább 30 karaktert kézzel';
+    } else {
+      btn.title = pastedCharsF > typedCharsF
+        ? '⚠️ Főleg beillesztett szöveg – az arány megjelenik a tanúsítványban'
+        : 'Hitelesítés & Mentés';
+    }
+  });
+}
+
+// ── MENTÉS / HITELESÍTÉS ──
 async function focusSave() {
   const area = document.getElementById('editor-area');
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
   if (wc < 100) { showFocusToast(`❌ Még ${100 - wc} szó hiányzik!`); return; }
-  if (fKeys + pastedCharsF < 30) { showFocusToast('❌ Túl kevés adat!'); return; }
+  if (fKeys < 30) { showFocusToast('❌ Írj legalább 30 karaktert kézzel!'); return; }
   if (!fCurrentUser) { window.location.href = '/#auth'; return; }
 
   const btn1 = document.getElementById('btn-save');
@@ -2241,7 +2264,6 @@ async function focusSave() {
 
     await dbF.from('profiles').update({ used_credits: used + 1 }).eq('id', fCurrentUser.id);
 
-    // OTS stamp
     try {
       const { data: { session } } = await dbF.auth.getSession();
       fetch(`${SUPA_URL_F}/functions/v1/ots-stamp`, {
@@ -2256,12 +2278,10 @@ async function focusSave() {
     fCertDocId = docId;
     fCertHash = hash;
 
-    // DOC ID + HASH
     setEl2('f-cert-id', docId);
     const hashEl = document.getElementById('f-cert-hash');
     if (hashEl) hashEl.textContent = hash;
 
-    // Trust badge
     const badge = getHumanoBadge(fHumanPct);
     const trustBadge = document.getElementById('f-cert-trust-badge');
     if (trustBadge) {
@@ -2270,7 +2290,6 @@ async function focusSave() {
       trustBadge.style.display = 'inline-flex';
     }
 
-    // Score magyarázat
     const explEl = document.getElementById('f-cert-score-explanation');
     const explText = document.getElementById('f-cert-score-explanation-text');
     if (explEl && explText) {
@@ -2281,7 +2300,6 @@ async function focusSave() {
       else explText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – ez NEM jelenti hogy AI írta.`;
     }
 
-    // Beillesztés arány a cert panelban
     if (pastedCharsF > 0) {
       const certPasteEl = document.getElementById('f-cert-paste-ratio');
       if (certPasteEl) {
@@ -2292,15 +2310,12 @@ async function focusSave() {
       }
     }
 
-    // Timeline időbélyegek
     const now = new Date().toLocaleString('hu-HU');
     setEl2('f-tl-hash-time', now);
     setEl2('f-tl-db-time', now);
 
-    // QR kód
     generateQR('f-cert-qr', docId);
 
-    // Badge
     const badgePreviewLink = document.getElementById('f-badge-preview-link');
     const badgeDocIdLabel = document.getElementById('f-badge-doc-id-label');
     const badgeHtml = document.getElementById('f-badge-html');
@@ -2308,11 +2323,9 @@ async function focusSave() {
     if (badgeDocIdLabel) badgeDocIdLabel.textContent = docId;
     if (badgeHtml) badgeHtml.textContent = getBadgeHtml(docId);
 
-    // Timelapse gomb
     const tlBtn = document.getElementById('f-tl-btn');
     if (tlBtn) tlBtn.style.display = 'inline-flex';
 
-    // Közösségi megosztás ha publikált
     if (isPublished) {
       const shareSection = document.getElementById('f-share-published-section');
       if (shareSection) {
@@ -2328,13 +2341,12 @@ async function focusSave() {
       }
     }
 
-    // Cert panel megjelenítése
+    clearTimeout(window._fAutosaveDebounce);
     localStorage.removeItem('humano_focus_draft');
     document.getElementById('cert-panel-focus').style.display = 'block';
     document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
 
     [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '✅ Hitelesítve'; b.style.opacity = '.6'; } });
-
     showFocusToast('✦ Hitelesítve! DOC ID: ' + docId);
 
   } catch (err) {
@@ -2342,6 +2354,7 @@ async function focusSave() {
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
   }
 }
+
 
 // OTS státusz figyelő
 function startOtsWatcherF(docId) {
