@@ -1134,6 +1134,11 @@
     <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">ℹ️ Mit jelent ez az eredmény?</div>
     <div id="f-cert-score-explanation-text"></div>
   </div>
+  <div id="f-cert-paste-ratio" style="display:none;margin-top:.75rem;background:var(--surface2);border-radius:8px;padding:.75rem 1rem">
+  <div style="font-size:.68rem;font-weight:700;color:var(--gold3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:.4rem">📋 Szöveg összetétele</div>
+  <div style="font-size:.8rem;color:var(--muted)">Kézzel gépelt: <strong id="f-cert-typed-pct" style="color:var(--gold)">–%</strong> &nbsp;|&nbsp; Beillesztett: <strong id="f-cert-pasted-pct" style="color:var(--gold3)">–%</strong></div>
+  <div style="font-size:.7rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)">A hitelesítés súlya a kézzel gépelt tartalmon van.</div>
+</div>
 
   <!-- OTS BADGE -->
   <div style="margin-top:.75rem">
@@ -1397,10 +1402,15 @@ function onFocusKeyDown(e) {
 
 if (e.key === 'Backspace' || e.key === 'Delete') {
     fDels++;
-    typedCharsF = Math.max(0, typedCharsF - 1);
+    if (pastedCharsF > 0) {
+        pastedCharsF = Math.max(0, pastedCharsF - 1);
+    } else {
+        typedCharsF = Math.max(0, typedCharsF - 1);
+    }
+    updatePasteRatioF();
     tlRecord('delete');
     checkTlFlush();
-  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+} else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
     fKeys++;
     typedCharsF++;
     const interval = fLastKey ? now - fLastKey : 150;
@@ -1452,7 +1462,10 @@ function insertPastedTextF(text) {
     const range = sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(span);
-    range.setStartAfter(span);
+    const emptyNode = document.createTextNode('\u200B');
+    span.parentNode.insertBefore(emptyNode, span.nextSibling);
+    range.setStartAfter(emptyNode);
+    range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
   }
@@ -1463,6 +1476,7 @@ function insertPastedTextF(text) {
   checkSaveF();
 }
 
+  
 function confirmFocusPaste() {
   window._fPasteAllowed = true;
   const modal = document.getElementById('f-paste-modal');
@@ -1531,11 +1545,20 @@ function checkSaveF() {
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
   const totalInput = fKeys + pastedCharsF;
-const ok = txt && title && totalInput >= 30 && wc >= 100;
-
+  const ok = txt && title && totalInput >= 30 && wc >= 100;
   ['btn-save', 'btn-save-right'].forEach(id => {
     const btn = document.getElementById(id);
-    if (btn) btn.disabled = !ok;
+    if (!btn) return;
+    btn.disabled = !ok;
+    if (!ok) {
+      if (!title) btn.title = 'Add meg a szöveg címét';
+      else if (wc < 100) btn.title = `Még ${100 - wc} szó hiányzik`;
+      else btn.title = 'Írj vagy illessz be több szöveget';
+    } else {
+      btn.title = pastedCharsF > typedCharsF
+        ? '⚠️ Főleg beillesztett szöveg – az arány megjelenik a tanúsítványban'
+        : 'Hitelesítés & Mentés';
+    }
   });
 }
 
@@ -2121,6 +2144,11 @@ if (draft.stats.sessionElapsedMs > 0) {
 
 // ── MENTÉS / HITELESÍTÉS ──
 async function focusSave() {
+  const area = document.getElementById('editor-area');
+  const txt = area?.innerText?.trim() || '';
+  const wc = txt.split(/\s+/).filter(Boolean).length;
+  if (wc < 100) { showFocusToast(`❌ Még ${100 - wc} szó hiányzik!`); return; }
+  if (fKeys + pastedCharsF < 30) { showFocusToast('❌ Túl kevés adat!'); return; }
   if (!fCurrentUser) { window.location.href = '/#auth'; return; }
 
   const btn1 = document.getElementById('btn-save');
@@ -2128,9 +2156,7 @@ async function focusSave() {
   [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '⏳...'; } });
 
   try {
-    const area = document.getElementById('editor-area');
     const content = area?.innerHTML || '';
-    const plainText = area?.innerText?.trim() || '';
     const title = document.getElementById('doc-title-input')?.value?.trim() || 'Névtelen';
     const isPublic = document.getElementById('f-is-public')?.checked ?? true;
     const isPublished = document.getElementById('f-is-published')?.checked ?? false;
@@ -2149,7 +2175,7 @@ async function focusSave() {
       return;
     }
 
-    const hash = await sha256(plainText);
+    const hash = await sha256(txt);
     const ts = Date.now().toString(36).toUpperCase();
     const userPrefix = (profile?.humano_id || fCurrentUser.id).substring(4, 8).toUpperCase();
     const docId = `DOC-${userPrefix}-${ts}`;
@@ -2239,6 +2265,17 @@ async function focusSave() {
       else explText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – ez NEM jelenti hogy AI írta.`;
     }
 
+    // Beillesztés arány a cert panelban
+    if (pastedCharsF > 0) {
+      const certPasteEl = document.getElementById('f-cert-paste-ratio');
+      if (certPasteEl) {
+        certPasteEl.style.display = 'block';
+        const total = typedCharsF + pastedCharsF;
+        setEl2('f-cert-typed-pct', Math.round((typedCharsF / total) * 100) + '%');
+        setEl2('f-cert-pasted-pct', Math.round((pastedCharsF / total) * 100) + '%');
+      }
+    }
+
     // Timeline időbélyegek
     const now = new Date().toLocaleString('hu-HU');
     setEl2('f-tl-hash-time', now);
@@ -2289,7 +2326,6 @@ async function focusSave() {
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
   }
 }
-
 
 // OTS státusz figyelő
 function startOtsWatcherF(docId) {
