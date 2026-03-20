@@ -582,6 +582,16 @@ textarea.form-control {
 }
 
 
+@keyframes focus-pulse {
+  0%, 100% { border-color: rgba(201,168,76,.2); color: var(--muted); box-shadow: none; }
+  50% { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,.3); }
+}
+
+.btn-focus-pulse {
+  animation: focus-pulse 2.5s ease-in-out infinite;
+}
+
+
 /* ─── LAYOUT ────────────────────────────────────────────────── */
 .page {
     display: none;
