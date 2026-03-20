@@ -6438,7 +6438,10 @@ function mediaInsert() {
         : mediaAlign === 'right' ? 'display:block;margin:10px 0 10px auto;'
         : 'display:block;margin:10px 0;';
     
-    const html = `<img src="${mediaSelectedSrc}" alt="${esc(alt)}" style="${alignStyle}width:${w}%;max-width:100%;border-radius:6px;">`;
+    const html = `<div class="editor-img-wrap" style="position:relative;display:inline-block;${alignStyle}width:${w}%;max-width:100%">
+    <img src="${mediaSelectedSrc}" alt="${esc(alt)}" style="width:100%;border-radius:6px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
+</div>`;
 
     const editor = document.getElementById('doc-content-area');
     editor.focus();
