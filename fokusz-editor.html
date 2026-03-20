@@ -2116,12 +2116,19 @@ function insertPastedTextF(text) {
   }
   pastedCharsF += text.length;
   updatePasteRatioF();
+  updateStatsF();
 
-  // setTimeout – DOM frissülés után fut le
-  setTimeout(() => {
-    updateStatsF();
-    checkSaveF();
-  }, 0);
+  // Gomb aktiválás azonnal a beillesztett szöveg alapján
+  const title = document.getElementById('doc-title-input')?.value?.trim() || '';
+  const allText = (area.innerText || '') + text;
+  const wc = allText.trim().split(/\s+/).filter(Boolean).length;
+  const ok = wc >= 100 && title;
+  ['btn-save', 'btn-save-right'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = !ok;
+    btn.title = ok ? 'Hitelesítés & Mentés' : `Még ${Math.max(0, 100 - wc)} szó hiányzik`;
+  });
 }
 
   
