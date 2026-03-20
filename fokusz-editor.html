@@ -2114,13 +2114,15 @@ function insertPastedTextF(text) {
     sel.removeAllRanges();
     sel.addRange(range);
   }
-  // typedCharsF-et NEM csökkentjük – a gépelt karakterek megmaradnak
   pastedCharsF += text.length;
   updatePasteRatioF();
-  updateStatsF();
-  checkSaveF();
-}
 
+  // setTimeout – DOM frissülés után fut le
+  setTimeout(() => {
+    updateStatsF();
+    checkSaveF();
+  }, 0);
+}
 
   
 function confirmFocusPaste() {
