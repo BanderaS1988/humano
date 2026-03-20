@@ -1368,98 +1368,13 @@ function initFocusEditor() {
   area.addEventListener('input', onFocusInput);
   area.addEventListener('paste', onFocusPaste);
 
-  // Törlés figyelő – ha az editor teljesen kiürül
   area.addEventListener('input', () => {
     const txt = area.innerText?.trim() || '';
     if (txt === '' && (fKeys > 0 || typedCharsF > 0 || pastedCharsF > 0)) {
-      if (!confirm('Mindent kitöröltél. Nullázzuk az összes mérést is?')) {
-        // Nem – nem csinálunk semmit
-        return;
-      }
-      // Igen – teljes nullázás
+      if (!confirm('Mindent kitöröltél. Nullázzuk az összes mérést is?')) return;
       fullResetF();
     }
   });
-
-
-  function fullResetF() {
-  // Számlálók
-  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
-  fSessionStart = null; fLastKey = null;
-  fTotalPausedMs = 0; fPauseStart = null;
-  fEvents = []; fPulseHistory = [];
-  fHumanPct = 0; fHumanCategory = '–'; fHumanCV = 0;
-  fEntropyCV = 0; fEntropyPct = 0;
-  fCfDnaScore = 0; fFlowPulseScore = 0; fSmdScore = 0; fTripleLockScore = 0;
-  typedCharsF = 0; pastedCharsF = 0;
-  fMouseEvents = []; fMouseScore = 0; fMouseCV = 0;
-  window._fPasteAllowed = false;
-  window._fPendingPaste = null;
-
-  // Timerek
-  clearInterval(fTimerInterval); fTimerInterval = null;
-  clearTimeout(fInactivityTimer); fInactivityTimer = null;
-  clearInterval(fInactivityInterval); fInactivityInterval = null;
-  clearTimeout(window._fAutosaveDebounce);
-  if (fOtsWatcherInterval) { clearInterval(fOtsWatcherInterval); fOtsWatcherInterval = null; }
-
-  // Modálok bezárása
-  const inactModal = document.getElementById('f-inactivity-modal');
-  if (inactModal) inactModal.remove();
-  const backModal = document.getElementById('back-modal');
-  if (backModal) backModal.remove();
-
-  // Paper animáció
-  document.getElementById('paper').classList.remove('breathing');
-
-  // Draft törlése
-  localStorage.removeItem('humano_focus_draft');
-
-  // Cert panel elrejtése
-  document.getElementById('cert-panel-focus').style.display = 'none';
-
-  // Paste UI
-  const bar = document.getElementById('f-paste-ratio-bar');
-  if (bar) bar.style.display = 'none';
-  const wrap = document.getElementById('wc-paste-wrap');
-  if (wrap) wrap.style.display = 'none';
-  const typedBar = document.getElementById('f-typed-bar');
-  if (typedBar) typedBar.style.width = '100%';
-  const pastedBar = document.getElementById('f-pasted-bar');
-  if (pastedBar) pastedBar.style.width = '0%';
-
-  // Stat UI
-  setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
-  setEl2('f-time', '00:00'); setEl2('f-human-index', '–%'); setEl2('f-triple-lock', '–');
-  setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
-  setEl2('f-mouse', '–'); setEl2('f-entropy', '–');
-  setEl2('wc-chars', 0); setEl2('wc-words', 0); setEl2('wc-keys', 0);
-  setEl2('wc-speed', '–'); setEl2('wc-human', '–');
-  setEl2('f-typed-pct', '100%'); setEl2('f-pasted-pct', '0%');
-  setEl2('wc-typed-pct', '100%'); setEl2('wc-pasted-pct', '0%');
-
-  const hiFill = document.getElementById('f-hi-fill');
-  if (hiFill) { hiFill.style.width = '0%'; }
-  const eFill = document.getElementById('f-entropy-fill');
-  if (eFill) { eFill.style.width = '0%'; }
-  const hiLabel = document.getElementById('f-human-label');
-  if (hiLabel) hiLabel.textContent = 'Billentyűdinamika alapján';
-  const hiEl = document.getElementById('f-human-index');
-  if (hiEl) { hiEl.textContent = '–%'; hiEl.style.color = ''; }
-
-  // Gombok
-  ['btn-save', 'btn-save-right'].forEach(id => {
-    const b = document.getElementById(id);
-    if (b) {
-      b.disabled = true;
-      b.textContent = id === 'btn-save' ? '🔒 Hitelesítés' : '🔒 Hitelesítés & Mentés';
-      b.style.opacity = '1';
-    }
-  });
-
-  drawPulseF();
-  showFocusToast('🗑 Minden nullázva – kezdhetsz újra!');
-}
 
   document.addEventListener('visibilitychange', () => {
     if (!fSessionStart) return;
@@ -1478,6 +1393,78 @@ function initFocusEditor() {
   });
 
   document.addEventListener('selectionchange', updateToolbarStateF);
+}
+
+
+
+  function fullResetF() {
+  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
+  fSessionStart = null; fLastKey = null;
+  fTotalPausedMs = 0; fPauseStart = null;
+  fEvents = []; fPulseHistory = [];
+  fHumanPct = 0; fHumanCategory = '–'; fHumanCV = 0;
+  fEntropyCV = 0; fEntropyPct = 0;
+  fCfDnaScore = 0; fFlowPulseScore = 0; fSmdScore = 0; fTripleLockScore = 0;
+  typedCharsF = 0; pastedCharsF = 0;
+  fMouseEvents = []; fMouseScore = 0; fMouseCV = 0;
+  window._fPasteAllowed = false;
+  window._fPendingPaste = null;
+
+  clearInterval(fTimerInterval); fTimerInterval = null;
+  clearTimeout(fInactivityTimer); fInactivityTimer = null;
+  clearInterval(fInactivityInterval); fInactivityInterval = null;
+  clearTimeout(window._fAutosaveDebounce);
+  if (typeof fOtsWatcherInterval !== 'undefined' && fOtsWatcherInterval) {
+    clearInterval(fOtsWatcherInterval); fOtsWatcherInterval = null;
+  }
+
+  const inactModal = document.getElementById('f-inactivity-modal');
+  if (inactModal) inactModal.remove();
+  const backModal = document.getElementById('back-modal');
+  if (backModal) backModal.remove();
+
+  document.getElementById('paper').classList.remove('breathing');
+  localStorage.removeItem('humano_focus_draft');
+  document.getElementById('cert-panel-focus').style.display = 'none';
+
+  const bar = document.getElementById('f-paste-ratio-bar');
+  if (bar) bar.style.display = 'none';
+  const wrap = document.getElementById('wc-paste-wrap');
+  if (wrap) wrap.style.display = 'none';
+  const typedBar = document.getElementById('f-typed-bar');
+  if (typedBar) typedBar.style.width = '100%';
+  const pastedBar = document.getElementById('f-pasted-bar');
+  if (pastedBar) pastedBar.style.width = '0%';
+
+  setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
+  setEl2('f-time', '00:00'); setEl2('f-human-index', '–%'); setEl2('f-triple-lock', '–');
+  setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
+  setEl2('f-mouse', '–'); setEl2('f-entropy', '–');
+  setEl2('wc-chars', 0); setEl2('wc-words', 0); setEl2('wc-keys', 0);
+  setEl2('wc-speed', '–'); setEl2('wc-human', '–');
+  setEl2('f-typed-pct', '100%'); setEl2('f-pasted-pct', '0%');
+  setEl2('wc-typed-pct', '100%'); setEl2('wc-pasted-pct', '0%');
+
+  const hiFill = document.getElementById('f-hi-fill');
+  if (hiFill) { hiFill.style.width = '0%'; }
+  const eFill = document.getElementById('f-entropy-fill');
+  if (eFill) { eFill.style.width = '0%'; }
+  const hiLabel = document.getElementById('f-human-label');
+  if (hiLabel) hiLabel.textContent = 'Billentyűdinamika alapján';
+  const hiEl = document.getElementById('f-human-index');
+  if (hiEl) { hiEl.textContent = '–%'; hiEl.style.color = ''; }
+
+  ['btn-save', 'btn-save-right'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) {
+      b.disabled = true;
+      b.textContent = id === 'btn-save' ? '🔒 Hitelesítés' : '🔒 Hitelesítés & Mentés';
+      b.style.opacity = '1';
+    }
+  });
+
+  drawPulseF();
+  showFocusToast('🗑 Minden nullázva – kezdhetsz újra!');
 }
 
 
@@ -2533,7 +2520,7 @@ function focusNewDoc() {
   document.getElementById('f-category').value = '';
   document.getElementById('category-indicator').style.display = 'none';
   fullResetF();
-}
+
 
   fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
   fSessionStart = null; fLastKey = null; fTotalPausedMs = 0;
