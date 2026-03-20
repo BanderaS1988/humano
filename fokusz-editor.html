@@ -1523,6 +1523,7 @@ function applyTextColor(color) {
   }
   if (color === null) {
     document.execCommand('removeFormat', false, null);
+    sel.collapseToEnd();
     return;
   }
   try {
@@ -1534,6 +1535,7 @@ function applyTextColor(color) {
     document.execCommand('styleWithCSS', false, true);
     document.execCommand('foreColor', false, color);
   }
+  sel.collapseToEnd();
 }
 
 // ── KIEMELŐ SZÍN ──
