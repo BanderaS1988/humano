@@ -2297,6 +2297,12 @@ async function focusSave() {
   if (wc < 100) { showFocusToast(`❌ Még ${100 - wc} szó hiányzik!`); return; }
   if (!fCurrentUser) { window.location.href = '/#auth'; return; }
 
+  // ── TIMER AZONNALI LEÁLLÍTÁS ──
+  clearInterval(fTimerInterval);
+  fTimerInterval = null;
+  clearTimeout(fInactivityTimer);
+  fInactivityTimer = null;
+
   const btn1 = document.getElementById('btn-save');
   const btn2 = document.getElementById('btn-save-right');
   [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '⏳...'; } });
@@ -2457,6 +2463,8 @@ async function focusSave() {
     showFocusToast('✦ Hitelesítve! DOC ID: ' + docId);
 
   } catch (err) {
+    // Hiba esetén a timer visszakapcsol ha volt aktív session
+    if (fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
     showFocusToast('❌ Hiba: ' + err.message);
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
   }
