@@ -834,7 +834,7 @@
     </div>
   </div>
   <div class="topbar-actions">
-    <a href="/" class="back-link">← Vissza</a>
+    <a href="javascript:void(0)" class="back-link" onclick="handleBackButton()">← Vissza</a>
     <button class="history-btn" onclick="document.execCommand('undo')" title="Visszavonás (Ctrl+Z)">↩</button>
     <button class="history-btn" onclick="document.execCommand('redo')" title="Előre (Ctrl+Y)">↪</button>
     <button class="btn btn-outline" onclick="openPreview()" title="Előnézet">👁 Előnézet</button>
@@ -1795,6 +1795,40 @@ function autoSaveF() {
     if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
     setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
   }, 5000);
+}
+
+  function handleBackButton() {
+  const content = document.getElementById('editor-area')?.innerHTML || '';
+  const title = document.getElementById('doc-title-input')?.value || '';
+  
+  // Mindig mentjük
+  if (content.trim()) {
+    localStorage.setItem('humano_focus_draft', JSON.stringify({ 
+      content, title, ts: Date.now() 
+    }));
+  }
+  
+  // Modal megjelenítése
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  modal.innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:420px;width:90%;text-align:center">
+      <div style="font-size:2rem;margin-bottom:.75rem">✦</div>
+      <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">Minden megjegyezve!</div>
+      <p style="font-size:.85rem;color:var(--muted);line-height:1.8;margin-bottom:1.5rem">
+        A piszkozatod automatikusan elmentve.<br>
+        Legközelebb amikor megnyitod a Fókusz Editort,<br>
+        <strong style="color:var(--gold)">pontosan onnan folytathatod ahol abbahagytad.</strong><br><br>
+        <span style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted2)">
+          📝 ${title || 'Névtelen'} · ${Math.round(content.replace(/<[^>]+>/g,'').length / 5)} szó · ${new Date().toLocaleTimeString('hu-HU', {hour:'2-digit',minute:'2-digit'})}
+        </span>
+      </p>
+      <div style="display:flex;gap:.75rem;justify-content:center">
+        <button onclick="window.location.href='/'" style="background:linear-gradient(135deg,#a07830,#c9a84c);color:#0c0a04;border:none;border-radius:6px;padding:.6rem 1.25rem;font-weight:700;cursor:pointer;font-size:.85rem">← Vissza a főoldalra</button>
+        <button onclick="this.closest('div[style]').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.6rem 1.25rem;cursor:pointer;font-size:.85rem">Maradok</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 function startAutosaveF() {
