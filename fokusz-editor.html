@@ -1416,9 +1416,10 @@ if (e.key === 'Backspace' || e.key === 'Delete') {
     checkTlFlush();
   }
 
-  fLastKey = now;
+fLastKey = now;
   updateStatsF();
   checkSaveF();
+  updatePasteRatioF();
   autoSaveF();
   resetFlowTimer();
   resetInactivityF();
@@ -1458,6 +1459,8 @@ function insertPastedTextF(text) {
   pastedCharsF += text.length;
   typedCharsF = Math.max(0, typedCharsF - text.length);
   updatePasteRatioF();
+  updateStatsF();
+  checkSaveF();
 }
 
 function confirmFocusPaste() {
@@ -1527,7 +1530,8 @@ function checkSaveF() {
   const title = document.getElementById('doc-title-input')?.value?.trim() || '';
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
-  const ok = txt && title && fKeys >= 30 && wc >= 100;
+  const totalInput = fKeys + pastedCharsF;
+const ok = txt && title && totalInput >= 30 && wc >= 100;
 
   ['btn-save', 'btn-save-right'].forEach(id => {
     const btn = document.getElementById(id);
