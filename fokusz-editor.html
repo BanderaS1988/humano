@@ -1114,7 +1114,7 @@
     <div id="word-warn-focus">📝 Még <strong id="f-words-left">100</strong> szó hiányzik a hitelesítéshez.</div>
 
     <!-- CERT PANEL -->
-   <div id="cert-panel-focus">
+<div id="cert-panel-focus">
   <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">✦ Szöveg hitelesítve</div>
   <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
 
@@ -1129,42 +1129,91 @@
     <span id="f-cert-trust-badge" style="display:none;align-items:center;gap:.4rem;padding:.3rem .9rem;border-radius:20px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);font-size:.85rem;font-weight:700"></span>
   </div>
 
+  <!-- SCORE MAGYARÁZAT -->
+  <div id="f-cert-score-explanation" style="display:none;margin-top:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;font-size:.78rem;color:var(--muted);line-height:1.8">
+    <div style="font-weight:700;color:var(--gold2);margin-bottom:.4rem">ℹ️ Mit jelent ez az eredmény?</div>
+    <div id="f-cert-score-explanation-text"></div>
+  </div>
+
   <!-- OTS BADGE -->
   <div style="margin-top:.75rem">
-    <span class="badge" id="f-cert-ots-badge" style="font-size:.75rem;padding:.3rem .75rem;border-radius:20px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold3)">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
+    <span id="f-cert-ots-badge" style="font-size:.75rem;padding:.3rem .75rem;border-radius:20px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold3)">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
+  </div>
+
+  <!-- TIMELINE -->
+  <div style="margin-top:1.1rem">
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</div>
+        <div><div style="font-size:.78rem;color:var(--text)">SHA-256 hash kiszámítva</div><div style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)" id="f-tl-hash-time">–</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</div>
+        <div><div style="font-size:.78rem;color:var(--text)">HUMANO adatbázisba mentve</div><div style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)" id="f-tl-db-time">–</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--muted2);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0" id="f-tl-ots-dot">⏳</div>
+        <div><div style="font-size:.78rem;color:var(--text)">OpenTimestamps – Bitcoin blokklánc</div><div style="font-size:.68rem;color:var(--muted);font-family:var(--font-mono)" id="f-tl-ots-time">Feldolgozás folyamatban (~1 óra)...</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</div>
+        <div><div style="font-size:.78rem;color:var(--text)">Registry-be kerülve</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- QR KÓD -->
   <div style="margin-top:1rem">
-    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód</div>
+    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód – mobil ellenőrzéshez</div>
     <div id="f-cert-qr"></div>
   </div>
 
   <!-- BEÁGYAZHATÓ BADGE -->
   <div style="margin-top:1rem">
-    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható pecsét</div>
+    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható HUMANO Pecsét</div>
+    <div style="margin-bottom:.5rem">
+      <a id="f-badge-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;background:rgba(6,6,8,.95);border:1.5px solid var(--gold);font-family:var(--font-display);font-size:12px;color:var(--gold);text-decoration:none;">
+        ✦ <span><strong id="f-badge-doc-id-label" style="display:block;font-size:11px;letter-spacing:.5px">HUMANO HITELESÍTETT</strong></span>
+      </a>
+    </div>
+    <div style="font-size:.68rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--font-mono)">HTML kód (kattints a másoláshoz):</div>
     <div id="f-badge-html" onclick="copyFocusBadge()" style="font-family:var(--font-mono);font-size:.65rem;color:var(--gold3);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;word-break:break-all">–</div>
   </div>
 
-  <!-- MEGOSZTÁS -->
+  <!-- MEGOSZTÁS GRID -->
   <div style="margin-top:1rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:1rem">
     <div style="font-size:.72rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás & Küldés</div>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusCertId()">📋 ID másolása</button>
-      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusVerifyLink()">🔗 Link másolása</button>
-      <button class="btn btn-outline" style="font-size:.75rem" onclick="focusDownloadPdf()">📄 PDF tanúsítvány</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusClipboard()">📋 Vágólapra</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="focusOpenSendEmail()">📧 Email küldés</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="focusDownloadPdf()">📄 PDF Tanúsítvány</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusVerifyLink()">🔗 Megosztási link</button>
       <button class="btn btn-outline" style="font-size:.75rem" onclick="focusDownloadSeal()">🏷️ Pecsét letöltése</button>
-      <button class="btn btn-outline" style="font-size:.75rem" onclick="openVerifyPage()">🔍 Ellenőrzés</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusBadge()">🏷️ Badge kód</button>
     </div>
   </div>
 
+  <!-- KÖZÖSSÉGI MEGOSZTÁS -->
+  <div id="f-share-published-section" style="display:none;margin-top:1rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:1rem">
+    <div style="font-size:.72rem;font-weight:700;color:var(--gold2);text-transform:uppercase;margin-bottom:.75rem">📤 Tartalom megosztása</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <a id="f-share-fb" href="#" target="_blank" class="btn btn-outline" style="font-size:.75rem">📘 Facebook</a>
+      <a id="f-share-tw" href="#" target="_blank" class="btn btn-outline" style="font-size:.75rem">🐦 Twitter/X</a>
+      <a id="f-share-wa" href="#" target="_blank" class="btn btn-outline" style="font-size:.75rem">💬 WhatsApp</a>
+      <a id="f-share-tg" href="#" target="_blank" class="btn btn-outline" style="font-size:.75rem">✈️ Telegram</a>
+      <a id="f-share-li" href="#" target="_blank" class="btn btn-outline" style="font-size:.75rem">💼 LinkedIn</a>
+      <button class="btn btn-gold" style="font-size:.75rem" onclick="copyFocusReadLink()">🔗 Link másolása</button>
+    </div>
+  </div>
+
+  <!-- TIMELAPSE + PUBLIKÁCIÓ -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
+    <button class="btn btn-outline" style="flex:1" id="f-tl-btn" style="display:none" onclick="focusOpenTimelapse()">▶ Alkotói idővonal</button>
+    <button class="btn btn-outline" style="flex:1" onclick="window.open('/read/'+fCertDocId,'_blank')">🌐 Publikáció</button>
+  </div>
+
   <!-- ÚJ SZÖVEG -->
-  <div style="display:flex;gap:.5rem;margin-top:1rem">
-    <button class="btn btn-gold" style="flex:1" onclick="focusNewDoc()">✦ Új szöveg</button>
-    <button class="btn btn-outline" onclick="window.location.href='/verify/'+fCertDocId" style="font-size:.75rem">🌐 Publikus oldal</button>
-  </div>
-</div>
-  </div>
+  <button class="btn btn-gold" style="width:100%;margin-top:.75rem" onclick="focusNewDoc()">✦ Új szöveg írása</button>
 </div>
 
 <!-- WORD COUNT BAR -->
@@ -2047,33 +2096,73 @@ async function focusSave() {
     startOtsWatcherF(docId);
 
     fCertDocId = docId;
-fCertHash = hash;
+    fCertHash = hash;
 
-setEl2('f-cert-id', docId);
-const hashEl = document.getElementById('f-cert-hash');
-if (hashEl) hashEl.textContent = hash;
+    // DOC ID + HASH
+    setEl2('f-cert-id', docId);
+    const hashEl = document.getElementById('f-cert-hash');
+    if (hashEl) hashEl.textContent = hash;
 
-// Trust badge
-const badge = getHumanoBadge(fHumanPct);
-const trustBadge = document.getElementById('f-cert-trust-badge');
-if (trustBadge) {
-  trustBadge.textContent = `${badge.icon} ${badge.label}`;
-  trustBadge.style.color = badge.color;
-  trustBadge.style.display = 'inline-flex';
-}
+    // Trust badge
+    const badge = getHumanoBadge(fHumanPct);
+    const trustBadge = document.getElementById('f-cert-trust-badge');
+    if (trustBadge) {
+      trustBadge.textContent = `${badge.icon} ${badge.label}`;
+      trustBadge.style.color = badge.color;
+      trustBadge.style.display = 'inline-flex';
+    }
 
-// QR kód
-generateQR('f-cert-qr', docId);
+    // Score magyarázat
+    const explEl = document.getElementById('f-cert-score-explanation');
+    const explText = document.getElementById('f-cert-score-explanation-text');
+    if (explEl && explText) {
+      explEl.style.display = 'block';
+      if (fHumanPct >= 85) explText.innerHTML = `<span style="color:var(--success)">✅ Magas kognitív jelenlét</span> – természetes emberi ritmus.`;
+      else if (fHumanPct >= 60) explText.innerHTML = `<span style="color:var(--gold)">🟡 Közepes kognitív jelenlét</span> – emberi jellegű ritmus.`;
+      else if (fHumanPct >= 40) explText.innerHTML = `<span style="color:var(--gold3)">🟠 Vegyes mintázat</span> – a HUMANO tényeket közöl, nem ítélkezik.`;
+      else explText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – ez NEM jelenti hogy AI írta.`;
+    }
 
-// Badge HTML
-const badgeEl = document.getElementById('f-badge-html');
-if (badgeEl) badgeEl.textContent = getBadgeHtml(docId);
+    // Timeline időbélyegek
+    const now = new Date().toLocaleString('hu-HU');
+    setEl2('f-tl-hash-time', now);
+    setEl2('f-tl-db-time', now);
 
-document.getElementById('cert-panel-focus').style.display = 'block';
-document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
-    
+    // QR kód
+    generateQR('f-cert-qr', docId);
 
+    // Badge
+    const badgePreviewLink = document.getElementById('f-badge-preview-link');
+    const badgeDocIdLabel = document.getElementById('f-badge-doc-id-label');
+    const badgeHtml = document.getElementById('f-badge-html');
+    if (badgePreviewLink) badgePreviewLink.href = `https://humano-hu.vercel.app/verify/${docId}`;
+    if (badgeDocIdLabel) badgeDocIdLabel.textContent = docId;
+    if (badgeHtml) badgeHtml.textContent = getBadgeHtml(docId);
+
+    // Timelapse gomb
+    const tlBtn = document.getElementById('f-tl-btn');
+    if (tlBtn) tlBtn.style.display = 'inline-flex';
+
+    // Közösségi megosztás ha publikált
+    if (isPublished) {
+      const shareSection = document.getElementById('f-share-published-section');
+      if (shareSection) {
+        shareSection.style.display = 'block';
+        const readUrl = `https://humano-hu.vercel.app/read/${docId}`;
+        const shareText = encodeURIComponent(`${title} – Hitelesített emberi tartalom\n${readUrl}`);
+        const urlEnc = encodeURIComponent(readUrl);
+        document.getElementById('f-share-fb').href = `https://www.facebook.com/sharer/sharer.php?u=${urlEnc}`;
+        document.getElementById('f-share-tw').href = `https://twitter.com/intent/tweet?text=${shareText}`;
+        document.getElementById('f-share-wa').href = `https://wa.me/?text=${shareText}`;
+        document.getElementById('f-share-tg').href = `https://t.me/share/url?url=${urlEnc}&text=${encodeURIComponent(title)}`;
+        document.getElementById('f-share-li').href = `https://www.linkedin.com/sharing/share-offsite/?url=${urlEnc}`;
+      }
+    }
+
+    // Cert panel megjelenítése
     localStorage.removeItem('humano_focus_draft');
+    document.getElementById('cert-panel-focus').style.display = 'block';
+    document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
 
     [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '✅ Hitelesítve'; b.style.opacity = '.6'; } });
 
@@ -2112,6 +2201,37 @@ function startOtsWatcherF(docId) {
   }, 5 * 60 * 1000); // 5 percenként
 }
 
+
+  function copyFocusClipboard() {
+  if (!fCertDocId) return;
+  const title = document.getElementById('doc-title-input')?.value || '–';
+  const text = `HUMANO Hitelesített Szöveg\n${'─'.repeat(36)}\nCím: ${title}\nDOC ID: ${fCertDocId}\nSHA-256: ${fCertHash}\nEllenőrző link: https://humano-hu.vercel.app/verify/${fCertDocId}`;
+  navigator.clipboard?.writeText(text);
+  showFocusToast('📋 Vágólapra másolva!');
+}
+
+function focusOpenSendEmail() {
+  if (!fCertDocId) return;
+  document.getElementById('send-doc-id-hidden').value = fCertDocId;
+  document.getElementById('send-verify-link-hidden').value = `https://humano-hu.vercel.app/verify/${fCertDocId}`;
+  document.getElementById('send-hash-hidden').value = fCertHash;
+  const title = document.getElementById('doc-title-input')?.value || '–';
+  document.getElementById('send-subject').value = `HUMANO hitelesített szöveg: ${title}`;
+  document.getElementById('send-modal').classList.add('open');
+}
+
+function copyFocusReadLink() {
+  if (!fCertDocId) return;
+  navigator.clipboard?.writeText(`https://humano-hu.vercel.app/read/${fCertDocId}`);
+  showFocusToast('🔗 Link másolva!');
+}
+
+function focusOpenTimelapse() {
+  if (!fCertDocId) return;
+  document.getElementById('timelapse-doc-input').value = fCertDocId;
+  document.getElementById('tl-modal').classList.add('open');
+  loadTimelapse(fCertDocId);
+}
   
 
 // ── CERT AKCIÓK ──
