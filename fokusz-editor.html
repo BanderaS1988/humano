@@ -1325,17 +1325,11 @@
     <p style="font-size:.86rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
       Még nem végezted el az <strong style="color:var(--text)">Írói Azonosság Kalibrációt</strong>.<br>
       Ez mindössze <strong style="color:var(--gold)">2-3 perc</strong>, és sokkal személyre szabottabb Kognitív Jelenlét mutatót kapsz.<br><br>
-      <span style="color:var(--muted2);font-size:.78rem">Teljesen opcionális – bármikor elvégezheted később is.</span>
+      <span style="color:var(--muted2);font-size:.78rem">Teljesen opcionális – bármikor elvégezheted később is a profil oldalon.</span>
     </p>
     <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="goToCalibrationF()">✦ Kalibrálok most</button>
       <button class="btn btn-outline" onclick="skipCalibrationReminderF()">Kihagyom – írok most</button>
-    </div>
-    <div style="margin-top:1rem">
-      <label style="display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.74rem;color:var(--muted2);cursor:pointer">
-        <input type="checkbox" id="cal-dont-show-again" style="accent-color:var(--gold)"/>
-        Ne mutasd többé ezt az üzenetet
-      </label>
     </div>
   </div>
 </div>
@@ -1511,21 +1505,13 @@ function initFocusEditorFull() {
 
 // ── KALIBRÁCIÓS EMLÉKEZTETŐ – fókusz editor ──
 async function checkCalibrationReminderF() {
-  // Ha a felhasználó korábban kikapcsolta örökre
-  if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
-
-  // Ha nemrég kihagyta (2 perc)
-  const lastSkip = localStorage.getItem('humano_cal_last_skip');
-  if (lastSkip && (Date.now() - parseInt(lastSkip)) < 2 * 60 * 1000) return;
-
+  if (localStorage.getItem('humano_cal_asked') === '1') return;
   if (!fCurrentUser) return;
 
-  // Biometrikus modal ne legyen nyitva
   const consentModal = document.getElementById('biometric-consent-modal');
   if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
 
   try {
-    // Megnézzük van-e már kalibrációs profil
     const { data, error } = await dbF
       .from('typing_profiles')
       .select('id')
@@ -1533,14 +1519,12 @@ async function checkCalibrationReminderF() {
       .limit(1);
 
     if (error) return;
-    if (data && data.length > 0) return; // Már van profil, nem mutatjuk
+    if (data && data.length > 0) return;
 
-    // Megmutatjuk az emlékeztetőt
     const modal = document.getElementById('cal-reminder-modal');
     if (!modal) return;
     modal.style.display = 'flex';
     modal.classList.add('open');
-
   } catch (e) {
     console.warn('checkCalibrationReminderF hiba:', e);
   }
@@ -1562,9 +1546,11 @@ function goToCalibrationF() {
 }
 
 function closeCalibrationModalF() {
+  localStorage.setItem('humano_cal_asked', '1');
   const calModal = document.getElementById('f-calibration-modal');
   if (calModal) { calModal.classList.remove('open'); calModal.style.display = 'none'; }
 }
+
 
 // ── KALIBRÁCIÓ VÁLTOZÓK ──
 const CAL_F = {
@@ -1692,20 +1678,12 @@ async function calStep2CompleteF() {
 
 
 function skipCalibrationReminderF() {
-  const checkbox = document.getElementById('cal-dont-show-again');
-  if (checkbox && checkbox.checked) {
-    localStorage.setItem('humano_cal_skip_forever', '1');
-    showFocusToast('✅ Kalibrációs emlékeztető kikapcsolva');
-  } else {
-    localStorage.setItem('humano_cal_last_skip', Date.now().toString());
-    showFocusToast('👌 Kihagyva – legközelebb emlékeztetünk');
-  }
+  localStorage.setItem('humano_cal_asked', '1');
   const modal = document.getElementById('cal-reminder-modal');
-  if (modal) {
-    modal.classList.remove('open');
-    modal.style.display = 'none';
-  }
+  if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
+  showFocusToast('👌 Kihagyva – bármikor elvégezheted a profil oldalon');
 }
+
 
 function updatePasteRatioF() {
   const total = typedCharsF + pastedCharsF;
@@ -2626,7 +2604,6 @@ async function focusSave() {
   if (wc < 100) { showFocusToast(`❌ Még ${100 - wc} szó hiányzik!`); return; }
   if (!fCurrentUser) { window.location.href = '/#auth'; return; }
 
-  // ── TIMER AZONNALI LEÁLLÍTÁS ──
   clearInterval(fTimerInterval);
   fTimerInterval = null;
   clearTimeout(fInactivityTimer);
@@ -2656,6 +2633,14 @@ async function focusSave() {
       return;
     }
 
+    // ── KALIBRÁCIÓS STÁTUSZ ──
+    const { data: calData } = await dbF
+      .from('typing_profiles')
+      .select('id')
+      .eq('user_id', fCurrentUser.id)
+      .limit(1);
+    const isCalibrated = !!(calData && calData.length > 0);
+
     const hash = await sha256(txt);
     const ts = Date.now().toString(36).toUpperCase();
     const userPrefix = (profile?.humano_id || fCurrentUser.id).substring(4, 8).toUpperCase();
@@ -2684,6 +2669,7 @@ async function focusSave() {
       smdScore: fSmdScore,
       tripleLockScore: fTripleLockScore,
       pulseDataPoints: fPulseHistory.slice(),
+      isCalibrated,
       source: 'fokusz-editor',
     };
 
@@ -2732,14 +2718,18 @@ async function focusSave() {
       trustBadge.style.display = 'inline-flex';
     }
 
+    const calibLabel = isCalibrated
+      ? '<span style="color:var(--success);font-size:.75rem">✓ Személyre szabott – a te gépelési profilodhoz viszonyítva</span>'
+      : '<span style="color:var(--muted);font-size:.75rem">ℹ️ Általános hitelesítés – általános emberi normák alapján mérve</span>';
+
     const explEl = document.getElementById('f-cert-score-explanation');
     const explText = document.getElementById('f-cert-score-explanation-text');
     if (explEl && explText) {
       explEl.style.display = 'block';
-      if (fHumanPct >= 85) explText.innerHTML = `<span style="color:var(--success)">✅ Magas kognitív jelenlét</span> – természetes emberi ritmus.`;
-      else if (fHumanPct >= 60) explText.innerHTML = `<span style="color:var(--gold)">🟡 Közepes kognitív jelenlét</span> – emberi jellegű ritmus.`;
-      else if (fHumanPct >= 40) explText.innerHTML = `<span style="color:var(--gold3)">🟠 Vegyes mintázat</span> – a HUMANO tényeket közöl, nem ítélkezik.`;
-      else explText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – ez NEM jelenti hogy AI írta.`;
+      if (fHumanPct >= 85) explText.innerHTML = `<span style="color:var(--success)">✅ Magas kognitív jelenlét</span> – természetes emberi ritmus.<br>${calibLabel}`;
+      else if (fHumanPct >= 60) explText.innerHTML = `<span style="color:var(--gold)">🟡 Közepes kognitív jelenlét</span> – emberi jellegű ritmus.<br>${calibLabel}`;
+      else if (fHumanPct >= 40) explText.innerHTML = `<span style="color:var(--gold3)">🟠 Vegyes mintázat</span> – a HUMANO tényeket közöl, nem ítélkezik.<br>${calibLabel}`;
+      else explText.innerHTML = `<span style="color:#e05555">🔴 Alacsony változatosság</span> – ez NEM jelenti hogy AI írta.<br>${calibLabel}`;
     }
 
     if (pastedCharsF > 0) {
@@ -2792,13 +2782,11 @@ async function focusSave() {
     showFocusToast('✦ Hitelesítve! DOC ID: ' + docId);
 
   } catch (err) {
-    // Hiba esetén a timer visszakapcsol ha volt aktív session
     if (fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
     showFocusToast('❌ Hiba: ' + err.message);
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
   }
 }
-
 
 
 // OTS státusz figyelő
