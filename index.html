@@ -219,7 +219,8 @@
     <span class="nav-link" onclick="showPage('whitepaper')">Módszertan</span>
     <div class="nav-divider"></div>
     <!-- Bejelentkezéshez kötött oldalak -->
-    <span class="nav-link" onclick="requireAuth('editor')">Írás</span>
+    <span class="nav-link" onclick="requireAuth('editor')" title="Gyors hitelesítés">Írás</span>
+<a class="nav-link" href="/fokusz-editor" style="text-decoration:none;color:var(--gold)" title="Komplex szövegszerkesztő">✦ Profi Editor</a>
     <span class="nav-link" onclick="requireAuth('dashboard')">Dashboard</span>
     <span class="nav-link" onclick="requireAuth('my-docs')">Szövegeim</span>
     <!-- Tanári és admin linkek (alapból rejtve) -->
@@ -267,7 +268,8 @@
         <button class="btn btn-outline btn-xl" onclick="showPage('verify-unified')">Szöveg ellenőrzése</button>
       </div>
       <div class="hero-actions" id="hero-actions-loggedin" style="display:none">
-        <button class="btn btn-gold btn-xl" onclick="requireAuth('editor')">✦ Új szöveg rögzítése</button>
+        <button class="btn btn-gold btn-xl" onclick="requireAuth('editor')">✦ Gyors hitelesítés</button>
+         <a href="/fokusz-editor" class="btn btn-outline btn-xl" style="text-decoration:none">⛶ Profi Editor</a>
         <button class="btn btn-outline btn-xl" onclick="requireAuth('dashboard')">→ Dashboard</button>
       </div>
       <div class="hero-trust">
@@ -443,7 +445,7 @@
               </div>
               <span class="badge badge-muted" id="e-version-badge">v1</span>
               <button class="btn btn-outline btn-sm" onclick="editorClear()">🗑 Törlés</button>
-<a href="/fokusz-editor" class="btn btn-outline btn-sm btn-focus-pulse" style="text-decoration:none">⛶ Fókusz mód</a>
+<a href="/fokusz-editor" class="btn btn-outline btn-sm btn-focus-pulse" style="text-decoration:none" title="Komplex szövegszerkesztő – hosszú írásokhoz, fejlett eszköztárral, flow móddal">⛶ Profi Editor</a>
 <button class="btn btn-gold btn-sm" id="btn-save" onclick="editorSave()" disabled>🔒 Hitelesítés & Mentés</button>
               <button class="btn btn-gold btn-sm" id="btn-save" onclick="editorSave()" disabled>🔒 Hitelesítés & Mentés</button>
             </div>
