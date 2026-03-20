@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>HUMANO – Fókusz Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --surface2: #13131a;
+      --surface3: #1a1a26;
+      --border: rgba(201,168,76,.12);
+      --gold: #c9a84c;
+      --gold2: #f0d070;
+      --gold3: #a07830;
+      --gold4: rgba(201,168,76,.2);
+      --text: #f0ede6;
+      --muted: #8a8090;
+      --muted2: #5a5060;
+      --success: #4ab870;
+      --danger: #e05555;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --paper-width: 820px;
+      --panel-w: 260px;
+      --transition: .4s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPBAR ── */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: rgba(6,6,8,.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      z-index: 100;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+
+    #topbar.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-100%);
+    }
+
+    .topbar-logo {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 3px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .topbar-center {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    #doc-title-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: .25rem .5rem;
+      width: 280px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    #doc-title-input:focus {
+      border-bottom-color: var(--gold);
+    }
+
+    #doc-title-input::placeholder { color: var(--muted2); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .4rem .9rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      font-family: var(--font-body);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #a07830, #c9a84c);
+      color: #0c0a04;
+    }
+
+    .btn-gold:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-gold:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: .4rem .6rem;
+    }
+
+    .btn-ghost:hover { color: var(--gold); }
+
+    /* ── LAYOUT ── */
+    #layout {
+      display: flex;
+      min-height: 100vh;
+      padding-top: 52px;
+    }
+
+    /* ── LEFT PANEL ── */
+    #panel-left {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      width: var(--panel-w);
+      height: calc(100vh - 52px);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: opacity var(--transition), transform var(--transition);
+      z-index: 50;
+    }
+
+    #panel-left.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-20px);
+    }
+
+    /* ── RIGHT PANEL ── */
+    #panel-right {
+      position: fixed;
+      top: 52px;
+      right: 0;
+      width: var(--panel-w);
+      height: calc(100vh - 52px);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: opacity var(--transition), transform var(--transition);
+      z-index: 50;
+    }
+
+    #panel-right.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(20px);
+    }
+
+    /* ── PAPER ── */
+    #paper-wrap {
+      flex: 1;
+      margin-left: var(--panel-w);
+      margin-right: var(--panel-w);
+      display: flex;
+      justify-content: center;
+      padding: 3rem 2rem 6rem;
+      transition: margin var(--transition);
+    }
+
+    #paper-wrap.fullwidth {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    #paper {
+      width: 100%;
+      max-width: var(--paper-width);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem 4rem;
+      min-height: calc(100vh - 200px);
+      position: relative;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+
+    #paper.focus-active {
+      border-color: rgba(201,168,76,.25);
+      box-shadow: 0 0 60px rgba(201,168,76,.06);
+    }
+
+    /* ── EDITOR AREA ── */
+    #editor-area {
+      min-height: 500px;
+      outline: none;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      line-height: 2;
+      color: var(--text);
+      caret-color: var(--gold);
+    }
+
+    #editor-area:empty::before {
+      content: attr(data-placeholder);
+      color: var(--muted2);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    #editor-area p { margin-bottom: .5rem; }
+    #editor-area h1 { font-size: 2rem; font-weight: 700; color: var(--gold2); margin: 1.5rem 0 .75rem; }
+    #editor-area h2 { font-size: 1.5rem; font-weight: 600; color: var(--gold2); margin: 1.25rem 0 .5rem; }
+    #editor-area h3 { font-size: 1.2rem; font-weight: 600; color: var(--gold); margin: 1rem 0 .4rem; }
+    #editor-area blockquote {
+      border-left: 3px solid var(--gold);
+      padding: .5rem 1.25rem;
+      margin: 1rem 0;
+      color: var(--muted);
+      font-style: italic;
+      background: rgba(201,168,76,.04);
+      border-radius: 0 6px 6px 0;
+    }
+    #editor-area ul, #editor-area ol { margin: .5rem 0 .5rem 1.5rem; }
+    #editor-area li { margin-bottom: .25rem; }
+    #editor-area a { color: var(--gold); }
+    #editor-area table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    #editor-area table td, #editor-area table th {
+      border: 1px solid var(--border);
+      padding: .5rem .75rem;
+      font-size: .9rem;
+    }
+    #editor-area table th {
+      background: var(--surface2);
+      color: var(--gold2);
+      font-weight: 600;
+    }
+
+    /* ── WORD COUNT BAR ── */
+    #word-count-bar {
+      position: fixed;
+      bottom: 0;
+      left: var(--panel-w);
+      right: var(--panel-w);
+      height: 36px;
+      background: rgba(6,6,8,.9);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--muted);
+      z-index: 50;
+      transition: opacity var(--transition);
+    }
+
+    #word-count-bar.hidden {
+      opacity: 0;
+    }
+
+    .wc-item span { color: var(--gold); font-weight: 600; }
+
+    /* ── TOOLBAR ── */
+    .toolbar-section {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+    }
+
+    .toolbar-label {
+      font-size: .6rem;
+      font-weight: 700;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-family: var(--font-mono);
+      margin-bottom: .1rem;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+    }
+
+    .tool-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: .3rem .55rem;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: var(--font-body);
+      min-width: 32px;
+      text-align: center;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201,168,76,.08);
+    }
+
+    .tool-btn.active {
+      background: rgba(201,168,76,.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── STAT CARDS ── */
+    .stat-mini {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+    }
+
+    .stat-mini-label {
+      font-size: .6rem;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-family: var(--font-mono);
+      margin-bottom: .25rem;
+    }
+
+    .stat-mini-val {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .stat-mini-sub {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-top: .2rem;
+    }
+
+    /* ── PULSE CANVAS ── */
+    #pulse-canvas-focus {
+      width: 100%;
+      height: 60px;
+      border-radius: 6px;
+      background: var(--surface2);
+      display: block;
+    }
+
+    /* ── HUMAN INDEX BAR ── */
+    .hi-bar-wrap {
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: .4rem;
+    }
+
+    .hi-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s, background .4s;
+    }
+
+    /* ── FOCUS MODE OVERLAY ── */
+    #focus-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6,6,8,.85);
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── BREATHING ANIMATION ── */
+    @keyframes breathe {
+      0%, 100% { opacity: .06; }
+      50% { opacity: .12; }
+    }
+
+    #paper.breathing::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 10px;
+      border: 2px solid var(--gold);
+      animation: breathe 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* ── FLOW MODE ── */
+    body.flow-mode #panel-left,
+    body.flow-mode #panel-right,
+    body.flow-mode #topbar {
+      opacity: .08;
+      pointer-events: none;
+    }
+
+    body.flow-mode:hover #panel-left,
+    body.flow-mode:hover #panel-right,
+    body.flow-mode:hover #topbar {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── HEADING PICKER ── */
+    .heading-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: .3rem .5rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      outline: none;
+      width: 100%;
+    }
+
+    .heading-select:focus { border-color: var(--gold); }
+
+    /* ── COLOR PICKER ── */
+    .color-row {
+      display: flex;
+      gap: .3rem;
+      flex-wrap: wrap;
+    }
+
+    .color-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .15s, transform .15s;
+    }
+
+    .color-dot:hover { transform: scale(1.2); border-color: #fff; }
+
+    /* ── PANEL TITLE ── */
+    .panel-title {
+      font-size: .65rem;
+      font-weight: 700;
+      color: var(--gold3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: var(--font-mono);
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: .25rem;
+    }
+
+    /* ── TOAST ── */
+    #focus-toast {
+      position: fixed;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface2);
+      border: 1px solid var(--gold);
+      color: var(--gold2);
+      padding: .6rem 1.4rem;
+      border-radius: 30px;
+      font-size: .82rem;
+      z-index: 9999;
+      display: none;
+      font-family: var(--font-mono);
+      box-shadow: 0 4px 24px rgba(0,0,0,.5);
+    }
+
+    /* ── AUTOSAVE INDICATOR ── */
+    #autosave-indicator {
+      font-size: .65rem;
+      font-family: var(--font-mono);
+      color: var(--muted2);
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+    }
+
+    #autosave-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted2);
+      transition: background .3s;
+    }
+
+    #autosave-dot.saved { background: var(--success); }
+    #autosave-dot.saving { background: var(--gold); }
+
+    /* ── WORD WARN ── */
+    #word-warn-focus {
+      position: absolute;
+      bottom: -2.5rem;
+      left: 0;
+      font-size: .72rem;
+      color: var(--gold3);
+      font-family: var(--font-mono);
+      display: none;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold3); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: .25rem 0;
+    }
+
+    /* ── CERT PANEL ── */
+    #cert-panel-focus {
+      display: none;
+      background: var(--surface2);
+      border: 1px solid var(--gold4);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .cert-id-focus {
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--gold2);
+      word-break: break-all;
+      background: var(--surface);
+      border-radius: 5px;
+      padding: .5rem .75rem;
+      margin: .5rem 0;
+    }
+
+    /* ── TABLE INSERT ── */
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+      margin-top: .35rem;
+    }
+
+    .table-cell {
+      width: 16px;
+      height: 16px;
+      background: var(--surface3);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .1s;
+    }
+
+    .table-cell.hover { background: var(--gold3); }
+
+    /* ── BACK LINK ── */
+    .back-link {
+      color: var(--muted);
+      font-size: .75rem;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      transition: color .2s;
+    }
+
+    .back-link:hover { color: var(--gold); }
+
+    /* ── FOCUS TOGGLE BTN ── */
+    #flow-toggle {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: .9rem;
+      z-index: 60;
+      transition: all .2s;
+      color: var(--muted);
+    }
+
+    #flow-toggle:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    #flow-toggle.active {
+      background: rgba(201,168,76,.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    @media (max-width: 1100px) {
+      :root { --panel-w: 220px; }
+      #paper { padding: 2rem 2.5rem; }
+    }
+
+    @media (max-width: 800px) {
+      #panel-left, #panel-right { display: none; }
+      #paper-wrap { margin: 0; }
+      #word-count-bar { left: 0; right: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav id="topbar">
+  <a href="/" class="topbar-logo">✦ HUMANO</a>
+  <div class="topbar-center">
+    <input type="text" id="doc-title-input" placeholder="A szöveg címe..." autocomplete="off"/>
+    <div id="autosave-indicator">
+      <div id="autosave-dot"></div>
+      <span id="autosave-text">–</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <a href="/" class="back-link">← Vissza</a>
+    <button class="btn btn-outline" onclick="toggleFlowMode()" id="flow-btn" title="Flow mód – csak te és a szöveg">⟡ Flow</button>
+    <button class="btn btn-gold" id="btn-save" onclick="focusSave()" disabled>🔒 Hitelesítés</button>
+  </div>
+</nav>
+
+<!-- LEFT PANEL – Statisztikák -->
+<div id="panel-left">
+  <div class="panel-title">📊 Alkotói adatok</div>
+
+  <canvas id="pulse-canvas-focus" width="240" height="60"></canvas>
+
+  <div class="stat-mini">
+    <div class="stat-mini-label">Humán Index</div>
+    <div class="stat-mini-val" id="f-human-index">–%</div>
+    <div class="hi-bar-wrap"><div class="hi-bar-fill" id="f-hi-fill" style="width:0%"></div></div>
+    <div class="stat-mini-sub" id="f-human-label">Billentyűdinamika alapján</div>
+  </div>
+
+  <div class="stat-mini">
+    <div class="stat-mini-label">💎 Kognitív Jelenlét</div>
+    <div class="stat-mini-val" id="f-triple-lock">–</div>
+    <div class="stat-mini-sub" id="f-tl-confidence">–</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+    <div class="stat-mini">
+      <div class="stat-mini-label">Leütés</div>
+      <div class="stat-mini-val" id="f-keys">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-label">Szó</div>
+      <div class="stat-mini-val" id="f-words">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-label">Szünet</div>
+      <div class="stat-mini-val" id="f-pauses">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-label">Javítás</div>
+      <div class="stat-mini-val" id="f-dels">0</div>
+    </div>
+  </div>
+
+  <div class="stat-mini">
+    <div class="stat-mini-label">⏱ Írási idő</div>
+    <div class="stat-mini-val" id="f-time">00:00</div>
+  </div>
+
+  <div class="stat-mini">
+    <div class="stat-mini-label">⚡ Ritmus-entrópia</div>
+    <div class="stat-mini-val" id="f-entropy">–</div>
+    <div class="hi-bar-wrap"><div class="hi-bar-fill" id="f-entropy-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="stat-mini" style="border-color:rgba(201,168,76,.2)">
+    <div class="stat-mini-label">🧠 CF-DNA</div>
+    <div style="font-size:.85rem;color:var(--gold3);font-weight:600" id="f-cfdna">–</div>
+  </div>
+  <div class="stat-mini" style="border-color:rgba(201,168,76,.2)">
+    <div class="stat-mini-label">✍️ Alkotói hév</div>
+    <div style="font-size:.85rem;color:var(--gold3);font-weight:600" id="f-nls">–</div>
+  </div>
+  <div class="stat-mini" style="border-color:rgba(201,168,76,.2)">
+    <div class="stat-mini-label">🫀 Biológiai ritmus</div>
+    <div style="font-size:.85rem;color:var(--gold3);font-weight:600" id="f-smd">–</div>
+  </div>
+  <div class="stat-mini" style="border-color:rgba(201,168,76,.2)">
+    <div class="stat-mini-label">🖱️ Egér dinamika</div>
+    <div style="font-size:.85rem;color:var(--gold3);font-weight:600" id="f-mouse">–</div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL – Eszköztár -->
+<div id="panel-right">
+  <div class="panel-title">🛠 Eszköztár</div>
+
+  <!-- Formázás -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Szöveg formázás</div>
+    <div class="toolbar-row">
+      <button class="tool-btn" id="tb-bold" onmousedown="event.preventDefault()" onclick="fmtF('bold')" title="Félkövér"><strong>B</strong></button>
+      <button class="tool-btn" id="tb-italic" onmousedown="event.preventDefault()" onclick="fmtF('italic')" title="Dőlt"><em>I</em></button>
+      <button class="tool-btn" id="tb-underline" onmousedown="event.preventDefault()" onclick="fmtF('underline')" title="Aláhúzott" style="text-decoration:underline">U</button>
+      <button class="tool-btn" id="tb-strike" onmousedown="event.preventDefault()" onclick="fmtF('strikeThrough')" title="Áthúzott"><s>S</s></button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('removeFormat')" title="Formázás törlése">✕</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Fejléc -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Fejléc stílus</div>
+    <select class="heading-select" onchange="insertHeading(this.value)">
+      <option value="">Normál szöveg</option>
+      <option value="h1">Fejléc 1</option>
+      <option value="h2">Fejléc 2</option>
+      <option value="h3">Fejléc 3</option>
+      <option value="blockquote">Idézet</option>
+    </select>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Igazítás -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Igazítás</div>
+    <div class="toolbar-row">
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyLeft')" title="Bal">⬅</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyCenter')" title="Közép">↔</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyRight')" title="Jobb">➡</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyFull')" title="Sorkizárt">⇔</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Lista -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Lista</div>
+    <div class="toolbar-row">
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertUnorderedList')">• Lista</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertOrderedList')">1. Lista</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Táblázat -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Táblázat beszúrása</div>
+    <div class="table-grid" id="table-grid"></div>
+    <div style="font-size:.62rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)" id="table-hint">Vigye fölé a sort/oszlopot</div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Link -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Hivatkozás</div>
+    <div class="toolbar-row">
+      <button class="tool-btn" style="flex:1" onclick="insertFocusLink()">🔗 Link beszúrása</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Szöveg szín -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Szöveg szín</div>
+    <div class="color-row">
+      <div class="color-dot" style="background:#f0ede6" onclick="setColor('#f0ede6')" title="Fehér"></div>
+      <div class="color-dot" style="background:#c9a84c" onclick="setColor('#c9a84c')" title="Arany"></div>
+      <div class="color-dot" style="background:#4ab870" onclick="setColor('#4ab870')" title="Zöld"></div>
+      <div class="color-dot" style="background:#e05555" onclick="setColor('#e05555')" title="Piros"></div>
+      <div class="color-dot" style="background:#6fa8dc" onclick="setColor('#6fa8dc')" title="Kék"></div>
+      <div class="color-dot" style="background:#8a8090" onclick="setColor('#8a8090')" title="Szürke"></div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Kategória -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Kategória</div>
+    <select class="heading-select" id="f-category">
+      <option value="">Kategória (opcionális)</option>
+      <option value="fiction">Szépirodalom</option>
+      <option value="essay">Esszé / Dolgozat</option>
+      <option value="academic">Tudományos cikk</option>
+      <option value="journalism">Újságcikk</option>
+      <option value="blog">Blog</option>
+      <option value="business">Üzleti szöveg</option>
+      <option value="poetry">Vers</option>
+      <option value="other">Egyéb</option>
+    </select>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Nyilvános kapcsoló -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Láthatóság</div>
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted)">
+      <input type="checkbox" id="f-is-public" checked style="accent-color:var(--gold)"/>
+      🌐 Nyilvános Registry
+    </label>
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted);margin-top:.4rem">
+      <input type="checkbox" id="f-is-published" style="accent-color:var(--gold)"/>
+      📢 Publikálás
+    </label>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Mentés gomb -->
+  <button class="btn btn-gold" style="width:100%;padding:.7rem" onclick="focusSave()" id="btn-save-right">🔒 Hitelesítés & Mentés</button>
+</div>
+
+<!-- PAPER -->
+<div id="paper-wrap">
+  <div id="paper">
+    <div
+      id="editor-area"
+      contenteditable="true"
+      spellcheck="false"
+      data-placeholder="Kezdj el írni… A HUMANO figyeli a keletkezés folyamatát."
+    ></div>
+
+    <div id="word-warn-focus">📝 Még <strong id="f-words-left">100</strong> szó hiányzik a hitelesítéshez.</div>
+
+    <!-- CERT PANEL -->
+    <div id="cert-panel-focus">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">✦ Szöveg hitelesítve</div>
+      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.35rem">Dokumentum azonosító</div>
+      <div class="cert-id-focus" id="f-cert-id">–</div>
+      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.35rem">SHA-256 lenyomat</div>
+      <div class="cert-id-focus" id="f-cert-hash" style="font-size:.65rem;color:#a6d6ff">–</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem">
+        <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusCertId()">📋 ID másolása</button>
+        <button class="btn btn-outline" style="font-size:.75rem" onclick="openVerifyPage()">🔍 Ellenőrzés</button>
+        <button class="btn btn-gold" style="font-size:.75rem" onclick="focusNewDoc()">✦ Új szöveg</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WORD COUNT BAR -->
+<div id="word-count-bar">
+  <div class="wc-item">Karakter: <span id="wc-chars">0</span></div>
+  <div class="wc-item">Szó: <span id="wc-words">0</span></div>
+  <div class="wc-item">Leütés: <span id="wc-keys">0</span></div>
+  <div class="wc-item">Tempó: <span id="wc-speed">–</span>/perc</div>
+  <div class="wc-item">Humán: <span id="wc-human">–</span></div>
+</div>
+
+<!-- FLOW TOGGLE -->
+<button id="flow-toggle" onclick="toggleFlowMode()" title="Flow mód">⟡</button>
+
+<!-- TOAST -->
+<div id="focus-toast"></div>
+
+<script src="/shared_js.js"></script>
+<script>
+/* ============================================================
+   FOKUSZ EDITOR – SAJÁT LOGIKA
+   Kommunikál a shared_js.js-szel (Supabase, sha256, stb.)
+   ============================================================ */
+
+const SUPA_URL_F = 'https://vidlijysdhbfvvytuzcg.supabase.co';
+const SUPA_ANON_F = 'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so';
+
+const { createClient: createClientF } = supabase;
+const dbF = createClientF(SUPA_URL_F, SUPA_ANON_F);
+
+// ── ÁLLAPOT ──
+let fCurrentUser = null;
+let fKeys = 0, fDels = 0, fPauses = 0, fFocusSwitches = 0;
+let fSessionStart = null, fLastKey = null;
+let fTotalPausedMs = 0, fPauseStart = null;
+let fEvents = [];
+let fPulseHistory = [];
+let fTimerInterval = null;
+let fAutosaveTimer = null;
+let fCertDocId = null;
+let fCertHash = null;
+let fHumanPct = 0;
+let fHumanCategory = '–';
+let fHumanCV = 0;
+let fEntropyCV = 0, fEntropyPct = 0;
+let fCfDnaScore = 0, fFlowPulseScore = 0, fSmdScore = 0;
+let fTripleLockScore = 0;
+let fMouseEvents = [], fMouseScore = 0, fMouseCV = 0;
+let fIsFlowMode = false;
+let fFlowTimer = null;
+let pulseCtxF = null;
+let typedCharsF = 0, pastedCharsF = 0;
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await dbF.auth.getSession();
+  if (!session?.user) {
+    window.location.href = '/#auth';
+    return;
+  }
+  fCurrentUser = session.user;
+
+  initFocusEditor();
+  initTableGrid();
+  initPulseF();
+  startAutosaveF();
+  initMouseTrackingF();
+});
+
+// ── EDITOR INIT ──
+function initFocusEditor() {
+  const area = document.getElementById('editor-area');
+  if (!area) return;
+
+  area.addEventListener('keydown', onFocusKeyDown);
+  area.addEventListener('input', onFocusInput);
+  area.addEventListener('paste', onFocusPaste);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!fSessionStart) return;
+    if (document.hidden) {
+      fPauseStart = Date.now();
+      fFocusSwitches++;
+      clearInterval(fTimerInterval);
+      fTimerInterval = null;
+    } else {
+      if (fPauseStart) {
+        fTotalPausedMs += Date.now() - fPauseStart;
+        fPauseStart = null;
+      }
+      if (!fTimerInterval) fTimerInterval = setInterval(updateTimerF, 1000);
+    }
+  });
+
+  document.addEventListener('selectionchange', updateToolbarStateF);
+}
+
+// ── KEYDOWN ──
+function onFocusKeyDown(e) {
+  const now = Date.now();
+
+  if (!fSessionStart) {
+    fSessionStart = now;
+    fTimerInterval = setInterval(updateTimerF, 1000);
+    document.getElementById('paper').classList.add('breathing');
+  }
+
+  if (fLastKey && (now - fLastKey) > 3000) {
+    fPauses++;
+    fEvents.push({ type: 'pause', ts: now, duration: now - fLastKey });
+  }
+
+  if (e.key === 'Backspace' || e.key === 'Delete') {
+    fDels++;
+    typedCharsF = Math.max(0, typedCharsF - 1);
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+    fKeys++;
+    typedCharsF++;
+    const interval = fLastKey ? now - fLastKey : 150;
+    fEvents.push({ type: 'key', ts: now, interval });
+    if (fEvents.length > 2000) fEvents = fEvents.slice(-1000);
+
+    fPulseHistory.push(calcPulseValF(interval));
+    if (fPulseHistory.length > 60) fPulseHistory.shift();
+
+    drawPulseF();
+    calcHumanIndexF();
+  }
+
+  fLastKey = now;
+  updateStatsF();
+  checkSaveF();
+
+  // Flow mód – aktiválás gépelésnél
+  if (fIsFlowMode) {
+    resetFlowTimer();
+  }
+}
+
+// ── PASTE ──
+function onFocusPaste(e) {
+  const text = e.clipboardData.getData('text/plain');
+  pastedCharsF += text.length;
+  typedCharsF = Math.max(0, typedCharsF - text.length);
+}
+
+// ── INPUT ──
+function onFocusInput() {
+  updateStatsF();
+  checkSaveF();
+  autoSaveF();
+}
+
+// ── STATS ──
+function updateStatsF() {
+  const area = document.getElementById('editor-area');
+  const txt = area?.innerText || '';
+  const wc = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+  const chars = txt.length;
+
+  setEl2('f-keys', fKeys);
+  setEl2('f-words', wc);
+  setEl2('f-dels', fDels);
+  setEl2('f-pauses', fPauses);
+  setEl2('wc-chars', chars);
+  setEl2('wc-words', wc);
+  setEl2('wc-keys', fKeys);
+
+  const mins = fSessionStart ? (Date.now() - fSessionStart - fTotalPausedMs) / 60000 : 0;
+  setEl2('wc-speed', mins > 0 ? Math.round(fKeys / mins) : '–');
+  setEl2('wc-human', fHumanPct ? fHumanPct + '%' : '–');
+
+  const warn = document.getElementById('word-warn-focus');
+  const left = document.getElementById('f-words-left');
+  if (warn && left) {
+    if (wc < 100 && txt.trim()) {
+      left.textContent = 100 - wc;
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+}
+
+function setEl2(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ── SAVE CHECK ──
+function checkSaveF() {
+  const area = document.getElementById('editor-area');
+  const title = document.getElementById('doc-title-input')?.value?.trim() || '';
+  const txt = area?.innerText?.trim() || '';
+  const wc = txt.split(/\s+/).filter(Boolean).length;
+  const ok = txt && title && fKeys >= 30 && wc >= 100;
+
+  ['btn-save', 'btn-save-right'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = !ok;
+  });
+}
+
+// ── TIMER ──
+function updateTimerF() {
+  if (!fSessionStart) return;
+  const elapsed = Math.floor((Date.now() - fSessionStart - fTotalPausedMs) / 1000);
+  const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const s = (elapsed % 60).toString().padStart(2, '0');
+  setEl2('f-time', `${m}:${s}`);
+}
+
+// ── PULSE ──
+function initPulseF() {
+  const canvas = document.getElementById('pulse-canvas-focus');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 240;
+  canvas.height = 60;
+  pulseCtxF = canvas.getContext('2d');
+  drawPulseF();
+}
+
+function calcPulseValF(interval) {
+  const n = Math.min(interval, 4000);
+  return Math.max(5, Math.min(95, (1 - n / 2000) * 90 + 5 + (Math.random() - .5) * 8));
+}
+
+function drawPulseF() {
+  if (!pulseCtxF) return;
+  const W = pulseCtxF.canvas.width;
+  const H = pulseCtxF.canvas.height;
+  pulseCtxF.clearRect(0, 0, W, H);
+  pulseCtxF.fillStyle = 'rgba(19,19,26,0.8)';
+  pulseCtxF.fillRect(0, 0, W, H);
+
+  const hist = fPulseHistory;
+  if (hist.length < 3) {
+    pulseCtxF.fillStyle = 'rgba(201,168,76,0.3)';
+    pulseCtxF.font = '9px monospace';
+    pulseCtxF.textAlign = 'center';
+    pulseCtxF.fillText('Gépelj...', W / 2, H / 2 + 4);
+    return;
+  }
+
+  const mean = hist.reduce((a, b) => a + b, 0) / hist.length;
+  const std = Math.sqrt(hist.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / hist.length);
+  const cv = std / (mean || 1);
+  const color = cv < 0.15 ? '#e05555' : cv > 0.22 ? '#4ab870' : '#c9a84c';
+
+  const mn = Math.min(...hist), mx = Math.max(...hist);
+  const range = (mx - mn) || 60;
+
+  pulseCtxF.beginPath();
+  hist.forEach((v, i) => {
+    const x = (i / (hist.length - 1)) * W;
+    const y = H - 8 - ((v - mn) / range) * (H - 16);
+    i === 0 ? pulseCtxF.moveTo(x, y) : pulseCtxF.lineTo(x, y);
+  });
+  pulseCtxF.strokeStyle = color;
+  pulseCtxF.lineWidth = 2;
+  pulseCtxF.stroke();
+}
+
+// ── HUMAN INDEX ──
+async function calcHumanIndexF() {
+  if (fKeys < 20) return;
+
+  const recent = fEvents.filter(e => e.type === 'key').slice(-50);
+  if (recent.length < 10) return;
+
+  const intervals = recent.slice(1).map((ev, i) => ev.ts - recent[i].ts).filter(v => v >= 30 && v < 5000);
+  if (intervals.length < 8) return;
+
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  const stddev = Math.sqrt(intervals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / intervals.length);
+  const cv = stddev / (mean || 1);
+
+  const delRatio = fDels / Math.max(1, fKeys);
+  const isIntense = cv > 0.9 && fPauses >= 3 && delRatio > 0.02;
+
+  let pct, color, label;
+  if (cv < 0.25) { pct = Math.round((cv / 0.25) * 25); color = '#e05555'; label = '🔴 Gépies'; }
+  else if (cv < 0.6) { pct = Math.round(25 + ((cv - 0.25) / 0.35) * 35); color = 'var(--gold)'; label = '🟡 Vegyes'; }
+  else if (!isIntense) { pct = Math.round(60 + ((cv - 0.6) / 0.3) * 25); color = 'var(--success)'; label = '🟢 Emberi'; }
+  else { pct = Math.min(100, Math.round(85 + ((cv - 0.9) / 0.5) * 15)); color = 'var(--gold2)'; label = '⭐ Intenzív'; }
+
+  pct = Math.max(0, Math.min(100, pct));
+  fHumanPct = pct;
+  fHumanCV = parseFloat(cv.toFixed(3));
+  fHumanCategory = label;
+
+  const hiEl = document.getElementById('f-human-index');
+  const hiFill = document.getElementById('f-hi-fill');
+  const hiLabel = document.getElementById('f-human-label');
+  if (hiEl) { hiEl.textContent = pct + '%'; hiEl.style.color = color; }
+  if (hiFill) { hiFill.style.width = pct + '%'; hiFill.style.background = color; }
+  if (hiLabel) hiLabel.textContent = label;
+  setEl2('wc-human', pct + '%');
+
+  // Entrópia
+  const allIntervals = fEvents.filter(e => e.type === 'key' && e.interval > 0).slice(-80).map(e => e.interval).filter(v => v >= 30 && v < 5000);
+  if (allIntervals.length >= 20) {
+    const eMean = allIntervals.reduce((a, b) => a + b, 0) / allIntervals.length;
+    const eStd = Math.sqrt(allIntervals.reduce((s, v) => s + Math.pow(v - eMean, 2), 0) / allIntervals.length);
+    const eCV = eStd / (eMean || 1);
+    const ePct = Math.min(100, Math.round((eCV / 1.5) * 100));
+    fEntropyCV = parseFloat(eCV.toFixed(3));
+    fEntropyPct = ePct;
+    const eEl = document.getElementById('f-entropy');
+    const eFill = document.getElementById('f-entropy-fill');
+    if (eEl) { eEl.textContent = ePct + '%'; eEl.style.color = eCV < 0.25 ? '#e05555' : eCV < 0.6 ? 'var(--gold)' : 'var(--success)'; }
+    if (eFill) { eFill.style.width = ePct + '%'; eFill.style.background = eCV < 0.25 ? '#e05555' : eCV < 0.6 ? 'var(--gold)' : 'var(--success)'; }
+  }
+
+  // Triple-Lock (egyszerűsített)
+  const cfPauses = fEvents.filter(e => e.type === 'pause');
+  const cfDna = Math.min(100, Math.round((cfPauses.length / Math.max(1, fKeys / 50)) * 60 + 20));
+  const nls = Math.min(100, Math.round(40 + cv * 40));
+  const smd = allIntervals.length >= 20 ? Math.min(100, Math.round(fEntropyPct * 0.8 + 20)) : 0;
+  const mouseW = (fMouseScore > 0 && fMouseEvents.length >= 50) ? 0.05 : 0;
+  const tl = Math.round(cfDna * 0.35 + nls * 0.35 + smd * 0.25 + fMouseScore * mouseW);
+
+  fCfDnaScore = cfDna;
+  fFlowPulseScore = nls;
+  fSmdScore = smd;
+  fTripleLockScore = tl;
+
+  setEl2('f-triple-lock', tl + '/100');
+  setEl2('f-cfdna', cfDna + '/100');
+  setEl2('f-nls', nls + '/100');
+  setEl2('f-smd', smd + '/100');
+
+  const mouseEl = document.getElementById('f-mouse');
+  if (mouseEl) mouseEl.textContent = fMouseEvents.length >= 50 ? fMouseScore + '/100' : '⏳ gyűjtés...';
+
+  const confEl = document.getElementById('f-tl-confidence');
+  if (confEl) confEl.textContent = fKeys < 50 ? 'Több adat kell' : tl >= 75 ? 'Magas megbízhatóság' : tl >= 50 ? 'Közepes megbízhatóság' : 'Alacsony';
+}
+
+// ── FLOW MÓD ──
+function toggleFlowMode() {
+  fIsFlowMode = !fIsFlowMode;
+  document.body.classList.toggle('flow-mode', fIsFlowMode);
+  const btn = document.getElementById('flow-toggle');
+  const topBtn = document.getElementById('flow-btn');
+  if (btn) btn.classList.toggle('active', fIsFlowMode);
+  if (topBtn) topBtn.style.color = fIsFlowMode ? 'var(--gold)' : '';
+  showFocusToast(fIsFlowMode ? '⟡ Flow mód – csak te és a szöveg' : '⟡ Flow mód kikapcsolva');
+}
+
+function resetFlowTimer() {
+  if (fFlowTimer) clearTimeout(fFlowTimer);
+  // Flow módban gépelésnél minden látható marad – megálláskor elhalványul
+  document.body.classList.remove('flow-pause');
+  fFlowTimer = setTimeout(() => {
+    if (fIsFlowMode) document.body.classList.add('flow-pause');
+  }, 3000);
+}
+
+// ── TOOLBAR ──
+function fmtF(cmd) {
+  document.getElementById('editor-area').focus();
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand(cmd, false, null);
+  setTimeout(updateToolbarStateF, 50);
+}
+
+function updateToolbarStateF() {
+  ['bold', 'italic', 'underline', 'strikeThrough'].forEach(cmd => {
+    const id = { bold: 'tb-bold', italic: 'tb-italic', underline: 'tb-underline', strikeThrough: 'tb-strike' }[cmd];
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+}
+
+function insertHeading(tag) {
+  const area = document.getElementById('editor-area');
+  area.focus();
+  if (!tag) { document.execCommand('formatBlock', false, 'p'); return; }
+  document.execCommand('formatBlock', false, tag);
+  const sel = document.getElementById('panel-right').querySelector('.heading-select');
+  setTimeout(() => { if (sel) sel.value = ''; }, 100);
+}
+
+function setColor(color) {
+  document.getElementById('editor-area').focus();
+  document.execCommand('foreColor', false, color);
+}
+
+function insertFocusLink() {
+  document.getElementById('editor-area').focus();
+  const url = prompt('Link URL-je:', 'https://');
+  if (!url) return;
+  const label = prompt('Link szövege:', 'link') || 'link';
+  document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:var(--gold)">${label}</a>`);
+}
+
+// ── TABLE GRID ──
+function initTableGrid() {
+  const grid = document.getElementById('table-grid');
+  if (!grid) return;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 5; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'table-cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.addEventListener('mouseover', () => highlightTable(r, c));
+      cell.addEventListener('click', () => insertTable(r + 1, c + 1));
+      grid.appendChild(cell);
+    }
+  }
+  grid.addEventListener('mouseleave', () => {
+    grid.querySelectorAll('.table-cell').forEach(c => c.classList.remove('hover'));
+    setEl2('table-hint', 'Vigye fölé a sort/oszlopot');
+  });
+}
+
+function highlightTable(row, col) {
+  document.querySelectorAll('.table-cell').forEach(c => {
+    c.classList.toggle('hover', parseInt(c.dataset.r) <= row && parseInt(c.dataset.c) <= col);
+  });
+  setEl2('table-hint', `${row + 1} sor × ${col + 1} oszlop`);
+}
+
+function insertTable(rows, cols) {
+  document.getElementById('editor-area').focus();
+  let html = '<table><thead><tr>';
+  for (let c = 0; c < cols; c++) html += `<th>Fejléc ${c + 1}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows - 1; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+  showFocusToast(`📊 ${rows}×${cols} táblázat beszúrva`);
+}
+
+// ── AUTOSAVE ──
+function autoSaveF() {
+  const dot = document.getElementById('autosave-dot');
+  const txt = document.getElementById('autosave-text');
+  if (dot) dot.className = 'saving';
+  if (txt) txt.textContent = 'Mentés...';
+
+  clearTimeout(window._fAutosaveDebounce);
+  window._fAutosaveDebounce = setTimeout(() => {
+    const content = document.getElementById('editor-area')?.innerHTML || '';
+    const title = document.getElementById('doc-title-input')?.value || '';
+    localStorage.setItem('humano_focus_draft', JSON.stringify({ content, title, ts: Date.now() }));
+    if (dot) dot.className = 'saved';
+    if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+    setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
+  }, 5000);
+}
+
+function startAutosaveF() {
+  // Piszkozat visszatöltése
+  try {
+    const draft = JSON.parse(localStorage.getItem('humano_focus_draft') || 'null');
+    if (draft && draft.content) {
+      const ago = Math.round((Date.now() - draft.ts) / 60000);
+      if (ago < 60 && confirm(`Találtunk egy mentett piszkozatot (${ago} perce). Betöltöd?`)) {
+        document.getElementById('editor-area').innerHTML = draft.content;
+        document.getElementById('doc-title-input').value = draft.title || '';
+        showFocusToast('📄 Piszkozat betöltve');
+      }
+    }
+  } catch (e) {}
+}
+
+// ── MENTÉS / HITELESÍTÉS ──
+async function focusSave() {
+  if (!fCurrentUser) { window.location.href = '/#auth'; return; }
+
+  const btn1 = document.getElementById('btn-save');
+  const btn2 = document.getElementById('btn-save-right');
+  [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '⏳...'; } });
+
+  try {
+    const area = document.getElementById('editor-area');
+    const content = area?.innerHTML || '';
+    const plainText = area?.innerText?.trim() || '';
+    const title = document.getElementById('doc-title-input')?.value?.trim() || 'Névtelen';
+    const isPublic = document.getElementById('f-is-public')?.checked ?? true;
+    const isPublished = document.getElementById('f-is-published')?.checked ?? false;
+    const category = document.getElementById('f-category')?.value || '';
+
+    const { data: profile } = await dbF.from('profiles').select('plan, monthly_credits, used_credits, trial_ends_at, username, humano_id').eq('id', fCurrentUser.id).single();
+    const plan = profile?.plan || 'free';
+    const used = profile?.used_credits || 0;
+    const limit = profile?.monthly_credits ?? 5;
+    const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+    const unlimited = plan === 'pro' || plan === 'institution' || plan === 'premium' || trialActive;
+
+    if (!unlimited && used >= limit) {
+      showFocusToast('❌ Havi keret elérve! Váltj magasabb csomagra.');
+      [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; } });
+      return;
+    }
+
+    const hash = await sha256(plainText);
+    const ts = Date.now().toString(36).toUpperCase();
+    const userPrefix = (profile?.humano_id || fCurrentUser.id).substring(4, 8).toUpperCase();
+    const docId = `DOC-${userPrefix}-${ts}`;
+
+    const sessionDurationMs = fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0;
+    const totalChars = typedCharsF + pastedCharsF;
+
+    const processData = {
+      keystrokeCount: fKeys,
+      deletionCount: fDels,
+      pauseCount: fPauses,
+      focusSwitches: fFocusSwitches,
+      humanIndex: fHumanPct,
+      humanCategory: fHumanCategory,
+      humanCV: fHumanCV,
+      sessionDurationMs,
+      typedChars: typedCharsF,
+      pastedChars: pastedCharsF,
+      typedPct: totalChars > 0 ? Math.round((typedCharsF / totalChars) * 100) : 100,
+      pastedPct: totalChars > 0 ? Math.round((pastedCharsF / totalChars) * 100) : 0,
+      entropyCV: fEntropyCV,
+      entropyPct: fEntropyPct,
+      cfDnaScore: fCfDnaScore,
+      flowPulseScore: fFlowPulseScore,
+      smdScore: fSmdScore,
+      tripleLockScore: fTripleLockScore,
+      pulseDataPoints: fPulseHistory.slice(),
+      source: 'fokusz-editor',
+    };
+
+    const { error } = await dbF.from('documents').insert({
+      doc_id: docId,
+      title,
+      content,
+      hash,
+      author_id: fCurrentUser.id,
+      author_name: profile?.username || fCurrentUser.email,
+      is_public: isPublic,
+      is_published: isPublished,
+      category: category || null,
+      process_data: processData,
+      saved_at: new Date().toISOString(),
+      version: 1,
+    });
+
+    if (error) throw new Error(error.message);
+
+    await dbF.from('profiles').update({ used_credits: used + 1 }).eq('id', fCurrentUser.id);
+
+    // OTS stamp
+    try {
+      const { data: { session } } = await dbF.auth.getSession();
+      fetch(`${SUPA_URL_F}/functions/v1/ots-stamp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ doc_id: docId, hash }),
+      }).catch(() => {});
+    } catch (e) {}
+
+    fCertDocId = docId;
+    fCertHash = hash;
+
+    setEl2('f-cert-id', docId);
+    const hashEl = document.getElementById('f-cert-hash');
+    if (hashEl) hashEl.textContent = hash;
+
+    document.getElementById('cert-panel-focus').style.display = 'block';
+    document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
+
+    localStorage.removeItem('humano_focus_draft');
+
+    [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '✅ Hitelesítve'; b.style.opacity = '.6'; } });
+
+    showFocusToast('✦ Hitelesítve! DOC ID: ' + docId);
+
+  } catch (err) {
+    showFocusToast('❌ Hiba: ' + err.message);
+    [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
+  }
+}
+
+// ── CERT AKCIÓK ──
+function copyFocusCertId() {
+  if (!fCertDocId) return;
+  navigator.clipboard?.writeText(fCertDocId);
+  showFocusToast('📋 DOC ID másolva!');
+}
+
+function openVerifyPage() {
+  if (!fCertDocId) return;
+  window.open(`/verify/${fCertDocId}`, '_blank');
+}
+
+function focusNewDoc() {
+  if (!confirm('Új dokumentumot nyitsz – a jelenlegi elvész ha nem mentetted. Folytatod?')) return;
+  document.getElementById('editor-area').innerHTML = '';
+  document.getElementById('doc-title-input').value = '';
+  document.getElementById('cert-panel-focus').style.display = 'none';
+  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
+  fSessionStart = null; fLastKey = null; fTotalPausedMs = 0;
+  fEvents = []; fPulseHistory = [];
+  fCertDocId = null; fCertHash = null;
+  fHumanPct = 0; typedCharsF = 0; pastedCharsF = 0;
+  clearInterval(fTimerInterval); fTimerInterval = null;
+  document.getElementById('paper').classList.remove('breathing');
+  updateStatsF(); checkSaveF(); drawPulseF();
+  setEl2('f-time', '00:00');
+}
+
+// ── EGÉR TRACKING ──
+function initMouseTrackingF() {
+  const area = document.getElementById('editor-area');
+  if (!area) return;
+  let lastX = 0, lastY = 0, lastT = 0;
+  let speeds = [];
+
+  area.addEventListener('mousemove', e => {
+    const now = Date.now();
+    if (now - lastT < 100) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const speed = dist / (now - lastT);
+    speeds.push(speed);
+    if (speeds.length > 50) speeds.shift();
+    fMouseEvents.push({ ts: now, speed });
+    if (fMouseEvents.length > 500) fMouseEvents.shift();
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
+
+    if (speeds.length >= 20) {
+      const m = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+      const s = Math.sqrt(speeds.reduce((a, b) => a + Math.pow(b - m, 2), 0) / speeds.length);
+      fMouseCV = parseFloat((s / (m || 1)).toFixed(3));
+      fMouseScore = fMouseCV < 0.2 ? 20 : fMouseCV < 0.5 ? 50 : fMouseCV < 1.0 ? 80 : 95;
+    }
+
+    const mEl = document.getElementById('f-mouse');
+    if (mEl) {
+      const mozgas = fMouseEvents.filter(e => !e.type).length;
+      const katt = fMouseEvents.filter(e => e.type === 'click').length;
+      mEl.textContent = fMouseEvents.length >= 50 ? `${mozgas} mozgás / ${katt} katt` : '⏳ gyűjtés...';
+    }
+  });
+
+  area.addEventListener('click', e => {
+    fMouseEvents.push({ ts: Date.now(), type: 'click', x: e.clientX, y: e.clientY });
+  });
+}
+
+// ── TOAST ──
+function showFocusToast(msg) {
+  const t = document.getElementById('focus-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.opacity = '1';
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.style.opacity = '0'; setTimeout(() => { t.style.display = 'none'; }, 400); }, 3000);
+}
+
+// ESC kilép flow módból
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && fIsFlowMode) toggleFlowMode();
+});
+
+window.addEventListener('resize', initPulseF);
+</script>
+</body>
+</html>
