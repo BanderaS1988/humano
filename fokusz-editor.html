@@ -2044,6 +2044,8 @@ async function focusSave() {
       }).catch(() => {});
     } catch (e) {}
 
+    startOtsWatcherF(docId);
+
     fCertDocId = docId;
 fCertHash = hash;
 
@@ -2082,6 +2084,35 @@ document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' 
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
   }
 }
+
+
+// OTS státusz figyelő
+function startOtsWatcherF(docId) {
+  let attempts = 0;
+  const interval = setInterval(async () => {
+    attempts++;
+    if (attempts > 24) { clearInterval(interval); return; } // max 2 óra
+    
+    const { data } = await dbF.from('documents')
+      .select('ots_receipt, ots_pending')
+      .eq('doc_id', docId)
+      .single();
+    
+    if (data?.ots_receipt) {
+      clearInterval(interval);
+      const badge = document.getElementById('f-cert-ots-badge');
+      if (badge) {
+        badge.textContent = '⛓️ Bitcoin blokkláncon rögzítve ✓';
+        badge.style.background = 'rgba(74,184,112,.1)';
+        badge.style.borderColor = 'rgba(74,184,112,.3)';
+        badge.style.color = '#4ab870';
+      }
+      showFocusToast('⛓️ Bitcoin blokklánc megerősítve!');
+    }
+  }, 5 * 60 * 1000); // 5 percenként
+}
+
+  
 
 // ── CERT AKCIÓK ──
 function copyFocusCertId() {
