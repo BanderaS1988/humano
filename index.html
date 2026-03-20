@@ -1572,6 +1572,23 @@
   </div>
 </div>
 
+
+<!-- Kalibrációs profil szekció -->
+<div class="card" style="margin-top:1.25rem;border-color:rgba(201,168,76,.18)">
+  <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:1rem">✍️ Írói Azonosság Kalibráció</div>
+  <div id="cal-profile-status" style="margin-bottom:1.25rem">
+    <div style="color:var(--muted);font-size:.82rem;padding:.5rem 0">⏳ Betöltés...</div>
+  </div>
+  <p style="font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">
+    A kalibráció megtanítja a rendszernek az egyedi gépelési ritmusodat – így a tanúsítványaid <strong style="color:var(--gold)">személyre szabott</strong> eredményt mutatnak az általános normák helyett. Mindössze 2-3 perc.
+  </p>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-gold btn-sm" onclick="showPage('calibration')">✦ Kalibráció elvégzése</button>
+    <button class="btn btn-outline btn-sm" id="cal-delete-btn" style="display:none;border-color:rgba(224,85,85,.4);color:#e05555" onclick="deleteCalibrationProfile()">🗑 Kalibrációs profil törlése</button>
+  </div>
+</div>
+
+  
 <!-- ────────────────────────────────────────────────────────────────────
      ADMIN PANEL
      ──────────────────────────────────────────────────────────────────── -->
