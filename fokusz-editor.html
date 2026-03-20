@@ -1114,18 +1114,56 @@
     <div id="word-warn-focus">📝 Még <strong id="f-words-left">100</strong> szó hiányzik a hitelesítéshez.</div>
 
     <!-- CERT PANEL -->
-    <div id="cert-panel-focus">
-      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">✦ Szöveg hitelesítve</div>
-      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.35rem">Dokumentum azonosító</div>
-      <div class="cert-id-focus" id="f-cert-id">–</div>
-      <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.35rem">SHA-256 lenyomat</div>
-      <div class="cert-id-focus" id="f-cert-hash" style="font-size:.65rem;color:#a6d6ff">–</div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem">
-        <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusCertId()">📋 ID másolása</button>
-        <button class="btn btn-outline" style="font-size:.75rem" onclick="openVerifyPage()">🔍 Ellenőrzés</button>
-        <button class="btn btn-gold" style="font-size:.75rem" onclick="focusNewDoc()">✦ Új szöveg</button>
-      </div>
+   <div id="cert-panel-focus">
+  <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">✦ Szöveg hitelesítve</div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">A keletkezési folyamat kriptográfiailag rögzítve.</p>
+
+  <!-- DOC ID + HASH -->
+  <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.25rem">Dokumentum azonosító</div>
+  <div class="cert-id-focus" id="f-cert-id">–</div>
+  <div style="font-size:.7rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:.25rem">SHA-256 lenyomat</div>
+  <div class="cert-id-focus" id="f-cert-hash" style="font-size:.65rem;color:#a6d6ff">–</div>
+
+  <!-- TRUST BADGE -->
+  <div style="margin-top:.75rem">
+    <span id="f-cert-trust-badge" style="display:none;align-items:center;gap:.4rem;padding:.3rem .9rem;border-radius:20px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);font-size:.85rem;font-weight:700"></span>
+  </div>
+
+  <!-- OTS BADGE -->
+  <div style="margin-top:.75rem">
+    <span class="badge" id="f-cert-ots-badge" style="font-size:.75rem;padding:.3rem .75rem;border-radius:20px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold3)">⛓️ OpenTimestamps – feldolgozás folyamatban...</span>
+  </div>
+
+  <!-- QR KÓD -->
+  <div style="margin-top:1rem">
+    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">📱 QR Kód</div>
+    <div id="f-cert-qr"></div>
+  </div>
+
+  <!-- BEÁGYAZHATÓ BADGE -->
+  <div style="margin-top:1rem">
+    <div style="font-size:.7rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem;text-transform:uppercase;font-family:var(--font-mono)">🏷️ Beágyazható pecsét</div>
+    <div id="f-badge-html" onclick="copyFocusBadge()" style="font-family:var(--font-mono);font-size:.65rem;color:var(--gold3);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;word-break:break-all">–</div>
+  </div>
+
+  <!-- MEGOSZTÁS -->
+  <div style="margin-top:1rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:1rem">
+    <div style="font-size:.72rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem;text-transform:uppercase">📤 Megosztás & Küldés</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusCertId()">📋 ID másolása</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="copyFocusVerifyLink()">🔗 Link másolása</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="focusDownloadPdf()">📄 PDF tanúsítvány</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="focusDownloadSeal()">🏷️ Pecsét letöltése</button>
+      <button class="btn btn-outline" style="font-size:.75rem" onclick="openVerifyPage()">🔍 Ellenőrzés</button>
     </div>
+  </div>
+
+  <!-- ÚJ SZÖVEG -->
+  <div style="display:flex;gap:.5rem;margin-top:1rem">
+    <button class="btn btn-gold" style="flex:1" onclick="focusNewDoc()">✦ Új szöveg</button>
+    <button class="btn btn-outline" onclick="window.location.href='/verify/'+fCertDocId" style="font-size:.75rem">🌐 Publikus oldal</button>
+  </div>
+</div>
   </div>
 </div>
 
@@ -2007,14 +2045,31 @@ async function focusSave() {
     } catch (e) {}
 
     fCertDocId = docId;
-    fCertHash = hash;
+fCertHash = hash;
 
-    setEl2('f-cert-id', docId);
-    const hashEl = document.getElementById('f-cert-hash');
-    if (hashEl) hashEl.textContent = hash;
+setEl2('f-cert-id', docId);
+const hashEl = document.getElementById('f-cert-hash');
+if (hashEl) hashEl.textContent = hash;
 
-    document.getElementById('cert-panel-focus').style.display = 'block';
-    document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
+// Trust badge
+const badge = getHumanoBadge(fHumanPct);
+const trustBadge = document.getElementById('f-cert-trust-badge');
+if (trustBadge) {
+  trustBadge.textContent = `${badge.icon} ${badge.label}`;
+  trustBadge.style.color = badge.color;
+  trustBadge.style.display = 'inline-flex';
+}
+
+// QR kód
+generateQR('f-cert-qr', docId);
+
+// Badge HTML
+const badgeEl = document.getElementById('f-badge-html');
+if (badgeEl) badgeEl.textContent = getBadgeHtml(docId);
+
+document.getElementById('cert-panel-focus').style.display = 'block';
+document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
+    
 
     localStorage.removeItem('humano_focus_draft');
 
@@ -2174,6 +2229,54 @@ function resetInactivityF() {
   }, 2 * 60 * 1000);
 }
 
+
+
+function copyFocusVerifyLink() {
+  if (!fCertDocId) return;
+  navigator.clipboard?.writeText(`https://humano-hu.vercel.app/verify/${fCertDocId}`);
+  showFocusToast('🔗 Link másolva!');
+}
+
+function copyFocusBadge() {
+  const code = document.getElementById('f-badge-html')?.textContent;
+  if (code && code !== '–') {
+    navigator.clipboard?.writeText(code);
+    showFocusToast('🏷️ Badge kód másolva!');
+  }
+}
+
+async function focusDownloadPdf() {
+  if (!fCertDocId) return;
+  const processData = {
+    keystrokeCount: fKeys,
+    deletionCount: fDels,
+    pauseCount: fPauses,
+    focusSwitches: fFocusSwitches,
+    humanIndex: fHumanPct,
+    humanCategory: fHumanCategory,
+    humanCV: fHumanCV,
+    sessionDurationMs: fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0,
+    pulseDataPoints: fPulseHistory.slice(),
+    typedChars: typedCharsF,
+    pastedChars: pastedCharsF,
+    typedPct: Math.round((typedCharsF / Math.max(1, typedCharsF + pastedCharsF)) * 100),
+    pastedPct: Math.round((pastedCharsF / Math.max(1, typedCharsF + pastedCharsF)) * 100),
+    entropyCV: fEntropyCV,
+    entropyPct: fEntropyPct,
+    cfDnaScore: fCfDnaScore,
+    flowPulseScore: fFlowPulseScore,
+    smdScore: fSmdScore,
+    tripleLockScore: fTripleLockScore,
+  };
+  const title = document.getElementById('doc-title-input')?.value || '–';
+  await generatePdfCert(fCertDocId, title, fCurrentUser?.email || '–', fCertHash, new Date().toISOString(), 'pending', processData);
+}
+
+async function focusDownloadSeal() {
+  if (!fCertDocId) return;
+  await downloadSeal(fCertDocId);
+}
+  
 function resumeFromInactivityF() {
   const modal = document.getElementById('f-inactivity-modal');
   if (modal) modal.remove();
