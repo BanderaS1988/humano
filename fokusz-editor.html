@@ -1402,17 +1402,15 @@ function onFocusKeyDown(e) {
     fEvents.push({ type: 'pause', ts: now, duration: now - fLastKey });
   }
 
-if (e.key === 'Backspace' || e.key === 'Delete') {
+  if (e.key === 'Backspace' || e.key === 'Delete') {
     fDels++;
-    if (pastedCharsF > 0) {
-        pastedCharsF = Math.max(0, pastedCharsF - 1);
-    } else {
-        typedCharsF = Math.max(0, typedCharsF - 1);
-    }
+    // Csak a gépelt karakterekből vonunk le – a beillesztett arányt
+    // nem manipuláljuk törléskor, mert a kurzorpozíciót nem követjük
+    typedCharsF = Math.max(0, typedCharsF - 1);
     updatePasteRatioF();
     tlRecord('delete');
     checkTlFlush();
-} else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
     fKeys++;
     typedCharsF++;
     const interval = fLastKey ? now - fLastKey : 150;
@@ -1428,7 +1426,7 @@ if (e.key === 'Backspace' || e.key === 'Delete') {
     checkTlFlush();
   }
 
-fLastKey = now;
+  fLastKey = now;
   updateStatsF();
   checkSaveF();
   updatePasteRatioF();
@@ -1436,6 +1434,7 @@ fLastKey = now;
   resetFlowTimer();
   resetInactivityF();
 }
+
 
 // ── PASTE ──
 function onFocusPaste(e) {
@@ -1471,12 +1470,13 @@ function insertPastedTextF(text) {
     sel.removeAllRanges();
     sel.addRange(range);
   }
+  // typedCharsF-et NEM csökkentjük – a gépelt karakterek megmaradnak
   pastedCharsF += text.length;
-  typedCharsF = Math.max(0, typedCharsF - text.length);
   updatePasteRatioF();
   updateStatsF();
   checkSaveF();
 }
+
 
   
 function confirmFocusPaste() {
@@ -1546,8 +1546,8 @@ function checkSaveF() {
   const title = document.getElementById('doc-title-input')?.value?.trim() || '';
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
-  const totalInput = fKeys + pastedCharsF;
-  const ok = txt && title && totalInput >= 30 && wc >= 100;
+  // JAVÍTVA: csak a valódi billentyűleütések számítanak interakciónak
+  const ok = txt && title && fKeys >= 30 && wc >= 100;
   ['btn-save', 'btn-save-right'].forEach(id => {
     const btn = document.getElementById(id);
     if (!btn) return;
@@ -1555,6 +1555,7 @@ function checkSaveF() {
     if (!ok) {
       if (!title) btn.title = 'Add meg a szöveg címét';
       else if (wc < 100) btn.title = `Még ${100 - wc} szó hiányzik`;
+      else if (fKeys < 30) btn.title = 'Írj legalább 30 karaktert kézzel';
       else btn.title = 'Írj vagy illessz be több szöveget';
     } else {
       btn.title = pastedCharsF > typedCharsF
@@ -1563,6 +1564,8 @@ function checkSaveF() {
     }
   });
 }
+
+
 
 // ── TIMER ──
 function updateTimerF() {
@@ -2132,12 +2135,12 @@ function startAutosaveF() {
           setEl2('wc-human', fHumanPct + '%');
         }
 
-        // Paste UI visszaállítása
         updatePasteRatioF();
 
-        // Idő visszaállítása
         if (draft.stats.sessionElapsedMs > 0) {
-          fSessionStart = Date.now() - draft.stats.sessionElapsedMs - fTotalPausedMs;
+          // JAVÍTVA: fTotalPausedMs már be van állítva fentebb,
+          // ezért itt csak a sessionElapsedMs-t vonjuk le – nincs dupla levonás
+          fSessionStart = Date.now() - draft.stats.sessionElapsedMs;
           fTimerInterval = setInterval(updateTimerF, 1000);
           document.getElementById('paper').classList.add('breathing');
           const elapsed = Math.floor(draft.stats.sessionElapsedMs / 1000);
@@ -2153,6 +2156,7 @@ function startAutosaveF() {
     }
   } catch (e) {}
 }
+
 
 // ── MENTÉS / HITELESÍTÉS ──
 async function focusSave() {
@@ -2421,10 +2425,9 @@ function focusNewDoc() {
   document.getElementById('f-category').value = '';
   document.getElementById('category-indicator').style.display = 'none';
 
-  // Minden számláló nullázása
   fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
   fSessionStart = null; fLastKey = null; fTotalPausedMs = 0;
-  fPauseStart = null;
+  fPauseStart = null; // JAVÍTVA: explicit nullázás, különben régi időbélyeg marad
   fEvents = []; fPulseHistory = [];
   fCertDocId = null; fCertHash = null;
   fHumanPct = 0; fHumanCategory = '–'; fHumanCV = 0;
@@ -2436,9 +2439,15 @@ function focusNewDoc() {
   window._fPendingPaste = null;
 
   clearInterval(fTimerInterval); fTimerInterval = null;
+  clearTimeout(fInactivityTimer); fInactivityTimer = null; // inaktivitás timer is törlendő
+  clearInterval(fInactivityInterval); fInactivityInterval = null;
+
+  // Ha inaktivitási modal nyitva volt, zárjuk be
+  const inactModal = document.getElementById('f-inactivity-modal');
+  if (inactModal) inactModal.remove();
+
   document.getElementById('paper').classList.remove('breathing');
 
-  // Paste UI nullázás
   const bar = document.getElementById('f-paste-ratio-bar');
   if (bar) bar.style.display = 'none';
   const wrap = document.getElementById('wc-paste-wrap');
@@ -2448,7 +2457,6 @@ function focusNewDoc() {
   const pastedBar = document.getElementById('f-pasted-bar');
   if (pastedBar) pastedBar.style.width = '0%';
 
-  // UI nullázás
   setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
   setEl2('f-time', '00:00'); setEl2('f-human-index', '–%'); setEl2('f-triple-lock', '–');
   setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
@@ -2472,6 +2480,7 @@ function focusNewDoc() {
   updateStatsF(); drawPulseF();
   showFocusToast('✦ Új dokumentum – írj bátran!');
 }
+
 
 // ── EGÉR TRACKING ──
 function initMouseTrackingF() {
@@ -2525,12 +2534,17 @@ function resetInactivityF() {
   if (existing) {
     existing.remove();
     if (fInactivityInterval) { clearInterval(fInactivityInterval); fInactivityInterval = null; }
-    if (fPauseStart) { fTotalPausedMs += Date.now() - fPauseStart; fPauseStart = null; }
+    // JAVÍTVA: fPauseStart nullázása ELŐTT adjuk hozzá, és csak ha még nem nullázódott
+    if (fPauseStart) {
+      fTotalPausedMs += Date.now() - fPauseStart;
+      fPauseStart = null;
+    }
     if (!fTimerInterval && fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
   }
   if (!fSessionStart) return;
   fInactivityTimer = setTimeout(() => {
-    fPauseStart = Date.now();
+    // Csak akkor indítjuk a szünetszámlálást ha még nem fut
+    if (!fPauseStart) fPauseStart = Date.now();
     clearInterval(fTimerInterval); fTimerInterval = null;
     let secs = 0;
     const modal = document.createElement('div');
@@ -2552,13 +2566,14 @@ function resetInactivityF() {
     document.body.appendChild(modal);
     fInactivityInterval = setInterval(() => {
       secs++;
-      const m = Math.floor(secs/60).toString().padStart(2,'0');
-      const s = (secs%60).toString().padStart(2,'0');
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
       const el = document.getElementById('f-inactivity-dur');
       if (el) el.textContent = `${m}:${s}`;
     }, 1000);
   }, 2 * 60 * 1000);
 }
+
 
 
 
@@ -2625,7 +2640,11 @@ function resumeFromInactivityF() {
   const modal = document.getElementById('f-inactivity-modal');
   if (modal) modal.remove();
   if (fInactivityInterval) { clearInterval(fInactivityInterval); fInactivityInterval = null; }
-  if (fPauseStart) { fTotalPausedMs += Date.now() - fPauseStart; fPauseStart = null; }
+  // JAVÍTVA: fPauseStart nullázása csak egyszer történik meg
+  if (fPauseStart) {
+    fTotalPausedMs += Date.now() - fPauseStart;
+    fPauseStart = null;
+  }
   if (!fTimerInterval && fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
   showFocusToast('▶ Folytatás – jó írást!');
 }
