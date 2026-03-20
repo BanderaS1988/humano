@@ -6,8 +6,8 @@
   <title>HUMANO – Fókusz Editor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -448,16 +448,20 @@
     /* ── FLOW MODE ── */
     body.flow-mode #panel-left,
     body.flow-mode #panel-right,
-    body.flow-mode #topbar {
-      opacity: .08;
+    body.flow-mode #topbar,
+    body.flow-mode #word-count-bar {
+      opacity: .06;
       pointer-events: none;
+      transition: opacity .8s ease;
     }
 
-    body.flow-mode:hover #panel-left,
-    body.flow-mode:hover #panel-right,
-    body.flow-mode:hover #topbar {
-      opacity: 1;
-      pointer-events: auto;
+    body.flow-pause #panel-left,
+    body.flow-pause #panel-right,
+    body.flow-pause #topbar,
+    body.flow-pause #word-count-bar {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transition: opacity .4s ease;
     }
 
     /* ── HEADING PICKER ── */
@@ -610,8 +614,158 @@
 
     .table-cell.hover { background: var(--gold3); }
 
-    /* ── BACK LINK ── */
-    .back-link {
+    /* ── PREVIEW MODAL ── */
+    #preview-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.85);
+      z-index: 9000;
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    #preview-modal.open {
+      display: flex;
+    }
+
+    #preview-box {
+      background: #fff;
+      color: #1a1a1a;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 760px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 3rem 4rem;
+      position: relative;
+      font-family: Georgia, serif;
+      font-size: 1.05rem;
+      line-height: 1.9;
+      box-shadow: 0 20px 80px rgba(0,0,0,.6);
+    }
+
+    #preview-box h1 { font-size: 2rem; margin-bottom: 1rem; color: #1a1a1a; }
+    #preview-box h2 { font-size: 1.5rem; margin-bottom: .75rem; color: #1a1a1a; }
+    #preview-box h3 { font-size: 1.2rem; margin-bottom: .5rem; color: #1a1a1a; }
+    #preview-box blockquote { border-left: 3px solid #c9a84c; padding: .5rem 1rem; color: #555; font-style: italic; margin: 1rem 0; }
+    #preview-box table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    #preview-box td, #preview-box th { border: 1px solid #ddd; padding: .5rem .75rem; }
+    #preview-box th { background: #f5f5f5; font-weight: 700; }
+
+    #preview-close {
+      position: sticky;
+      top: 0;
+      float: right;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: .5rem;
+      z-index: 1;
+    }
+
+    /* ── BRIGHTNESS SLIDER ── */
+    #brightness-wrap {
+      padding: .75rem 1rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    #brightness-label {
+      font-size: .6rem;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-family: var(--font-mono);
+      margin-bottom: .4rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #brightness-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #060608, #ffffff);
+      outline: none;
+      cursor: pointer;
+    }
+
+    #brightness-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--gold);
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(201,168,76,.5);
+    }
+
+    #brightness-desc {
+      font-size: .62rem;
+      color: var(--muted2);
+      font-family: var(--font-mono);
+      margin-top: .3rem;
+      text-align: center;
+    }
+
+    /* ── FONT SELECTOR ── */
+    .font-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .3rem;
+    }
+
+    .font-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: .75rem;
+      padding: .3rem .5rem;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+
+    .font-btn:hover, .font-btn.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201,168,76,.08);
+    }
+
+    /* ── UNDO/REDO ── */
+    .history-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: .9rem;
+      padding: .3rem .6rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .history-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .history-btn:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
       color: var(--muted);
       font-size: .75rem;
       text-decoration: none;
@@ -665,243 +819,6 @@
       #paper-wrap { margin: 0; }
       #word-count-bar { left: 0; right: 0; }
     }
-
-    /* ── BRIGHTNESS SLIDER ── */
-    #brightness-wrap {
-      position: fixed;
-      bottom: 2.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 200;
-      background: rgba(14,14,20,.95);
-      border: 1px solid var(--gold4);
-      border-radius: 30px;
-      padding: .5rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 4px 24px rgba(0,0,0,.5);
-      transition: opacity .3s;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #brightness-wrap.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .brightness-label {
-      font-size: .65rem;
-      font-family: var(--font-mono);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    #brightness-slider {
-      -webkit-appearance: none;
-      width: 160px;
-      height: 4px;
-      border-radius: 2px;
-      background: linear-gradient(90deg, #060608, #ffffff);
-      outline: none;
-      cursor: pointer;
-    }
-
-    #brightness-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--gold);
-      cursor: pointer;
-      border: 2px solid #0c0a04;
-      box-shadow: 0 0 6px rgba(201,168,76,.5);
-    }
-
-    .brightness-val {
-      font-size: .65rem;
-      font-family: var(--font-mono);
-      color: var(--gold);
-      min-width: 28px;
-      text-align: right;
-    }
-
-    /* ── PREVIEW MODAL ── */
-    #preview-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.8);
-      z-index: 500;
-      backdrop-filter: blur(8px);
-      align-items: center;
-      justify-content: center;
-    }
-
-    #preview-modal.open {
-      display: flex;
-    }
-
-    #preview-box {
-      background: #1a1a14;
-      border: 1px solid var(--gold4);
-      border-radius: 12px;
-      width: 90vw;
-      max-width: 860px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 20px 80px rgba(0,0,0,.8);
-    }
-
-    #preview-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: rgba(201,168,76,.04);
-    }
-
-    #preview-content-wrap {
-      overflow-y: auto;
-      padding: 3rem 4rem;
-      flex: 1;
-    }
-
-    #preview-content-inner {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      line-height: 2;
-      color: var(--text);
-      max-width: 720px;
-      margin: 0 auto;
-    }
-
-    #preview-content-inner h1 { font-size: 2rem; color: var(--gold2); margin: 1.5rem 0 .75rem; }
-    #preview-content-inner h2 { font-size: 1.5rem; color: var(--gold2); margin: 1.25rem 0 .5rem; }
-    #preview-content-inner h3 { font-size: 1.2rem; color: var(--gold); margin: 1rem 0 .4rem; }
-    #preview-content-inner blockquote { border-left: 3px solid var(--gold); padding: .5rem 1.25rem; margin: 1rem 0; color: var(--muted); font-style: italic; background: rgba(201,168,76,.04); border-radius: 0 6px 6px 0; }
-    #preview-content-inner table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-    #preview-content-inner td, #preview-content-inner th { border: 1px solid var(--border); padding: .5rem .75rem; }
-    #preview-content-inner th { background: rgba(201,168,76,.08); color: var(--gold2); }
-
-    /* ── NEW PAGE MODAL ── */
-    #newpage-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.75);
-      z-index: 500;
-      backdrop-filter: blur(6px);
-      align-items: center;
-      justify-content: center;
-    }
-
-    #newpage-modal.open { display: flex; }
-
-    #newpage-box {
-      background: var(--surface);
-      border: 1px solid var(--gold4);
-      border-radius: 12px;
-      padding: 2rem;
-      width: 90vw;
-      max-width: 480px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.7);
-    }
-
-    /* ── FIND & REPLACE ── */
-    #findreplace-wrap {
-      display: none;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .75rem 1rem;
-      margin-bottom: .5rem;
-      gap: .5rem;
-      flex-direction: column;
-    }
-
-    #findreplace-wrap.open { display: flex; }
-
-    .fr-row { display: flex; gap: .5rem; align-items: center; }
-
-    .fr-input {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      color: var(--text);
-      font-size: .8rem;
-      padding: .35rem .65rem;
-      font-family: var(--font-mono);
-      outline: none;
-    }
-
-    .fr-input:focus { border-color: var(--gold); }
-
-    /* ── WORD GOAL ── */
-    #word-goal-bar {
-      height: 3px;
-      background: var(--surface3);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: .3rem;
-    }
-
-    #word-goal-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--gold3), var(--gold));
-      border-radius: 2px;
-      transition: width .4s;
-      width: 0%;
-    }
-
-    /* ── FOCUS BREATHE CURSOR ── */
-    @keyframes cursor-breathe {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    /* ── TYPEWRITER MODE ── */
-    body.typewriter-mode #editor-area {
-      font-family: 'Courier New', monospace !important;
-      letter-spacing: .5px;
-    }
-
-    /* ── NIGHT MODE extra ── */
-    body.night-mode #paper {
-      background: #080806;
-      border-color: rgba(201,168,76,.08);
-    }
-
-    /* ── READING TIME ── */
-    .wc-item { display: flex; align-items: center; gap: .3rem; }
-
-    /* ── BRIGHTNESS TOGGLE BTN ── */
-    #brightness-toggle {
-      position: fixed;
-      bottom: 1rem;
-      left: 1rem;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: .9rem;
-      z-index: 60;
-      transition: all .2s;
-      color: var(--muted);
-    }
-
-    #brightness-toggle:hover { border-color: var(--gold); color: var(--gold); }
   </style>
 </head>
 <body>
@@ -918,10 +835,11 @@
   </div>
   <div class="topbar-actions">
     <a href="/" class="back-link">← Vissza</a>
-    <button class="btn btn-ghost" onclick="openPreview()" title="Előnézet">👁️</button>
-    <button class="btn btn-ghost" onclick="openNewPageModal()" title="Új oldal">📄</button>
-    <button class="btn btn-ghost" onclick="toggleFindReplace()" title="Keresés & Csere">🔍</button>
-    <button class="btn btn-outline" onclick="toggleFlowMode()" id="flow-btn" title="Flow mód – csak te és a szöveg">⟡ Flow</button>
+    <button class="history-btn" onclick="document.execCommand('undo')" title="Visszavonás (Ctrl+Z)">↩</button>
+    <button class="history-btn" onclick="document.execCommand('redo')" title="Előre (Ctrl+Y)">↪</button>
+    <button class="btn btn-outline" onclick="openPreview()" title="Előnézet">👁 Előnézet</button>
+    <button class="btn btn-outline" onclick="toggleFlowMode()" id="flow-btn" title="Flow mód – gépelésnél minden eltűnik, szünetnél visszajön">⟡ Flow</button>
+    <button class="btn btn-outline" onclick="focusNewDoc()" title="Új dokumentum">＋ Új</button>
     <button class="btn btn-gold" id="btn-save" onclick="focusSave()" disabled>🔒 Hitelesítés</button>
   </div>
 </nav>
@@ -1001,11 +919,41 @@
   <div class="toolbar-section">
     <div class="toolbar-label">Szöveg formázás</div>
     <div class="toolbar-row">
-      <button class="tool-btn" id="tb-bold" onmousedown="event.preventDefault()" onclick="fmtF('bold')" title="Félkövér"><strong>B</strong></button>
-      <button class="tool-btn" id="tb-italic" onmousedown="event.preventDefault()" onclick="fmtF('italic')" title="Dőlt"><em>I</em></button>
-      <button class="tool-btn" id="tb-underline" onmousedown="event.preventDefault()" onclick="fmtF('underline')" title="Aláhúzott" style="text-decoration:underline">U</button>
+      <button class="tool-btn" id="tb-bold" onmousedown="event.preventDefault()" onclick="fmtF('bold')" title="Félkövér (Ctrl+B)"><strong>B</strong></button>
+      <button class="tool-btn" id="tb-italic" onmousedown="event.preventDefault()" onclick="fmtF('italic')" title="Dőlt (Ctrl+I)"><em>I</em></button>
+      <button class="tool-btn" id="tb-underline" onmousedown="event.preventDefault()" onclick="fmtF('underline')" title="Aláhúzott (Ctrl+U)" style="text-decoration:underline">U</button>
       <button class="tool-btn" id="tb-strike" onmousedown="event.preventDefault()" onclick="fmtF('strikeThrough')" title="Áthúzott"><s>S</s></button>
       <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('removeFormat')" title="Formázás törlése">✕</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Betűméret -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Betűméret</div>
+    <div class="toolbar-row">
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="setFontSize('1')" title="Kis">S</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="setFontSize('3')" title="Normál">M</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="setFontSize('5')" title="Nagy">L</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="setFontSize('7')" title="Extra nagy">XL</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Betűtípus -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Betűtípus</div>
+    <div class="font-grid">
+      <button class="font-btn active" id="font-cormorant" onclick="setEditorFont('Cormorant Garamond')" style="font-family:'Cormorant Garamond',serif">Cormorant</button>
+      <button class="font-btn" id="font-outfit" onclick="setEditorFont('Outfit')" style="font-family:'Outfit',sans-serif">Outfit</button>
+      <button class="font-btn" id="font-georgia" onclick="setEditorFont('Georgia')" style="font-family:Georgia,serif">Georgia</button>
+      <button class="font-btn" id="font-mono" onclick="setEditorFont('JetBrains Mono')" style="font-family:'JetBrains Mono',monospace">Mono</button>
+      <button class="font-btn" id="font-playfair" onclick="setEditorFont('Playfair Display')" style="font-family:'Playfair Display',serif">Playfair</button>
+      <button class="font-btn" id="font-lora" onclick="setEditorFont('Lora')" style="font-family:'Lora',serif">Lora</button>
+      <button class="font-btn" id="font-times" onclick="setEditorFont('Times New Roman')" style="font-family:'Times New Roman',serif">Times</button>
+      <button class="font-btn" id="font-arial" onclick="setEditorFont('Arial')" style="font-family:Arial,sans-serif">Arial</button>
     </div>
   </div>
 
@@ -1016,10 +964,11 @@
     <div class="toolbar-label">Fejléc stílus</div>
     <select class="heading-select" onchange="insertHeading(this.value)">
       <option value="">Normál szöveg</option>
-      <option value="h1">Fejléc 1</option>
-      <option value="h2">Fejléc 2</option>
-      <option value="h3">Fejléc 3</option>
-      <option value="blockquote">Idézet</option>
+      <option value="h1">Fejléc 1 – Főcím</option>
+      <option value="h2">Fejléc 2 – Alcím</option>
+      <option value="h3">Fejléc 3 – Szakaszcím</option>
+      <option value="blockquote">Idézet blokk</option>
+      <option value="pre">Kód blokk</option>
     </select>
   </div>
 
@@ -1029,10 +978,10 @@
   <div class="toolbar-section">
     <div class="toolbar-label">Igazítás</div>
     <div class="toolbar-row">
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyLeft')" title="Bal">⬅</button>
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyCenter')" title="Közép">↔</button>
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyRight')" title="Jobb">➡</button>
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyFull')" title="Sorkizárt">⇔</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyLeft')" title="Bal igazítás">⬅ Bal</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyCenter')" title="Középre">↔ Közép</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyRight')" title="Jobb">➡ Jobb</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('justifyFull')" title="Sorkizárt">⇔ Sorkizárt</button>
     </div>
   </div>
 
@@ -1042,8 +991,8 @@
   <div class="toolbar-section">
     <div class="toolbar-label">Lista</div>
     <div class="toolbar-row">
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertUnorderedList')">• Lista</button>
-      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertOrderedList')">1. Lista</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertUnorderedList')">• Felsorolás</button>
+      <button class="tool-btn" onmousedown="event.preventDefault()" onclick="fmtF('insertOrderedList')">1. Számozott</button>
     </div>
   </div>
 
@@ -1051,9 +1000,10 @@
 
   <!-- Táblázat -->
   <div class="toolbar-section">
-    <div class="toolbar-label">Táblázat beszúrása</div>
+    <div class="toolbar-label">Táblázat – vigye fölé a mérethez</div>
     <div class="table-grid" id="table-grid"></div>
-    <div style="font-size:.62rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)" id="table-hint">Vigye fölé a sort/oszlopot</div>
+    <div style="font-size:.62rem;color:var(--muted2);margin-top:.3rem;font-family:var(--font-mono)" id="table-hint">Pl. 3×4 = 3 sor, 4 oszlop</div>
+    <button class="tool-btn" style="width:100%;margin-top:.4rem" onclick="deleteSelectedTable()">🗑 Táblázat törlése</button>
   </div>
 
   <hr class="divider"/>
@@ -1063,40 +1013,71 @@
     <div class="toolbar-label">Hivatkozás</div>
     <div class="toolbar-row">
       <button class="tool-btn" style="flex:1" onclick="insertFocusLink()">🔗 Link beszúrása</button>
+      <button class="tool-btn" onclick="document.execCommand('unlink')" title="Link törlése">✕ Link</button>
     </div>
   </div>
 
   <hr class="divider"/>
 
-  <!-- Szöveg szín -->
+  <!-- Szöveg szín – JAVÍTOTT -->
   <div class="toolbar-section">
-    <div class="toolbar-label">Szöveg szín</div>
+    <div class="toolbar-label">Szöveg szín – jelölj ki szöveget!</div>
     <div class="color-row">
-      <div class="color-dot" style="background:#f0ede6" onclick="setColor('#f0ede6')" title="Fehér"></div>
-      <div class="color-dot" style="background:#c9a84c" onclick="setColor('#c9a84c')" title="Arany"></div>
-      <div class="color-dot" style="background:#4ab870" onclick="setColor('#4ab870')" title="Zöld"></div>
-      <div class="color-dot" style="background:#e05555" onclick="setColor('#e05555')" title="Piros"></div>
-      <div class="color-dot" style="background:#6fa8dc" onclick="setColor('#6fa8dc')" title="Kék"></div>
-      <div class="color-dot" style="background:#8a8090" onclick="setColor('#8a8090')" title="Szürke"></div>
+      <div class="color-dot" style="background:#f0ede6;border:1px solid #555" onclick="applyTextColor('#f0ede6')" title="Fehér"></div>
+      <div class="color-dot" style="background:#c9a84c" onclick="applyTextColor('#c9a84c')" title="Arany"></div>
+      <div class="color-dot" style="background:#4ab870" onclick="applyTextColor('#4ab870')" title="Zöld"></div>
+      <div class="color-dot" style="background:#e05555" onclick="applyTextColor('#e05555')" title="Piros"></div>
+      <div class="color-dot" style="background:#6fa8dc" onclick="applyTextColor('#6fa8dc')" title="Kék"></div>
+      <div class="color-dot" style="background:#cc88ff" onclick="applyTextColor('#cc88ff')" title="Lila"></div>
+      <div class="color-dot" style="background:#ff9944" onclick="applyTextColor('#ff9944')" title="Narancs"></div>
+      <div class="color-dot" style="background:#8a8090" onclick="applyTextColor('#8a8090')" title="Szürke"></div>
+    </div>
+    <button class="tool-btn" style="width:100%;margin-top:.3rem;font-size:.7rem" onclick="applyTextColor(null)">✕ Szín törlése</button>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Kiemelő szín -->
+  <div class="toolbar-section">
+    <div class="toolbar-label">Kiemelő szín (háttér)</div>
+    <div class="color-row">
+      <div class="color-dot" style="background:#ffe066;border:1px solid #aaa" onclick="applyHighlight('#ffe066')" title="Sárga kiemelő"></div>
+      <div class="color-dot" style="background:#b8f5c8;border:1px solid #aaa" onclick="applyHighlight('#b8f5c8')" title="Zöld kiemelő"></div>
+      <div class="color-dot" style="background:#ffc0c0;border:1px solid #aaa" onclick="applyHighlight('#ffc0c0')" title="Piros kiemelő"></div>
+      <div class="color-dot" style="background:#c0d8ff;border:1px solid #aaa" onclick="applyHighlight('#c0d8ff')" title="Kék kiemelő"></div>
+      <div class="color-dot" style="background:transparent;border:2px solid #666" onclick="applyHighlight('transparent')" title="Törlés">✕</div>
     </div>
   </div>
 
   <hr class="divider"/>
 
-  <!-- Kategória -->
+  <!-- Kategória – vizuális visszajelzéssel -->
   <div class="toolbar-section">
     <div class="toolbar-label">Kategória</div>
-    <select class="heading-select" id="f-category">
+    <select class="heading-select" id="f-category" onchange="onCategoryChange(this.value)">
       <option value="">Kategória (opcionális)</option>
-      <option value="fiction">Szépirodalom</option>
-      <option value="essay">Esszé / Dolgozat</option>
-      <option value="academic">Tudományos cikk</option>
-      <option value="journalism">Újságcikk</option>
-      <option value="blog">Blog</option>
-      <option value="business">Üzleti szöveg</option>
-      <option value="poetry">Vers</option>
-      <option value="other">Egyéb</option>
+      <option value="fiction">📖 Szépirodalom</option>
+      <option value="essay">🎓 Esszé / Dolgozat</option>
+      <option value="academic">🔬 Tudományos cikk</option>
+      <option value="journalism">📰 Újságcikk</option>
+      <option value="blog">💬 Blog</option>
+      <option value="business">💼 Üzleti szöveg</option>
+      <option value="poetry">✨ Vers</option>
+      <option value="other">📝 Egyéb</option>
     </select>
+    <div id="category-indicator" style="display:none;margin-top:.4rem;padding:.35rem .6rem;border-radius:5px;font-size:.72rem;font-family:var(--font-mono)"></div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Fényerő csúszka -->
+  <div id="brightness-wrap">
+    <div id="brightness-label">
+      <span>🌙 Fényerő</span>
+      <span id="brightness-val">0%</span>
+    </div>
+    <input type="range" id="brightness-slider" min="0" max="100" value="0" oninput="setBrightness(this.value)"/>
+    <div id="brightness-desc">Húzd jobbra a világosabb megjelenésért</div>
   </div>
 
   <hr class="divider"/>
@@ -1104,64 +1085,20 @@
   <!-- Nyilvános kapcsoló -->
   <div class="toolbar-section">
     <div class="toolbar-label">Láthatóság</div>
-    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted)">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted);margin-bottom:.3rem" title="A hitelesítés ténye látható a nyilvános registryben – a tartalom nem">
       <input type="checkbox" id="f-is-public" checked style="accent-color:var(--gold)"/>
       🌐 Nyilvános Registry
     </label>
-    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted);margin-top:.4rem">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted)" title="A teljes szöveg megjelenik a Publikációk oldalon">
       <input type="checkbox" id="f-is-published" style="accent-color:var(--gold)"/>
-      📢 Publikálás
-    </label>
-  </div>
-
-  <hr class="divider"/>
-
-  <!-- Keresés & Csere -->
-  <div class="toolbar-section">
-    <div class="toolbar-label">Keresés & Csere</div>
-    <div id="findreplace-wrap">
-      <div class="fr-row">
-        <input class="fr-input" id="fr-find" placeholder="Keresés..." oninput="frHighlight()"/>
-        <button class="tool-btn" onclick="frFindNext()">↓</button>
-      </div>
-      <div class="fr-row">
-        <input class="fr-input" id="fr-replace" placeholder="Csere erre..."/>
-        <button class="tool-btn" onclick="frReplace()">Csere</button>
-        <button class="tool-btn" onclick="frReplaceAll()">Mind</button>
-      </div>
-      <div style="font-size:.62rem;color:var(--muted);font-family:var(--font-mono)" id="fr-result">–</div>
-    </div>
-    <button class="tool-btn" style="width:100%" onclick="toggleFindReplace()">🔍 Megnyit / Bezár</button>
-  </div>
-
-  <hr class="divider"/>
-
-  <!-- Szó cél -->
-  <div class="toolbar-section">
-    <div class="toolbar-label">Szó cél</div>
-    <div style="display:flex;gap:.4rem;align-items:center">
-      <input type="number" id="word-goal-input" class="fr-input" placeholder="pl. 500" min="1" max="50000" oninput="updateWordGoal()" style="width:80px"/>
-      <span style="font-size:.72rem;color:var(--muted)">szó</span>
-    </div>
-    <div id="word-goal-bar"><div id="word-goal-fill"></div></div>
-    <div style="font-size:.65rem;color:var(--muted2);font-family:var(--font-mono);margin-top:.25rem" id="word-goal-label">Állíts be szó célt</div>
-  </div>
-
-  <hr class="divider"/>
-
-  <!-- Typewriter mód -->
-  <div class="toolbar-section">
-    <div class="toolbar-label">Írógép mód</div>
-    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.8rem;color:var(--muted)">
-      <input type="checkbox" id="typewriter-toggle" onchange="toggleTypewriter()" style="accent-color:var(--gold)"/>
-      🎹 Typewriter betűtípus
+      📢 Publikálás a feedbe
     </label>
   </div>
 
   <hr class="divider"/>
 
   <!-- Mentés gomb -->
-  <button class="btn btn-gold" style="width:100%;padding:.7rem" onclick="focusSave()" id="btn-save-right">🔒 Hitelesítés & Mentés</button>
+  <button class="btn btn-gold" style="width:100%;padding:.7rem" onclick="focusSave()" id="btn-save-right" title="Legalább 100 szó és 30 leütés szükséges">🔒 Hitelesítés & Mentés</button>
 </div>
 
 <!-- PAPER -->
@@ -1194,71 +1131,39 @@
 
 <!-- WORD COUNT BAR -->
 <div id="word-count-bar">
-  <div class="wc-item">Kar: <span id="wc-chars">0</span></div>
+  <div class="wc-item">Karakter: <span id="wc-chars">0</span></div>
   <div class="wc-item">Szó: <span id="wc-words">0</span></div>
   <div class="wc-item">Leütés: <span id="wc-keys">0</span></div>
   <div class="wc-item">Tempó: <span id="wc-speed">–</span>/perc</div>
   <div class="wc-item">Humán: <span id="wc-human">–</span></div>
-  <div class="wc-item">Olvasási idő: <span id="wc-readtime">–</span></div>
 </div>
 
 <!-- FLOW TOGGLE -->
-<button id="flow-toggle" onclick="toggleFlowMode()" title="Flow mód">⟡</button>
-
-<!-- BRIGHTNESS TOGGLE -->
-<button id="brightness-toggle" onclick="toggleBrightnessSlider()" title="Fényerő">☀</button>
-
-<!-- BRIGHTNESS SLIDER -->
-<div id="brightness-wrap">
-  <span class="brightness-label">🌑 Sötét</span>
-  <input type="range" id="brightness-slider" min="0" max="100" value="0" oninput="applyBrightness(this.value)"/>
-  <span class="brightness-val" id="brightness-val">0%</span>
-  <span class="brightness-label">Világos ☀️</span>
-</div>
-
-<!-- PREVIEW MODAL -->
-<div id="preview-modal">
-  <div id="preview-box">
-    <div id="preview-header">
-      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2)">👁️ Előnézet</div>
-      <div style="display:flex;gap:.5rem;align-items:center">
-        <span style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)" id="preview-wordcount">–</span>
-        <button class="btn btn-outline" style="font-size:.75rem" onclick="printPreview()">🖨️ Nyomtatás</button>
-        <button class="btn btn-ghost" onclick="closePreview()" style="font-size:1.2rem">✕</button>
-      </div>
-    </div>
-    <div id="preview-content-wrap">
-      <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold2);margin-bottom:2rem;text-align:center" id="preview-title-show"></div>
-      <div id="preview-content-inner"></div>
-    </div>
-  </div>
-</div>
-
-<!-- NEW PAGE MODAL -->
-<div id="newpage-modal">
-  <div id="newpage-box">
-    <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">📄 Új oldal</div>
-    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.7">A jelenlegi szöveg elvész ha nem hitelesítetted. Mi legyen?</p>
-    <div style="display:flex;flex-direction:column;gap:.5rem">
-      <button class="btn btn-gold" onclick="doNewPage('save')">🔒 Előbb hitelesítem, aztán új</button>
-      <button class="btn btn-outline" onclick="doNewPage('discard')">🗑 Eldobom és újat kezdek</button>
-      <button class="btn btn-ghost" onclick="closeNewPageModal()">✕ Mégse</button>
-    </div>
-  </div>
-</div>
+<button id="flow-toggle" onclick="toggleFlowMode()" title="Flow mód – gépelésnél minden eltűnik">⟡</button>
 
 <!-- TOAST -->
 <div id="focus-toast"></div>
 
+<!-- PREVIEW MODAL -->
+<div id="preview-modal" onclick="if(event.target===this)closePreview()">
+  <div id="preview-box">
+    <button id="preview-close" onclick="closePreview()">✕</button>
+    <div id="preview-title" style="font-size:1.8rem;font-weight:700;margin-bottom:1.5rem;color:#1a1a1a;font-family:Georgia,serif"></div>
+    <div id="preview-content"></div>
+  </div>
+</div>
+
 <script src="/shared_js.js"></script>
 <script>
 /* ============================================================
-   FOKUSZ EDITOR – TELJES LOGIKA v2
+   FOKUSZ EDITOR – SAJÁT LOGIKA
+   Kommunikál a shared_js.js-szel (Supabase, sha256, stb.)
    ============================================================ */
 
 const SUPA_URL_F = 'https://vidlijysdhbfvvytuzcg.supabase.co';
 const SUPA_ANON_F = 'sb_publishable_JSk64VmwL-YNTgF0sFgA0w_Qb4sC_so';
-const { createClient: createClientF } = window.supabase;
+
+const { createClient: createClientF } = supabase;
 const dbF = createClientF(SUPA_URL_F, SUPA_ANON_F);
 
 // ── ÁLLAPOT ──
@@ -1269,72 +1174,80 @@ let fTotalPausedMs = 0, fPauseStart = null;
 let fEvents = [];
 let fPulseHistory = [];
 let fTimerInterval = null;
-let fCertDocId = null, fCertHash = null;
-let fHumanPct = 0, fHumanCategory = '–', fHumanCV = 0;
+let fAutosaveTimer = null;
+let fCertDocId = null;
+let fCertHash = null;
+let fHumanPct = 0;
+let fHumanCategory = '–';
+let fHumanCV = 0;
 let fEntropyCV = 0, fEntropyPct = 0;
-let fCfDnaScore = 0, fFlowPulseScore = 0, fSmdScore = 0, fTripleLockScore = 0;
+let fCfDnaScore = 0, fFlowPulseScore = 0, fSmdScore = 0;
+let fTripleLockScore = 0;
 let fMouseEvents = [], fMouseScore = 0, fMouseCV = 0;
-let fIsFlowMode = false, fFlowTimer = null;
+let fIsFlowMode = false;
+let fFlowTimer = null;
 let pulseCtxF = null;
 let typedCharsF = 0, pastedCharsF = 0;
-let fBrightnessVisible = false;
-let frCurrentMatches = [], frCurrentIdx = 0;
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await dbF.auth.getSession();
-  if (!session?.user) { window.location.href = '/#auth'; return; }
+  if (!session?.user) {
+    window.location.href = '/#auth';
+    return;
+  }
   fCurrentUser = session.user;
+
   initFocusEditor();
   initTableGrid();
   initPulseF();
   startAutosaveF();
   initMouseTrackingF();
-  // Piszkozat visszatöltése
-  loadDraftF();
 });
 
 // ── EDITOR INIT ──
 function initFocusEditor() {
   const area = document.getElementById('editor-area');
   if (!area) return;
+
   area.addEventListener('keydown', onFocusKeyDown);
   area.addEventListener('input', onFocusInput);
   area.addEventListener('paste', onFocusPaste);
+
   document.addEventListener('visibilitychange', () => {
     if (!fSessionStart) return;
     if (document.hidden) {
-      fPauseStart = Date.now(); fFocusSwitches++;
-      clearInterval(fTimerInterval); fTimerInterval = null;
+      fPauseStart = Date.now();
+      fFocusSwitches++;
+      clearInterval(fTimerInterval);
+      fTimerInterval = null;
     } else {
-      if (fPauseStart) { fTotalPausedMs += Date.now() - fPauseStart; fPauseStart = null; }
+      if (fPauseStart) {
+        fTotalPausedMs += Date.now() - fPauseStart;
+        fPauseStart = null;
+      }
       if (!fTimerInterval) fTimerInterval = setInterval(updateTimerF, 1000);
     }
   });
+
   document.addEventListener('selectionchange', updateToolbarStateF);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      if (fIsFlowMode) toggleFlowMode();
-      closePreview();
-      closeNewPageModal();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); toggleFindReplace(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); openPreview(); }
-  });
 }
 
 // ── KEYDOWN ──
 function onFocusKeyDown(e) {
   const now = Date.now();
+
   if (!fSessionStart) {
     fSessionStart = now;
     fTimerInterval = setInterval(updateTimerF, 1000);
     document.getElementById('paper').classList.add('breathing');
   }
+
   if (fLastKey && (now - fLastKey) > 3000) {
     fPauses++;
     fEvents.push({ type: 'pause', ts: now, duration: now - fLastKey });
   }
+
   if (e.key === 'Backspace' || e.key === 'Delete') {
     fDels++;
     typedCharsF = Math.max(0, typedCharsF - 1);
@@ -1344,38 +1257,41 @@ function onFocusKeyDown(e) {
     const interval = fLastKey ? now - fLastKey : 150;
     fEvents.push({ type: 'key', ts: now, interval });
     if (fEvents.length > 2000) fEvents = fEvents.slice(-1000);
+
     fPulseHistory.push(calcPulseValF(interval));
     if (fPulseHistory.length > 60) fPulseHistory.shift();
+
     drawPulseF();
     calcHumanIndexF();
   }
+
   fLastKey = now;
   updateStatsF();
   checkSaveF();
-  if (fIsFlowMode) resetFlowTimer();
+  autoSaveF();
+  resetFlowTimer();
 }
 
 // ── PASTE ──
 function onFocusPaste(e) {
   const text = e.clipboardData.getData('text/plain');
   pastedCharsF += text.length;
+  typedCharsF = Math.max(0, typedCharsF - text.length);
 }
 
 // ── INPUT ──
 function onFocusInput() {
   updateStatsF();
   checkSaveF();
-  scheduleAutosaveF();
-  updateWordGoal();
+  autoSaveF();
 }
 
 // ── STATS ──
 function updateStatsF() {
   const area = document.getElementById('editor-area');
   const txt = area?.innerText || '';
-  const wc = txt.trim() ? txt.trim().split(/\s+/).filter(Boolean).length : 0;
+  const wc = txt.trim() ? txt.trim().split(/\s+/).length : 0;
   const chars = txt.length;
-  const readMins = Math.ceil(wc / 200);
 
   setEl2('f-keys', fKeys);
   setEl2('f-words', wc);
@@ -1384,7 +1300,6 @@ function updateStatsF() {
   setEl2('wc-chars', chars);
   setEl2('wc-words', wc);
   setEl2('wc-keys', fKeys);
-  setEl2('wc-readtime', wc > 0 ? readMins + ' perc' : '–');
 
   const mins = fSessionStart ? (Date.now() - fSessionStart - fTotalPausedMs) / 60000 : 0;
   setEl2('wc-speed', mins > 0 ? Math.round(fKeys / mins) : '–');
@@ -1393,8 +1308,12 @@ function updateStatsF() {
   const warn = document.getElementById('word-warn-focus');
   const left = document.getElementById('f-words-left');
   if (warn && left) {
-    if (wc < 100 && txt.trim()) { left.textContent = 100 - wc; warn.style.display = 'block'; }
-    else warn.style.display = 'none';
+    if (wc < 100 && txt.trim()) {
+      left.textContent = 100 - wc;
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
   }
 }
 
@@ -1410,6 +1329,7 @@ function checkSaveF() {
   const txt = area?.innerText?.trim() || '';
   const wc = txt.split(/\s+/).filter(Boolean).length;
   const ok = txt && title && fKeys >= 30 && wc >= 100;
+
   ['btn-save', 'btn-save-right'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = !ok;
@@ -1442,10 +1362,12 @@ function calcPulseValF(interval) {
 
 function drawPulseF() {
   if (!pulseCtxF) return;
-  const W = pulseCtxF.canvas.width, H = pulseCtxF.canvas.height;
+  const W = pulseCtxF.canvas.width;
+  const H = pulseCtxF.canvas.height;
   pulseCtxF.clearRect(0, 0, W, H);
   pulseCtxF.fillStyle = 'rgba(19,19,26,0.8)';
   pulseCtxF.fillRect(0, 0, W, H);
+
   const hist = fPulseHistory;
   if (hist.length < 3) {
     pulseCtxF.fillStyle = 'rgba(201,168,76,0.3)';
@@ -1454,12 +1376,15 @@ function drawPulseF() {
     pulseCtxF.fillText('Gépelj...', W / 2, H / 2 + 4);
     return;
   }
+
   const mean = hist.reduce((a, b) => a + b, 0) / hist.length;
   const std = Math.sqrt(hist.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / hist.length);
   const cv = std / (mean || 1);
   const color = cv < 0.15 ? '#e05555' : cv > 0.22 ? '#4ab870' : '#c9a84c';
+
   const mn = Math.min(...hist), mx = Math.max(...hist);
   const range = (mx - mn) || 60;
+
   pulseCtxF.beginPath();
   hist.forEach((v, i) => {
     const x = (i / (hist.length - 1)) * W;
@@ -1474,110 +1399,262 @@ function drawPulseF() {
 // ── HUMAN INDEX ──
 async function calcHumanIndexF() {
   if (fKeys < 20) return;
+
   const recent = fEvents.filter(e => e.type === 'key').slice(-50);
   if (recent.length < 10) return;
+
   const intervals = recent.slice(1).map((ev, i) => ev.ts - recent[i].ts).filter(v => v >= 30 && v < 5000);
   if (intervals.length < 8) return;
+
   const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
   const stddev = Math.sqrt(intervals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / intervals.length);
   const cv = stddev / (mean || 1);
+
   const delRatio = fDels / Math.max(1, fKeys);
   const isIntense = cv > 0.9 && fPauses >= 3 && delRatio > 0.02;
+
   let pct, color, label;
   if (cv < 0.25) { pct = Math.round((cv / 0.25) * 25); color = '#e05555'; label = '🔴 Gépies'; }
   else if (cv < 0.6) { pct = Math.round(25 + ((cv - 0.25) / 0.35) * 35); color = 'var(--gold)'; label = '🟡 Vegyes'; }
   else if (!isIntense) { pct = Math.round(60 + ((cv - 0.6) / 0.3) * 25); color = 'var(--success)'; label = '🟢 Emberi'; }
   else { pct = Math.min(100, Math.round(85 + ((cv - 0.9) / 0.5) * 15)); color = 'var(--gold2)'; label = '⭐ Intenzív'; }
+
   pct = Math.max(0, Math.min(100, pct));
-  fHumanPct = pct; fHumanCV = parseFloat(cv.toFixed(3)); fHumanCategory = label;
+  fHumanPct = pct;
+  fHumanCV = parseFloat(cv.toFixed(3));
+  fHumanCategory = label;
+
   const hiEl = document.getElementById('f-human-index');
   const hiFill = document.getElementById('f-hi-fill');
+  const hiLabel = document.getElementById('f-human-label');
   if (hiEl) { hiEl.textContent = pct + '%'; hiEl.style.color = color; }
   if (hiFill) { hiFill.style.width = pct + '%'; hiFill.style.background = color; }
+  if (hiLabel) hiLabel.textContent = label;
   setEl2('wc-human', pct + '%');
+
   // Entrópia
-  const allI = fEvents.filter(e => e.type === 'key' && e.interval > 0).slice(-80).map(e => e.interval).filter(v => v >= 30 && v < 5000);
-  if (allI.length >= 20) {
-    const em = allI.reduce((a, b) => a + b, 0) / allI.length;
-    const es = Math.sqrt(allI.reduce((s, v) => s + Math.pow(v - em, 2), 0) / allI.length);
-    const eCV = es / (em || 1);
+  const allIntervals = fEvents.filter(e => e.type === 'key' && e.interval > 0).slice(-80).map(e => e.interval).filter(v => v >= 30 && v < 5000);
+  if (allIntervals.length >= 20) {
+    const eMean = allIntervals.reduce((a, b) => a + b, 0) / allIntervals.length;
+    const eStd = Math.sqrt(allIntervals.reduce((s, v) => s + Math.pow(v - eMean, 2), 0) / allIntervals.length);
+    const eCV = eStd / (eMean || 1);
     const ePct = Math.min(100, Math.round((eCV / 1.5) * 100));
-    fEntropyCV = parseFloat(eCV.toFixed(3)); fEntropyPct = ePct;
+    fEntropyCV = parseFloat(eCV.toFixed(3));
+    fEntropyPct = ePct;
     const eEl = document.getElementById('f-entropy');
     const eFill = document.getElementById('f-entropy-fill');
-    const eColor = eCV < 0.25 ? '#e05555' : eCV < 0.6 ? 'var(--gold)' : 'var(--success)';
-    if (eEl) { eEl.textContent = ePct + '%'; eEl.style.color = eColor; }
-    if (eFill) { eFill.style.width = ePct + '%'; eFill.style.background = eColor; }
+    if (eEl) { eEl.textContent = ePct + '%'; eEl.style.color = eCV < 0.25 ? '#e05555' : eCV < 0.6 ? 'var(--gold)' : 'var(--success)'; }
+    if (eFill) { eFill.style.width = ePct + '%'; eFill.style.background = eCV < 0.25 ? '#e05555' : eCV < 0.6 ? 'var(--gold)' : 'var(--success)'; }
   }
-  // Triple-Lock
+
+  // Triple-Lock (egyszerűsített)
   const cfPauses = fEvents.filter(e => e.type === 'pause');
   const cfDna = Math.min(100, Math.round((cfPauses.length / Math.max(1, fKeys / 50)) * 60 + 20));
   const nls = Math.min(100, Math.round(40 + cv * 40));
-  const smd = allI.length >= 20 ? Math.min(100, Math.round(fEntropyPct * 0.8 + 20)) : 0;
+  const smd = allIntervals.length >= 20 ? Math.min(100, Math.round(fEntropyPct * 0.8 + 20)) : 0;
   const mouseW = (fMouseScore > 0 && fMouseEvents.length >= 50) ? 0.05 : 0;
   const tl = Math.round(cfDna * 0.35 + nls * 0.35 + smd * 0.25 + fMouseScore * mouseW);
-  fCfDnaScore = cfDna; fFlowPulseScore = nls; fSmdScore = smd; fTripleLockScore = tl;
+
+  fCfDnaScore = cfDna;
+  fFlowPulseScore = nls;
+  fSmdScore = smd;
+  fTripleLockScore = tl;
+
   setEl2('f-triple-lock', tl + '/100');
   setEl2('f-cfdna', cfDna + '/100');
   setEl2('f-nls', nls + '/100');
   setEl2('f-smd', smd + '/100');
+
   const mouseEl = document.getElementById('f-mouse');
-  if (mouseEl) {
-    const mozgas = fMouseEvents.filter(e => !e.type).length;
-    const katt = fMouseEvents.filter(e => e.type === 'click').length;
-    mouseEl.textContent = fMouseEvents.length >= 50 ? `${mozgas} mozgás / ${katt} katt` : '⏳ gyűjtés...';
-  }
+  if (mouseEl) mouseEl.textContent = fMouseEvents.length >= 50 ? fMouseScore + '/100' : '⏳ gyűjtés...';
+
   const confEl = document.getElementById('f-tl-confidence');
-  if (confEl) confEl.textContent = fKeys < 50 ? 'Több adat kell' : tl >= 75 ? 'Magas megbízhatóság' : tl >= 50 ? 'Közepes' : 'Alacsony';
+  if (confEl) confEl.textContent = fKeys < 50 ? 'Több adat kell' : tl >= 75 ? 'Magas megbízhatóság' : tl >= 50 ? 'Közepes megbízhatóság' : 'Alacsony';
 }
 
-// ── FLOW MÓD ──
+// ── FLOW MÓD – JAVÍTOTT ──
 function toggleFlowMode() {
   fIsFlowMode = !fIsFlowMode;
   document.body.classList.toggle('flow-mode', fIsFlowMode);
+  if (!fIsFlowMode) {
+    document.body.classList.remove('flow-pause');
+    clearTimeout(fFlowTimer);
+  }
   const btn = document.getElementById('flow-toggle');
   const topBtn = document.getElementById('flow-btn');
   if (btn) btn.classList.toggle('active', fIsFlowMode);
-  if (topBtn) topBtn.style.color = fIsFlowMode ? 'var(--gold)' : '';
-  showFocusToast(fIsFlowMode ? '⟡ Flow mód BE – Escape a kilépéshez' : '⟡ Flow mód KI');
+  if (topBtn) {
+    topBtn.style.borderColor = fIsFlowMode ? 'var(--gold)' : '';
+    topBtn.style.color = fIsFlowMode ? 'var(--gold)' : '';
+  }
+  showFocusToast(fIsFlowMode
+    ? '⟡ Flow mód BE – gépelésnél minden eltűnik, megállásnál visszajön'
+    : '⟡ Flow mód KI');
 }
 
 function resetFlowTimer() {
-  if (fFlowTimer) clearTimeout(fFlowTimer);
+  if (!fIsFlowMode) return;
+  // Gépelésnél eltűnik minden
   document.body.classList.remove('flow-pause');
-  fFlowTimer = setTimeout(() => { if (fIsFlowMode) document.body.classList.add('flow-pause'); }, 3000);
+  clearTimeout(fFlowTimer);
+  // 3mp szünet után visszajön
+  fFlowTimer = setTimeout(() => {
+    if (fIsFlowMode) document.body.classList.add('flow-pause');
+  }, 3000);
 }
 
-// ── BRIGHTNESS SLIDER ──
-function toggleBrightnessSlider() {
-  fBrightnessVisible = !fBrightnessVisible;
-  const wrap = document.getElementById('brightness-wrap');
-  if (wrap) wrap.classList.toggle('visible', fBrightnessVisible);
+// ── TOOLBAR ──
+function fmtF(cmd) {
+  const area = document.getElementById('editor-area');
+  area.focus();
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand(cmd, false, null);
+  setTimeout(updateToolbarStateF, 50);
 }
 
-function applyBrightness(val) {
+// ── SZÖVEGSZÍN – JAVÍTOTT ──
+function applyTextColor(color) {
+  const area = document.getElementById('editor-area');
+  area.focus();
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) {
+    showFocusToast('⚠️ Először jelölj ki szöveget!');
+    return;
+  }
+  document.execCommand('styleWithCSS', false, true);
+  if (color === null) {
+    document.execCommand('removeFormat', false, null);
+  } else {
+    document.execCommand('foreColor', false, color);
+  }
+}
+
+// ── KIEMELŐ SZÍN ──
+function applyHighlight(color) {
+  const area = document.getElementById('editor-area');
+  area.focus();
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) {
+    showFocusToast('⚠️ Először jelölj ki szöveget!');
+    return;
+  }
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('hiliteColor', false, color === 'transparent' ? 'inherit' : color);
+}
+
+// ── BETŰMÉRET ──
+function setFontSize(size) {
+  const area = document.getElementById('editor-area');
+  area.focus();
+  document.execCommand('fontSize', false, size);
+}
+
+// ── BETŰTÍPUS ──
+function setEditorFont(fontName) {
+  const area = document.getElementById('editor-area');
+  area.style.fontFamily = `'${fontName}', serif`;
+  document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+  const idMap = {
+    'Cormorant Garamond': 'font-cormorant',
+    'Outfit': 'font-outfit',
+    'Georgia': 'font-georgia',
+    'JetBrains Mono': 'font-mono',
+    'Playfair Display': 'font-playfair',
+    'Lora': 'font-lora',
+    'Times New Roman': 'font-times',
+    'Arial': 'font-arial',
+  };
+  const btn = document.getElementById(idMap[fontName]);
+  if (btn) btn.classList.add('active');
+  showFocusToast(`✦ Betűtípus: ${fontName}`);
+}
+
+// ── KATEGÓRIA VÁLTOZÁS ──
+function onCategoryChange(val) {
+  const ind = document.getElementById('category-indicator');
+  if (!ind) return;
+  const info = {
+    fiction: { label: '📖 Szépirodalom', color: '#c9a84c', desc: 'Kreatív írás – próza, novella, regény' },
+    essay: { label: '🎓 Esszé', color: '#6fa8dc', desc: 'Érvelő, elemző dolgozat' },
+    academic: { label: '🔬 Tudományos', color: '#4ab870', desc: 'Kutatás, cikk, tanulmány' },
+    journalism: { label: '📰 Újságírás', color: '#ff9944', desc: 'Hír, riport, tudósítás' },
+    blog: { label: '💬 Blog', color: '#cc88ff', desc: 'Személyes, informális írás' },
+    business: { label: '💼 Üzleti', color: '#8a8090', desc: 'Szakmai, formális szöveg' },
+    poetry: { label: '✨ Vers', color: '#f0d070', desc: 'Lírai, ritmikus alkotás' },
+    other: { label: '📝 Egyéb', color: '#8a8090', desc: 'Általános kategória' },
+  };
+  if (!val) { ind.style.display = 'none'; return; }
+  const i = info[val];
+  if (!i) return;
+  ind.style.display = 'block';
+  ind.style.background = i.color + '22';
+  ind.style.border = `1px solid ${i.color}44`;
+  ind.style.color = i.color;
+  ind.innerHTML = `${i.label}<br><span style="font-size:.65rem;opacity:.7">${i.desc}</span>`;
+}
+
+// ── FÉNYERŐ CSÚSZKA ──
+function setBrightness(val) {
   const v = parseInt(val);
-  document.getElementById('brightness-val').textContent = v + '%';
-  // Dinamikusan interpolál sötétből világosba
-  const bg = interpolateColor('#060608', '#f5f0e8', v / 100);
-  const surface = interpolateColor('#0e0e14', '#ffffff', v / 100);
-  const surface2 = interpolateColor('#13131a', '#f0ede6', v / 100);
-  const textColor = interpolateColor('#f0ede6', '#1a1008', v / 100);
-  const mutedColor = interpolateColor('#8a8090', '#5a4020', v / 100);
-  const borderColor = v > 50
-    ? `rgba(160,120,48,${0.3 + v / 300})`
-    : `rgba(201,168,76,${0.12 + v / 400})`;
+  setEl2('brightness-val', v + '%');
 
-  document.documentElement.style.setProperty('--bg', bg);
-  document.documentElement.style.setProperty('--surface', surface);
-  document.documentElement.style.setProperty('--surface2', surface2);
-  document.documentElement.style.setProperty('--text', textColor);
-  document.documentElement.style.setProperty('--muted', mutedColor);
-  document.documentElement.style.setProperty('--border', borderColor);
+  // Dinamikus CSS változók frissítése
+  const root = document.documentElement;
+  const t = v / 100;
 
-  // Paper háttér
-  const paper = document.getElementById('paper');
-  if (paper) paper.style.background = surface;
+  // Háttér: sötéttől világosig
+  const bg = interpolateColor('#060608', '#f5f0e8', t);
+  const surface = interpolateColor('#0e0e14', '#ffffff', t);
+  const surface2 = interpolateColor('#13131a', '#f0ece4', t);
+  const surface3 = interpolateColor('#1a1a26', '#e8e4dc', t);
+  const textColor = interpolateColor('#f0ede6', '#1a1a1a', t);
+  const mutedColor = interpolateColor('#8a8090', '#5a5060', t);
+  const borderColor = t > 0.5
+    ? `rgba(160,120,48,${0.2 + t * 0.3})`
+    : `rgba(201,168,76,${0.12 + t * 0.2})`;
+
+  root.style.setProperty('--bg', bg);
+  root.style.setProperty('--surface', surface);
+  root.style.setProperty('--surface2', surface2);
+  root.style.setProperty('--surface3', surface3);
+  root.style.setProperty('--text', textColor);
+  root.style.setProperty('--muted', mutedColor);
+  root.style.setProperty('--border', borderColor);
+
+  // Gombok, feliratok szín frissítése
+  const panelBg = t > 0.5 ? surface : surface;
+  document.querySelectorAll('#panel-left, #panel-right').forEach(el => {
+    el.style.background = surface;
+    el.style.color = textColor;
+  });
+  document.querySelectorAll('.tool-btn, .font-btn').forEach(el => {
+    el.style.background = surface2;
+    el.style.color = t > 0.6 ? '#1a1a1a' : '';
+    el.style.borderColor = borderColor;
+  });
+  document.querySelectorAll('.stat-mini').forEach(el => {
+    el.style.background = surface2;
+  });
+  document.querySelectorAll('.stat-mini-label, .toolbar-label, .panel-title').forEach(el => {
+    el.style.color = t > 0.5 ? '#5a5060' : '';
+  });
+  document.querySelectorAll('.heading-select').forEach(el => {
+    el.style.background = surface2;
+    el.style.color = t > 0.5 ? '#1a1a1a' : '';
+  });
+  document.getElementById('topbar').style.background = t > 0.5
+    ? `rgba(245,240,232,0.95)`
+    : `rgba(6,6,8,0.92)`;
+  document.getElementById('doc-title-input').style.color = textColor;
+  document.getElementById('word-count-bar').style.background = t > 0.5
+    ? `rgba(245,240,232,0.95)`
+    : `rgba(6,6,8,0.9)`;
+
+  const desc = v === 0 ? '🌙 Sötét – a szem kímélésére' :
+    v < 30 ? '🌑 Kevéssé világos' :
+    v < 60 ? '🌤 Közepes fényerő' :
+    v < 90 ? '☀️ Világos mód' : '🌞 Maximális fényerő';
+  setEl2('brightness-desc', desc);
 }
 
 function interpolateColor(hex1, hex2, t) {
@@ -1589,32 +1666,41 @@ function interpolateColor(hex1, hex2, t) {
   return `rgb(${r},${g},${b})`;
 }
 
-// ── SZÍN JAVÍTÁS ──
-function setColor(color) {
+// ── ELŐNÉZET ──
+function openPreview() {
   const area = document.getElementById('editor-area');
-  area.focus();
-  // Biztosítjuk hogy van kijelölés
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-    showFocusToast('⚠️ Előbb jelölj ki szöveget!');
-    return;
-  }
-  document.execCommand('styleWithCSS', false, true);
-  document.execCommand('foreColor', false, color);
+  const title = document.getElementById('doc-title-input')?.value || '';
+  const content = area?.innerHTML || '';
+  if (!content.trim()) { showFocusToast('⚠️ Nincs szöveg az előnézethez!'); return; }
+  document.getElementById('preview-title').textContent = title || 'Cím nélkül';
+  document.getElementById('preview-content').innerHTML = content;
+  document.getElementById('preview-modal').classList.add('open');
 }
 
-// ── TOOLBAR ──
-function fmtF(cmd) {
-  document.getElementById('editor-area').focus();
-  document.execCommand('styleWithCSS', false, true);
-  document.execCommand(cmd, false, null);
-  setTimeout(updateToolbarStateF, 50);
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('open');
+}
+
+// ── TÁBLÁZAT TÖRLÉS ──
+function deleteSelectedTable() {
+  const area = document.getElementById('editor-area');
+  const sel = window.getSelection();
+  let node = sel?.anchorNode;
+  while (node && node !== area) {
+    if (node.nodeName === 'TABLE') {
+      node.remove();
+      showFocusToast('🗑 Táblázat törölve');
+      return;
+    }
+    node = node.parentNode;
+  }
+  showFocusToast('⚠️ Kattints a táblázatba, majd nyomd meg a Törlés gombot!');
 }
 
 function updateToolbarStateF() {
-  ['bold','italic','underline','strikeThrough'].forEach(cmd => {
-    const ids = { bold:'tb-bold', italic:'tb-italic', underline:'tb-underline', strikeThrough:'tb-strike' };
-    const btn = document.getElementById(ids[cmd]);
+  ['bold', 'italic', 'underline', 'strikeThrough'].forEach(cmd => {
+    const id = { bold: 'tb-bold', italic: 'tb-italic', underline: 'tb-underline', strikeThrough: 'tb-strike' }[cmd];
+    const btn = document.getElementById(id);
     if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
   });
 }
@@ -1624,8 +1710,13 @@ function insertHeading(tag) {
   area.focus();
   if (!tag) { document.execCommand('formatBlock', false, 'p'); return; }
   document.execCommand('formatBlock', false, tag);
-  const sel = document.getElementById('panel-right')?.querySelector('.heading-select');
+  const sel = document.getElementById('panel-right').querySelector('.heading-select');
   setTimeout(() => { if (sel) sel.value = ''; }, 100);
+}
+
+function setColor(color) {
+  document.getElementById('editor-area').focus();
+  document.execCommand('foreColor', false, color);
 }
 
 function insertFocusLink() {
@@ -1636,153 +1727,6 @@ function insertFocusLink() {
   document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:var(--gold)">${label}</a>`);
 }
 
-// ── ELŐNÉZET ──
-function openPreview() {
-  const area = document.getElementById('editor-area');
-  const title = document.getElementById('doc-title-input')?.value || '';
-  const content = area?.innerHTML || '';
-  const txt = area?.innerText || '';
-  const wc = txt.trim().split(/\s+/).filter(Boolean).length;
-  const readMins = Math.ceil(wc / 200);
-
-  document.getElementById('preview-title-show').textContent = title || 'Cím nélkül';
-  document.getElementById('preview-content-inner').innerHTML = content || '<p style="color:var(--muted);font-style:italic">Még nincs szöveg.</p>';
-  document.getElementById('preview-wordcount').textContent = `${wc} szó · ~${readMins} perc olvasás`;
-
-  document.getElementById('preview-modal').classList.add('open');
-}
-
-function closePreview() {
-  document.getElementById('preview-modal')?.classList.remove('open');
-}
-
-function printPreview() {
-  const content = document.getElementById('preview-content-inner')?.innerHTML || '';
-  const title = document.getElementById('preview-title-show')?.textContent || '';
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
-    <style>body{font-family:Georgia,serif;max-width:720px;margin:2rem auto;line-height:1.8;color:#1a1008;}
-    h1{font-size:2rem;margin-bottom:1rem;}h2{font-size:1.5rem;}
-    blockquote{border-left:3px solid #c9a84c;padding:.5rem 1rem;color:#666;font-style:italic;}
-    table{width:100%;border-collapse:collapse;}td,th{border:1px solid #ccc;padding:.5rem;}
-    </style></head><body><h1>${title}</h1>${content}</body></html>`);
-  win.document.close();
-  win.print();
-}
-
-// ── ÚJ OLDAL ──
-function openNewPageModal() {
-  document.getElementById('newpage-modal').classList.add('open');
-}
-
-function closeNewPageModal() {
-  document.getElementById('newpage-modal')?.classList.remove('open');
-}
-
-async function doNewPage(action) {
-  closeNewPageModal();
-  if (action === 'save') {
-    await focusSave();
-  }
-  resetEditorF();
-}
-
-function resetEditorF() {
-  document.getElementById('editor-area').innerHTML = '';
-  document.getElementById('doc-title-input').value = '';
-  document.getElementById('cert-panel-focus').style.display = 'none';
-  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
-  fSessionStart = null; fLastKey = null; fTotalPausedMs = 0; fPauseStart = null;
-  fEvents = []; fPulseHistory = [];
-  fCertDocId = null; fCertHash = null;
-  fHumanPct = 0; typedCharsF = 0; pastedCharsF = 0;
-  clearInterval(fTimerInterval); fTimerInterval = null;
-  document.getElementById('paper')?.classList.remove('breathing');
-  // Nulláz minden számláló
-  ['f-keys','f-words','f-dels','f-pauses','wc-chars','wc-words','wc-keys'].forEach(id => setEl2(id, '0'));
-  ['f-human-index','f-triple-lock','f-cfdna','f-nls','f-smd','f-entropy','f-time'].forEach(id => setEl2(id, '–'));
-  setEl2('f-tl-confidence', '–');
-  setEl2('wc-speed', '–'); setEl2('wc-human', '–'); setEl2('wc-readtime', '–');
-  const hiFill = document.getElementById('f-hi-fill');
-  if (hiFill) hiFill.style.width = '0%';
-  const eFill = document.getElementById('f-entropy-fill');
-  if (eFill) eFill.style.width = '0%';
-  ['btn-save','btn-save-right'].forEach(id => { const b = document.getElementById(id); if (b) { b.disabled = true; b.textContent = id === 'btn-save' ? '🔒 Hitelesítés' : '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
-  drawPulseF();
-  localStorage.removeItem('humano_focus_draft');
-  showFocusToast('📄 Új dokumentum kész!');
-}
-
-// ── KERESÉS & CSERE ──
-function toggleFindReplace() {
-  const wrap = document.getElementById('findreplace-wrap');
-  if (!wrap) return;
-  wrap.classList.toggle('open');
-  if (wrap.classList.contains('open')) document.getElementById('fr-find')?.focus();
-}
-
-function frHighlight() {
-  const term = document.getElementById('fr-find')?.value || '';
-  setEl2('fr-result', term ? '⏳ Keresés...' : '–');
-  if (!term) return;
-  const area = document.getElementById('editor-area');
-  const text = area.innerText;
-  const count = (text.match(new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
-  setEl2('fr-result', count > 0 ? `${count} találat` : 'Nincs találat');
-}
-
-function frFindNext() {
-  const term = document.getElementById('fr-find')?.value || '';
-  if (!term) return;
-  const area = document.getElementById('editor-area');
-  const html = area.innerHTML;
-  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  area.innerHTML = html.replace(/<mark[^>]*>(.*?)<\/mark>/gi, '$1');
-  area.innerHTML = area.innerHTML.replace(regex, '<mark style="background:rgba(201,168,76,.4);color:var(--text);border-radius:2px;">$1</mark>');
-  const firstMark = area.querySelector('mark');
-  if (firstMark) firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function frReplace() {
-  const find = document.getElementById('fr-find')?.value || '';
-  const replace = document.getElementById('fr-replace')?.value || '';
-  if (!find) return;
-  const area = document.getElementById('editor-area');
-  const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-  area.innerHTML = area.innerHTML.replace(regex, replace);
-  setEl2('fr-result', 'Csere kész');
-}
-
-function frReplaceAll() {
-  const find = document.getElementById('fr-find')?.value || '';
-  const replace = document.getElementById('fr-replace')?.value || '';
-  if (!find) return;
-  const area = document.getElementById('editor-area');
-  const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-  const count = (area.innerHTML.match(regex) || []).length;
-  area.innerHTML = area.innerHTML.replace(regex, replace);
-  setEl2('fr-result', `${count} csere kész`);
-}
-
-// ── SZÓ CÉL ──
-function updateWordGoal() {
-  const goal = parseInt(document.getElementById('word-goal-input')?.value || '0');
-  if (!goal) { setEl2('word-goal-label', 'Állíts be szó célt'); document.getElementById('word-goal-fill').style.width = '0%'; return; }
-  const area = document.getElementById('editor-area');
-  const wc = (area?.innerText || '').trim().split(/\s+/).filter(Boolean).length;
-  const pct = Math.min(100, Math.round((wc / goal) * 100));
-  document.getElementById('word-goal-fill').style.width = pct + '%';
-  setEl2('word-goal-label', `${wc} / ${goal} szó (${pct}%)`);
-  if (pct >= 100) showFocusToast('🎯 Szó cél elérve!');
-}
-
-// ── TYPEWRITER MÓD ──
-function toggleTypewriter() {
-  const cb = document.getElementById('typewriter-toggle');
-  document.body.classList.toggle('typewriter-mode', cb?.checked);
-  showFocusToast(cb?.checked ? '🎹 Írógép mód BE' : '🎹 Írógép mód KI');
-}
-
 // ── TABLE GRID ──
 function initTableGrid() {
   const grid = document.getElementById('table-grid');
@@ -1791,7 +1735,8 @@ function initTableGrid() {
     for (let c = 0; c < 5; c++) {
       const cell = document.createElement('div');
       cell.className = 'table-cell';
-      cell.dataset.r = r; cell.dataset.c = c;
+      cell.dataset.r = r;
+      cell.dataset.c = c;
       cell.addEventListener('mouseover', () => highlightTable(r, c));
       cell.addEventListener('click', () => insertTable(r + 1, c + 1));
       grid.appendChild(cell);
@@ -1826,38 +1771,33 @@ function insertTable(rows, cols) {
 }
 
 // ── AUTOSAVE ──
-function scheduleAutosaveF() {
-  clearTimeout(window._fAutosaveDebounce);
-  window._fAutosaveDebounce = setTimeout(autoSaveF, 5000);
-}
-
 function autoSaveF() {
   const dot = document.getElementById('autosave-dot');
   const txt = document.getElementById('autosave-text');
-  const content = document.getElementById('editor-area')?.innerHTML || '';
-  const title = document.getElementById('doc-title-input')?.value || '';
-  if (!content && !title) return;
   if (dot) dot.className = 'saving';
   if (txt) txt.textContent = 'Mentés...';
-  localStorage.setItem('humano_focus_draft', JSON.stringify({ content, title, ts: Date.now() }));
-  if (dot) { setTimeout(() => { dot.className = 'saved'; if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }); setTimeout(() => { dot.className = ''; if (txt) txt.textContent = '–'; }, 3000); }, 300); }
+
+  clearTimeout(window._fAutosaveDebounce);
+  window._fAutosaveDebounce = setTimeout(() => {
+    const content = document.getElementById('editor-area')?.innerHTML || '';
+    const title = document.getElementById('doc-title-input')?.value || '';
+    localStorage.setItem('humano_focus_draft', JSON.stringify({ content, title, ts: Date.now() }));
+    if (dot) dot.className = 'saved';
+    if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+    setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
+  }, 5000);
 }
 
 function startAutosaveF() {
-  setInterval(autoSaveF, 15000);
-}
-
-function loadDraftF() {
+  // Piszkozat visszatöltése
   try {
     const draft = JSON.parse(localStorage.getItem('humano_focus_draft') || 'null');
-    if (draft?.content) {
+    if (draft && draft.content) {
       const ago = Math.round((Date.now() - draft.ts) / 60000);
-      if (ago < 120 && confirm(`Találtunk egy mentett piszkozatot (${ago} perce). Betöltöd?`)) {
+      if (ago < 60 && confirm(`Találtunk egy mentett piszkozatot (${ago} perce). Betöltöd?`)) {
         document.getElementById('editor-area').innerHTML = draft.content;
         document.getElementById('doc-title-input').value = draft.title || '';
         showFocusToast('📄 Piszkozat betöltve');
-        updateStatsF();
-        checkSaveF();
       }
     }
   } catch (e) {}
@@ -1866,9 +1806,11 @@ function loadDraftF() {
 // ── MENTÉS / HITELESÍTÉS ──
 async function focusSave() {
   if (!fCurrentUser) { window.location.href = '/#auth'; return; }
+
   const btn1 = document.getElementById('btn-save');
   const btn2 = document.getElementById('btn-save-right');
   [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '⏳...'; } });
+
   try {
     const area = document.getElementById('editor-area');
     const content = area?.innerHTML || '';
@@ -1877,43 +1819,71 @@ async function focusSave() {
     const isPublic = document.getElementById('f-is-public')?.checked ?? true;
     const isPublished = document.getElementById('f-is-published')?.checked ?? false;
     const category = document.getElementById('f-category')?.value || '';
-    const { data: profile } = await dbF.from('profiles').select('plan,monthly_credits,used_credits,trial_ends_at,username,humano_id').eq('id', fCurrentUser.id).single();
+
+    const { data: profile } = await dbF.from('profiles').select('plan, monthly_credits, used_credits, trial_ends_at, username, humano_id').eq('id', fCurrentUser.id).single();
     const plan = profile?.plan || 'free';
     const used = profile?.used_credits || 0;
     const limit = profile?.monthly_credits ?? 5;
     const trialActive = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
     const unlimited = plan === 'pro' || plan === 'institution' || plan === 'premium' || trialActive;
+
     if (!unlimited && used >= limit) {
-      showFocusToast('❌ Havi keret elérve!');
+      showFocusToast('❌ Havi keret elérve! Váltj magasabb csomagra.');
       [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; } });
       return;
     }
+
     const hash = await sha256(plainText);
     const ts = Date.now().toString(36).toUpperCase();
     const userPrefix = (profile?.humano_id || fCurrentUser.id).substring(4, 8).toUpperCase();
     const docId = `DOC-${userPrefix}-${ts}`;
+
     const sessionDurationMs = fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0;
     const totalChars = typedCharsF + pastedCharsF;
+
     const processData = {
-      keystrokeCount: fKeys, deletionCount: fDels, pauseCount: fPauses,
-      focusSwitches: fFocusSwitches, humanIndex: fHumanPct, humanCategory: fHumanCategory,
-      humanCV: fHumanCV, sessionDurationMs, typedChars: typedCharsF, pastedChars: pastedCharsF,
+      keystrokeCount: fKeys,
+      deletionCount: fDels,
+      pauseCount: fPauses,
+      focusSwitches: fFocusSwitches,
+      humanIndex: fHumanPct,
+      humanCategory: fHumanCategory,
+      humanCV: fHumanCV,
+      sessionDurationMs,
+      typedChars: typedCharsF,
+      pastedChars: pastedCharsF,
       typedPct: totalChars > 0 ? Math.round((typedCharsF / totalChars) * 100) : 100,
       pastedPct: totalChars > 0 ? Math.round((pastedCharsF / totalChars) * 100) : 0,
-      entropyCV: fEntropyCV, entropyPct: fEntropyPct,
-      cfDnaScore: fCfDnaScore, flowPulseScore: fFlowPulseScore,
-      smdScore: fSmdScore, tripleLockScore: fTripleLockScore,
-      pulseDataPoints: fPulseHistory.slice(), source: 'fokusz-editor',
+      entropyCV: fEntropyCV,
+      entropyPct: fEntropyPct,
+      cfDnaScore: fCfDnaScore,
+      flowPulseScore: fFlowPulseScore,
+      smdScore: fSmdScore,
+      tripleLockScore: fTripleLockScore,
+      pulseDataPoints: fPulseHistory.slice(),
+      source: 'fokusz-editor',
     };
+
     const { error } = await dbF.from('documents').insert({
-      doc_id: docId, title, content, hash,
-      author_id: fCurrentUser.id, author_name: profile?.username || fCurrentUser.email,
-      is_public: isPublic, is_published: isPublished,
-      category: category || null, process_data: processData,
-      saved_at: new Date().toISOString(), version: 1,
+      doc_id: docId,
+      title,
+      content,
+      hash,
+      author_id: fCurrentUser.id,
+      author_name: profile?.username || fCurrentUser.email,
+      is_public: isPublic,
+      is_published: isPublished,
+      category: category || null,
+      process_data: processData,
+      saved_at: new Date().toISOString(),
+      version: 1,
     });
+
     if (error) throw new Error(error.message);
+
     await dbF.from('profiles').update({ used_credits: used + 1 }).eq('id', fCurrentUser.id);
+
+    // OTS stamp
     try {
       const { data: { session } } = await dbF.auth.getSession();
       fetch(`${SUPA_URL_F}/functions/v1/ots-stamp`, {
@@ -1922,19 +1892,26 @@ async function focusSave() {
         body: JSON.stringify({ doc_id: docId, hash }),
       }).catch(() => {});
     } catch (e) {}
-    fCertDocId = docId; fCertHash = hash;
+
+    fCertDocId = docId;
+    fCertHash = hash;
+
     setEl2('f-cert-id', docId);
     const hashEl = document.getElementById('f-cert-hash');
     if (hashEl) hashEl.textContent = hash;
+
     document.getElementById('cert-panel-focus').style.display = 'block';
     document.getElementById('cert-panel-focus').scrollIntoView({ behavior: 'smooth' });
+
     localStorage.removeItem('humano_focus_draft');
+
     [btn1, btn2].forEach(b => { if (b) { b.disabled = true; b.textContent = '✅ Hitelesítve'; b.style.opacity = '.6'; } });
+
     showFocusToast('✦ Hitelesítve! DOC ID: ' + docId);
+
   } catch (err) {
     showFocusToast('❌ Hiba: ' + err.message);
     [btn1, btn2].forEach(b => { if (b) { b.disabled = false; b.textContent = '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; } });
-    checkSaveF();
   }
 }
 
@@ -1950,30 +1927,87 @@ function openVerifyPage() {
   window.open(`/verify/${fCertDocId}`, '_blank');
 }
 
-function focusNewDoc() { openNewPageModal(); }
+function focusNewDoc() {
+  if (fKeys > 10 && !confirm('Új dokumentumot nyitsz. A jelenlegi szöveg elvész ha nem hitelesítetted. Folytatod?')) return;
+  document.getElementById('editor-area').innerHTML = '';
+  document.getElementById('doc-title-input').value = '';
+  document.getElementById('cert-panel-focus').style.display = 'none';
+  document.getElementById('f-category').value = '';
+  document.getElementById('category-indicator').style.display = 'none';
+
+  // Minden számláló nullázása
+  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
+  fSessionStart = null; fLastKey = null; fTotalPausedMs = 0;
+  fPauseStart = null;
+  fEvents = []; fPulseHistory = [];
+  fCertDocId = null; fCertHash = null;
+  fHumanPct = 0; fHumanCategory = '–'; fHumanCV = 0;
+  fEntropyCV = 0; fEntropyPct = 0;
+  fCfDnaScore = 0; fFlowPulseScore = 0; fSmdScore = 0; fTripleLockScore = 0;
+  typedCharsF = 0; pastedCharsF = 0;
+  fMouseEvents = []; fMouseScore = 0; fMouseCV = 0;
+
+  clearInterval(fTimerInterval); fTimerInterval = null;
+  document.getElementById('paper').classList.remove('breathing');
+
+  // UI nullázás
+  setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
+  setEl2('f-time', '00:00'); setEl2('f-human-index', '–%'); setEl2('f-triple-lock', '–');
+  setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
+  setEl2('f-mouse', '–'); setEl2('f-entropy', '–');
+  setEl2('wc-chars', 0); setEl2('wc-words', 0); setEl2('wc-keys', 0); setEl2('wc-speed', '–'); setEl2('wc-human', '–');
+
+  const hiFill = document.getElementById('f-hi-fill');
+  if (hiFill) { hiFill.style.width = '0%'; }
+  const eFill = document.getElementById('f-entropy-fill');
+  if (eFill) { eFill.style.width = '0%'; }
+
+  const hiLabel = document.getElementById('f-human-label');
+  if (hiLabel) hiLabel.textContent = 'Billentyűdinamika alapján';
+
+  ['btn-save', 'btn-save-right'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.disabled = true; b.textContent = id === 'btn-save' ? '🔒 Hitelesítés' : '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; }
+  });
+
+  updateStatsF(); drawPulseF();
+  showFocusToast('✦ Új dokumentum – írj bátran!');
+}
 
 // ── EGÉR TRACKING ──
 function initMouseTrackingF() {
   const area = document.getElementById('editor-area');
   if (!area) return;
-  let lastX = 0, lastY = 0, lastT = 0, speeds = [];
+  let lastX = 0, lastY = 0, lastT = 0;
+  let speeds = [];
+
   area.addEventListener('mousemove', e => {
     const now = Date.now();
     if (now - lastT < 100) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
-    const speed = Math.sqrt(dx*dx + dy*dy) / (now - lastT);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const speed = dist / (now - lastT);
     speeds.push(speed);
     if (speeds.length > 50) speeds.shift();
     fMouseEvents.push({ ts: now, speed });
     if (fMouseEvents.length > 500) fMouseEvents.shift();
     lastX = e.clientX; lastY = e.clientY; lastT = now;
+
     if (speeds.length >= 20) {
-      const m = speeds.reduce((a,b)=>a+b,0)/speeds.length;
-      const s = Math.sqrt(speeds.reduce((a,b)=>a+Math.pow(b-m,2),0)/speeds.length);
-      fMouseCV = parseFloat((s/(m||1)).toFixed(3));
-      fMouseScore = fMouseCV<0.2?20:fMouseCV<0.5?50:fMouseCV<1.0?80:95;
+      const m = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+      const s = Math.sqrt(speeds.reduce((a, b) => a + Math.pow(b - m, 2), 0) / speeds.length);
+      fMouseCV = parseFloat((s / (m || 1)).toFixed(3));
+      fMouseScore = fMouseCV < 0.2 ? 20 : fMouseCV < 0.5 ? 50 : fMouseCV < 1.0 ? 80 : 95;
+    }
+
+    const mEl = document.getElementById('f-mouse');
+    if (mEl) {
+      const mozgas = fMouseEvents.filter(e => !e.type).length;
+      const katt = fMouseEvents.filter(e => e.type === 'click').length;
+      mEl.textContent = fMouseEvents.length >= 50 ? `${mozgas} mozgás / ${katt} katt` : '⏳ gyűjtés...';
     }
   });
+
   area.addEventListener('click', e => {
     fMouseEvents.push({ ts: Date.now(), type: 'click', x: e.clientX, y: e.clientY });
   });
@@ -1983,11 +2017,25 @@ function initMouseTrackingF() {
 function showFocusToast(msg) {
   const t = document.getElementById('focus-toast');
   if (!t) return;
-  t.textContent = msg; t.style.display = 'block'; t.style.opacity = '1';
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.opacity = '1';
   clearTimeout(t._to);
   t._to = setTimeout(() => { t.style.opacity = '0'; setTimeout(() => { t.style.display = 'none'; }, 400); }, 3000);
 }
 
+// ESC kilép flow módból és bezárja az előnézetet
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('preview-modal').classList.contains('open')) {
+      closePreview();
+    } else if (fIsFlowMode) {
+      toggleFlowMode();
+    }
+  }
+});
+
 window.addEventListener('resize', initPulseF);
 </script>
 </body>
+</html>
