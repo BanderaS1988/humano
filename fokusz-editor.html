@@ -1300,9 +1300,9 @@
 
     <div style="display:flex;gap:.75rem;justify-content:center">
 
-      <button class="btn btn-gold" id="consent-accept-btn" style="min-width:160px" onclick="handleConsentAccept()">✦ Elfogadom</button>
+      <button class="btn btn-gold" id="consent-accept-btn" style="min-width:160px" onclick="handleConsentAcceptF()">✦ Elfogadom</button>
 
-      <button class="btn btn-outline" id="consent-decline-btn" onclick="handleConsentDecline()">✕ Vissza</button>
+      <button class="btn btn-outline" id="consent-decline-btn" onclick="handleConsentDeclineF()">✕ Vissza</button>
 
     </div>
 
@@ -1449,12 +1449,7 @@ async function handleConsentAcceptF() {
   }
 }
 
-// ── CONSENT VISSZAUTASÍTÁS ──
-function handleConsentDeclineF() {
-  const modal = document.getElementById('biometric-consent-modal');
-  if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
-  window.location.href = '/';
-}
+
 
 
 
@@ -1554,14 +1549,147 @@ async function checkCalibrationReminderF() {
 
 // ── KALIBRÁCIÓS EMLÉKEZTETŐ GOMBOK – fókusz editor ──
 function goToCalibrationF() {
-  const modal = document.getElementById('cal-reminder-modal');
-  if (modal) {
-    modal.classList.remove('open');
-    modal.style.display = 'none';
-  }
-  // Átirányítás a kalibrációs oldalra (főoldalon)
-  window.location.href = '/#calibration';
+  // Bezárjuk az emlékeztető modalt
+  const reminderModal = document.getElementById('cal-reminder-modal');
+  if (reminderModal) { reminderModal.classList.remove('open'); reminderModal.style.display = 'none'; }
+
+  // Megnyitjuk a kalibrációs modalt
+  const calModal = document.getElementById('f-calibration-modal');
+  if (calModal) { calModal.style.display = 'flex'; calModal.classList.add('open'); }
+
+  // Inicializáljuk a kalibrációt
+  calInitF();
 }
+
+function closeCalibrationModalF() {
+  const calModal = document.getElementById('f-calibration-modal');
+  if (calModal) { calModal.classList.remove('open'); calModal.style.display = 'none'; }
+}
+
+// ── KALIBRÁCIÓ VÁLTOZÓK ──
+const CAL_F = {
+  step1Events: [], step2Events: [],
+  step1LastKey: null, step2LastKey: null,
+};
+
+function calInitF() {
+  const area1 = document.getElementById('f-cal-area-1');
+  const area2 = document.getElementById('f-cal-area-2');
+  if (!area1 || !area2) return;
+  if (area1.dataset.calInited) return;
+  area1.dataset.calInited = '1';
+
+  [area1, area2].forEach(el => {
+    el.addEventListener('paste', e => { e.preventDefault(); showFocusToast('📋 Kalibrációban beillesztés nem engedélyezett!'); });
+    el.addEventListener('drop', e => e.preventDefault());
+  });
+
+  area1.addEventListener('keydown', e => {
+    if (!e.isTrusted || e.repeat) return;
+    const now = Date.now();
+    if (e.key === 'Backspace') {
+      CAL_F.step1Events.push({ type: 'delete', ts: now });
+    } else if (e.key.length === 1) {
+      const interval = CAL_F.step1LastKey ? now - CAL_F.step1LastKey : 150;
+      CAL_F.step1Events.push({ type: 'key', ts: now, interval });
+      CAL_F.step1LastKey = now;
+    }
+    calUpdateF1();
+  });
+
+  area2.addEventListener('keydown', e => {
+    if (!e.isTrusted || e.repeat) return;
+    const now = Date.now();
+    if (e.key === 'Backspace') {
+      CAL_F.step2Events.push({ type: 'delete', ts: now });
+    } else if (e.key.length === 1) {
+      const interval = CAL_F.step2LastKey ? now - CAL_F.step2LastKey : 150;
+      CAL_F.step2Events.push({ type: 'key', ts: now, interval });
+      CAL_F.step2LastKey = now;
+    }
+    calUpdateF2();
+  });
+}
+
+function calUpdateF1() {
+  const area = document.getElementById('f-cal-area-1');
+  if (!area) return;
+  const len = area.innerText.replace(/\n/g, '').length;
+  const pct = Math.min(100, Math.round((len / 380) * 100));
+  const charsEl = document.getElementById('f-cal-1-chars');
+  const progressEl = document.getElementById('f-cal-1-progress');
+  const btnEl = document.getElementById('f-cal-1-btn');
+  if (charsEl) charsEl.textContent = len;
+  if (progressEl) progressEl.style.width = pct + '%';
+  if (btnEl) btnEl.disabled = len < 320;
+}
+
+function calUpdateF2() {
+  const area = document.getElementById('f-cal-area-2');
+  if (!area) return;
+  const words = area.innerText.trim().split(/\s+/).filter(Boolean).length;
+  const wordsEl = document.getElementById('f-cal-2-words');
+  const btnEl = document.getElementById('f-cal-2-btn');
+  if (wordsEl) wordsEl.textContent = words;
+  if (btnEl) btnEl.disabled = words < 30;
+}
+
+function calStep1CompleteF() {
+  document.getElementById('f-cal-step-1').style.display = 'none';
+  document.getElementById('f-cal-step-2').style.display = 'block';
+  document.getElementById('f-cal-area-2').focus();
+  showFocusToast('✅ Másolási minta rögzítve – most írj szabadon!');
+}
+
+function calExtractFeaturesF(events) {
+  const keyEvents = events.filter(e => e.type === 'key');
+  const deleteEvents = events.filter(e => e.type === 'delete');
+  if (keyEvents.length < 5) return { burstMean: 0, pauseVariance: 0, revisionRate: 0, rhythmEntropy: 0 };
+  const intervals = keyEvents.map(e => e.interval).filter(v => v && v > 0 && v < 10000);
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  let bursts = [], currentBurst = [];
+  intervals.forEach(iv => {
+    if (iv < 1500) { currentBurst.push(iv); }
+    else { if (currentBurst.length) { bursts.push(currentBurst.reduce((a,b)=>a+b,0)); currentBurst=[]; } }
+  });
+  if (currentBurst.length) bursts.push(currentBurst.reduce((a,b)=>a+b,0));
+  const burstMean = bursts.length ? bursts.reduce((a,b)=>a+b,0)/bursts.length : mean;
+  const pauses = intervals.filter(v => v >= 1500);
+  const pauseMean = pauses.length ? pauses.reduce((a,b)=>a+b,0)/pauses.length : 0;
+  const pauseVariance = pauses.length ? pauses.reduce((s,v)=>s+Math.pow(v-pauseMean,2),0)/pauses.length : 0;
+  const revisionRate = deleteEvents.length / Math.max(1, keyEvents.length + deleteEvents.length);
+  const buckets = {};
+  intervals.forEach(v => { const b = Math.floor(v/100)*100; buckets[b]=(buckets[b]||0)+1; });
+  const total = intervals.length;
+  const rhythmEntropy = -Object.values(buckets).reduce((s,count)=>{ const p=count/total; return s+(p>0?p*Math.log2(p):0); },0);
+  return { burstMean, pauseVariance, revisionRate, rhythmEntropy };
+}
+
+async function calStep2CompleteF() {
+  const btn = document.getElementById('f-cal-2-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mentés...'; }
+  try {
+    const t = calExtractFeaturesF(CAL_F.step1Events);
+    const c = calExtractFeaturesF(CAL_F.step2Events);
+    const rows = [
+      { user_id: fCurrentUser.id, profile_type: 'transcription', burst_mean: t.burstMean, pause_variance: t.pauseVariance, revision_rate: t.revisionRate, rhythm_entropy: t.rhythmEntropy, sample_count: CAL_F.step1Events.filter(e=>e.type==='key').length },
+      { user_id: fCurrentUser.id, profile_type: 'composition', burst_mean: c.burstMean, pause_variance: c.pauseVariance, revision_rate: c.revisionRate, rhythm_entropy: c.rhythmEntropy, sample_count: CAL_F.step2Events.filter(e=>e.type==='key').length }
+    ];
+    const { error } = await dbF.from('typing_profiles').upsert(rows, { onConflict: 'user_id,profile_type' });
+    if (error) throw error;
+
+    document.getElementById('f-cal-step-2').style.display = 'none';
+    document.getElementById('f-cal-result').style.display = 'block';
+    document.getElementById('f-cal-result-entropy').textContent = c.rhythmEntropy.toFixed(2);
+    document.getElementById('f-cal-result-burst').textContent = Math.round(c.burstMean) + ' ms';
+    document.getElementById('f-cal-result-revision').textContent = (c.revisionRate * 100).toFixed(1) + '%';
+    showFocusToast('✦ Kalibrációs profil elmentve!');
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Kalibráció befejezése'; }
+    showFocusToast('❌ Hiba: ' + err.message);
+  }
+}
+
 
 function skipCalibrationReminderF() {
   const checkbox = document.getElementById('cal-dont-show-again');
@@ -1871,31 +1999,6 @@ function setEl2(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
 }
-
-// ── SAVE CHECK ──
-function checkSaveF() {
-  const area = document.getElementById('editor-area');
-  const title = document.getElementById('doc-title-input')?.value?.trim() || '';
-  const txt = area?.innerText?.trim() || '';
-  const wc = txt.split(/\s+/).filter(Boolean).length;
-  const ok = txt && title && wc >= 100;
-  ['btn-save', 'btn-save-right'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.disabled = !ok;
-    if (!ok) {
-      if (!title) btn.title = 'Add meg a szöveg címét';
-      else btn.title = `Még ${100 - wc} szó hiányzik`;
-    } else {
-      btn.title = pastedCharsF > typedCharsF
-        ? '⚠️ Főleg beillesztett szöveg – az arány megjelenik a tanúsítványban'
-        : 'Hitelesítés & Mentés';
-    }
-  });
-}
-
-
-
 
 
 // ── TIMER ──
@@ -2490,31 +2593,7 @@ function startAutosaveF() {
 
 
 // ── MENTÉS / HITELESÍTÉS ──
-// ── SAVE CHECK ──
-function checkSaveF() {
-  const area = document.getElementById('editor-area');
-  const title = document.getElementById('doc-title-input')?.value?.trim() || '';
-  const txt = area?.innerText?.trim() || '';
-  const wc = txt.split(/\s+/).filter(Boolean).length;
-  const ok = txt && title && fKeys >= 30 && wc >= 100;
-  ['btn-save', 'btn-save-right'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.disabled = !ok;
-    if (!ok) {
-      if (!title) btn.title = 'Add meg a szöveg címét';
-      else if (wc < 100) btn.title = `Még ${100 - wc} szó hiányzik`;
-      else if (fKeys < 30) btn.title = 'Írj legalább 30 karaktert kézzel';
-    } else {
-      btn.title = pastedCharsF > typedCharsF
-        ? '⚠️ Főleg beillesztett szöveg – az arány megjelenik a tanúsítványban'
-        : 'Hitelesítés & Mentés';
-    }
-  });
-}
 
-// ── MENTÉS / HITELESÍTÉS ──
-// ── SAVE CHECK ──
 function checkSaveF() {
   const area = document.getElementById('editor-area');
   const title = document.getElementById('doc-title-input')?.value?.trim() || '';
@@ -2535,6 +2614,8 @@ function checkSaveF() {
     }
   });
 }
+
+
 
 
 // ── MENTÉS / HITELESÍTÉS ──
@@ -2801,6 +2882,7 @@ function focusNewDoc() {
   document.getElementById('f-category').value = '';
   document.getElementById('category-indicator').style.display = 'none';
   fullResetF();
+}
 
 
   fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
@@ -3174,5 +3256,87 @@ window.addEventListener('resize', initPulseF);
     </div>
   </div>
 </div>
+
+
+<!-- KALIBRÁCIÓS MODAL – FÓKUSZ EDITOR -->
+<div id="f-calibration-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9900;backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:2rem;overflow-y:auto">
+  <div style="max-width:620px;width:100%;background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;position:relative">
+
+    <!-- Bezárás gomb -->
+    <button onclick="closeCalibrationModalF()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+
+    <!-- Fejléc -->
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">Írói Azonosság <span style="color:var(--gold)">Kalibráció</span></div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.8">Ez a két rövid feladat megtanítja a rendszernek a <strong style="color:var(--text)">te egyedi gépelési ritmusodat</strong>.</p>
+    </div>
+
+    <!-- Adatvédelem -->
+    <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:.85rem 1.1rem;margin-bottom:1.5rem;font-size:.78rem;color:var(--muted);line-height:1.7">
+      🔒 <strong style="color:var(--gold2)">Adatvédelem:</strong> A gépelési mintázatod kizárólag a te profilodban tárolódik, soha nem adjuk át harmadik félnek. A rendszer a billentyűleütések időintervallumait méri – a szöveg tartalmát nem elemzi.
+    </div>
+
+    <!-- 1. LÉPÉS -->
+    <div id="f-cal-step-1">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.4rem">📋 1. lépés – Másold le ezt a szöveget</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem;line-height:1.7">Gépeld be pontosan az alábbi szöveget természetes tempóban.</p>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem;font-size:.85rem;color:var(--text);line-height:1.8;font-style:italic;user-select:none">
+        Az AI-generált tartalmak egyre inkább elárasztják az internetet, ezért egyre nehezebb megkülönböztetni az emberi és a gépi szövegeket. A szerzőségi bizonytalanság fokozatosan bizalomvesztéshez vezet. A felhasználók egyre kevésbé magára a tartalomra, inkább a forrásra alapozzák a bizalmukat. A HUMANO erre a problémára ad választ: nem azt bizonyítja, hogy a szöveg jó, hanem azt, hogy ember írta.
+      </div>
+      <div id="f-cal-area-1" contenteditable="true" style="min-height:100px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:1rem 1.25rem;font-size:.9rem;color:var(--text);line-height:1.8;outline:none" data-placeholder="Kezdd el gépelni ide a fenti szöveget..."></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.75rem;flex-wrap:wrap;gap:.5rem">
+        <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">Beírt karakter: <strong id="f-cal-1-chars" style="color:var(--gold)">0</strong> / 380</div>
+        <div style="flex:1;min-width:120px;max-width:200px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+          <div id="f-cal-1-progress" style="height:100%;background:linear-gradient(90deg,var(--gold4),var(--gold));border-radius:2px;width:0%;transition:width .3s"></div>
+        </div>
+        <button id="f-cal-1-btn" class="btn btn-gold" onclick="calStep1CompleteF()" disabled>Tovább →</button>
+      </div>
+    </div>
+
+    <!-- 2. LÉPÉS -->
+    <div id="f-cal-step-2" style="display:none">
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:.4rem">✍️ 2. lépés – Szabad írás</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem;line-height:1.7">Írj legalább 4-5 mondatot az alábbi kérdésre válaszolva természetesen.</p>
+      <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:.85rem 1.1rem;margin-bottom:.75rem;font-size:.88rem;color:var(--gold2);font-style:italic;font-family:var(--font-display)">
+        „Mesélj el egy vicces vagy kínos pillanatot az életedből – olyat amit már nevetve tudsz elmesélni."
+      </div>
+      <div id="f-cal-area-2" contenteditable="true" style="min-height:130px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:1rem 1.25rem;font-size:.9rem;color:var(--text);line-height:1.8;outline:none" data-placeholder="Írj ide szabadon..."></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.75rem">
+        <div style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">Szó: <strong id="f-cal-2-words" style="color:var(--gold)">0</strong> / minimum 30</div>
+        <button id="f-cal-2-btn" class="btn btn-gold" onclick="calStep2CompleteF()" disabled>✦ Kalibráció befejezése</button>
+      </div>
+    </div>
+
+    <!-- EREDMÉNY -->
+    <div id="f-cal-result" style="display:none;text-align:center;padding:1rem 0">
+      <div style="font-size:3rem;margin-bottom:.75rem">✦</div>
+      <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold2);margin-bottom:.4rem">Kalibráció kész!</div>
+      <p style="color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:1rem">A rendszer megtanulta az egyedi gépelési ritmusodat.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.25rem">
+        <div style="background:var(--surface);border-radius:8px;padding:.65rem 1.25rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold)" id="f-cal-result-entropy">–</div>
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Ritmus entrópia</div>
+        </div>
+        <div style="background:var(--surface);border-radius:8px;padding:.65rem 1.25rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold)" id="f-cal-result-burst">–</div>
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Átlag burst</div>
+        </div>
+        <div style="background:var(--surface);border-radius:8px;padding:.65rem 1.25rem;text-align:center">
+          <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--gold)" id="f-cal-result-revision">–</div>
+          <div style="font-size:.65rem;color:var(--muted);font-family:var(--font-mono)">Javítási arány</div>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="closeCalibrationModalF()">✦ Vissza az editorba</button>
+    </div>
+
+    <!-- KIHAGYÁS -->
+    <div style="text-align:center;margin-top:1.25rem" id="f-cal-skip-wrap">
+      <button onclick="closeCalibrationModalF()" style="background:none;border:none;color:var(--muted2);font-size:.78rem;cursor:pointer">Kihagyom most – elvégzem később</button>
+    </div>
+
+  </div>
+</div>
+
+    
 </body>
 </html>
