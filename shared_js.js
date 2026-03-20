@@ -643,6 +643,9 @@ function showPage(page) {
         return;
     }
     _showSection(page);
+    if (page === 'profile') {
+        loadCalibrationStatus();
+    }
 }
 
 function _showSection(hash) {
@@ -5776,6 +5779,52 @@ async function tsaStamp(hashHex, docId) {
         console.error('OTS hiba:', error);
         return false;
     }
+}
+
+
+async function loadCalibrationStatus() {
+  const statusEl = document.getElementById('cal-profile-status');
+  const deleteBtn = document.getElementById('cal-delete-btn');
+  if (!statusEl || !currentUser) return;
+
+  const { data, error } = await db
+    .from('typing_profiles')
+    .select('profile_type, rhythm_entropy, burst_mean, revision_rate, created_at')
+    .eq('user_id', currentUser.id);
+
+  if (error || !data || data.length === 0) {
+    statusEl.innerHTML = `
+      <div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:.85rem 1rem;font-size:.82rem;color:var(--muted)">
+        ⚠️ Még nem végezted el a kalibrációt. A tanúsítványaid jelenleg <strong style="color:var(--gold)">általános emberi normák</strong> alapján készülnek.
+      </div>`;
+    if (deleteBtn) deleteBtn.style.display = 'none';
+    return;
+  }
+
+  const comp = data.find(r => r.profile_type === 'composition');
+  const date = comp ? new Date(comp.created_at).toLocaleDateString('hu-HU') : '–';
+
+  statusEl.innerHTML = `
+    <div style="background:rgba(74,184,112,.06);border:1px solid rgba(74,184,112,.2);border-radius:8px;padding:.85rem 1rem;font-size:.82rem;color:var(--muted)">
+      ✅ <strong style="color:var(--success)">Kalibrált profil aktív</strong> – ${date} óta<br>
+      <div style="display:flex;gap:1rem;margin-top:.6rem;flex-wrap:wrap">
+        ${comp ? `
+        <span>Entrópia: <strong style="color:var(--gold)">${comp.rhythm_entropy?.toFixed(2) ?? '–'}</strong></span>
+        <span>Burst: <strong style="color:var(--gold)">${Math.round(comp.burst_mean ?? 0)} ms</strong></span>
+        <span>Javítási arány: <strong style="color:var(--gold)">${((comp.revision_rate ?? 0) * 100).toFixed(1)}%</strong></span>
+        ` : ''}
+      </div>
+    </div>`;
+  if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+}
+
+async function deleteCalibrationProfile() {
+  if (!confirm('Biztosan törlöd a kalibrációs profilodat? A következő hitelesítéseid általános normák alapján készülnek majd.')) return;
+  const { error } = await db.from('typing_profiles').delete().eq('user_id', currentUser.id);
+  if (error) { showToast('❌ Hiba: ' + error.message); return; }
+  localStorage.removeItem('humano_cal_asked');
+  showToast('✅ Kalibrációs profil törölve');
+  loadCalibrationStatus();
 }
 
 async function downloadOtsFile(docId) {
