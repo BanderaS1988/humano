@@ -2029,6 +2029,9 @@ function autoSaveF() {
         pastedChars: pastedCharsF,
         events: fEvents.slice(-200),
         pulseHistory: fPulseHistory.slice(),
+        typedChars: typedCharsF,
+        pastedChars: pastedCharsF,
+        pasteAllowed: window._fPasteAllowed || false,
         totalPausedMs: fTotalPausedMs,
         sessionElapsedMs: fSessionStart ? Math.max(0, Date.now() - fSessionStart - fTotalPausedMs) : 0,
       }
@@ -2042,8 +2045,10 @@ function autoSaveF() {
 function handleBackButton() {
   const content = document.getElementById('editor-area')?.innerHTML || '';
   const title = document.getElementById('doc-title-input')?.value || '';
+
+  const sessionElapsedMs = fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0;
+
   if (content.trim()) {
-    const sessionElapsedMs = fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0;
     localStorage.setItem('humano_focus_draft', JSON.stringify({
       content,
       title,
@@ -2055,6 +2060,7 @@ function handleBackButton() {
         humanPct: fHumanPct,
         typedChars: typedCharsF,
         pastedChars: pastedCharsF,
+        pasteAllowed: window._fPasteAllowed || false,
         events: fEvents.slice(-200),
         pulseHistory: fPulseHistory.slice(),
         totalPausedMs: fTotalPausedMs,
@@ -2063,13 +2069,16 @@ function handleBackButton() {
     }));
   }
 
-  
+  // Számláló megállítása
+  clearInterval(fTimerInterval);
+  fTimerInterval = null;
+  if (fSessionStart && !fPauseStart) fPauseStart = Date.now();
+
   // Modal megjelenítése
-const modal = document.createElement('div');
-modal.id = 'back-modal';
-modal.style.cssText = 'position:fixed;inset:0;...';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
-  modal.innerHTML = `
+  const backModal = document.createElement('div');
+  backModal.id = 'back-modal';
+  backModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  backModal.innerHTML = `
     <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:420px;width:90%;text-align:center">
       <div style="font-size:2rem;margin-bottom:.75rem">✦</div>
       <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold2);margin-bottom:.75rem">Minden megjegyezve!</div>
@@ -2086,12 +2095,11 @@ modal.style.cssText = 'position:fixed;inset:0;...';
       </p>
       <div style="display:flex;gap:.75rem;justify-content:center">
         <button onclick="window.location.href='/'" style="background:linear-gradient(135deg,#a07830,#c9a84c);color:#0c0a04;border:none;border-radius:6px;padding:.6rem 1.25rem;font-weight:700;cursor:pointer;font-size:.85rem">← Vissza a főoldalra</button>
-        <button onclick="document.getElementById('back-modal').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.6rem 1.25rem;cursor:pointer;font-size:.85rem">Maradok</button>
+        <button onclick="resumeFromBackModal()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.6rem 1.25rem;cursor:pointer;font-size:.85rem">Maradok</button>
       </div>
     </div>`;
-  document.body.appendChild(modal);
+  document.body.appendChild(backModal);
 }
-
   
 function startAutosaveF() {
   try {
@@ -2099,7 +2107,7 @@ function startAutosaveF() {
     if (draft && draft.content) {
       document.getElementById('editor-area').innerHTML = draft.content;
       document.getElementById('doc-title-input').value = draft.title || '';
-      
+
       if (draft.stats) {
         fKeys = draft.stats.keys || 0;
         fDels = draft.stats.dels || 0;
@@ -2108,21 +2116,10 @@ function startAutosaveF() {
         typedCharsF = draft.stats.typedChars || 0;
         pastedCharsF = draft.stats.pastedChars || 0;
         fEvents = draft.stats.events || [];
-fPulseHistory = draft.stats.pulseHistory || [];
-fTotalPausedMs = draft.stats.totalPausedMs || 0;
+        fPulseHistory = draft.stats.pulseHistory || [];
+        fTotalPausedMs = draft.stats.totalPausedMs || 0;
+        window._fPasteAllowed = draft.stats.pasteAllowed || false;
 
-// Idő visszaállítása – mintha most indult volna el az eltelt idővel
-if (draft.stats.sessionElapsedMs > 0) {
-  fSessionStart = Date.now() - draft.stats.sessionElapsedMs - fTotalPausedMs;
-  fTimerInterval = setInterval(updateTimerF, 1000);
-  document.getElementById('paper').classList.add('breathing');
-  // Azonnal megjelenítjük az eltelt időt
-  const elapsed = Math.floor(draft.stats.sessionElapsedMs / 1000);
-  const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-  const s = (elapsed % 60).toString().padStart(2, '0');
-  setEl2('f-time', `${m}:${s}`);
-}
-        
         const txt = document.getElementById('editor-area')?.innerText || '';
         setEl2('f-keys', fKeys);
         setEl2('f-dels', fDels);
@@ -2134,10 +2131,25 @@ if (draft.stats.sessionElapsedMs > 0) {
           setEl2('f-human-index', fHumanPct + '%');
           setEl2('wc-human', fHumanPct + '%');
         }
+
+        // Paste UI visszaállítása
+        updatePasteRatioF();
+
+        // Idő visszaállítása
+        if (draft.stats.sessionElapsedMs > 0) {
+          fSessionStart = Date.now() - draft.stats.sessionElapsedMs - fTotalPausedMs;
+          fTimerInterval = setInterval(updateTimerF, 1000);
+          document.getElementById('paper').classList.add('breathing');
+          const elapsed = Math.floor(draft.stats.sessionElapsedMs / 1000);
+          const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+          const s = (elapsed % 60).toString().padStart(2, '0');
+          setEl2('f-time', `${m}:${s}`);
+        }
+
         drawPulseF();
+        checkSaveF();
       }
       showFocusToast('📄 Piszkozat visszatöltve – folytathatod!');
-      checkSaveF();
     }
   } catch (e) {}
 }
@@ -2420,9 +2432,21 @@ function focusNewDoc() {
   fCfDnaScore = 0; fFlowPulseScore = 0; fSmdScore = 0; fTripleLockScore = 0;
   typedCharsF = 0; pastedCharsF = 0;
   fMouseEvents = []; fMouseScore = 0; fMouseCV = 0;
+  window._fPasteAllowed = false;
+  window._fPendingPaste = null;
 
   clearInterval(fTimerInterval); fTimerInterval = null;
   document.getElementById('paper').classList.remove('breathing');
+
+  // Paste UI nullázás
+  const bar = document.getElementById('f-paste-ratio-bar');
+  if (bar) bar.style.display = 'none';
+  const wrap = document.getElementById('wc-paste-wrap');
+  if (wrap) wrap.style.display = 'none';
+  const typedBar = document.getElementById('f-typed-bar');
+  if (typedBar) typedBar.style.width = '100%';
+  const pastedBar = document.getElementById('f-pasted-bar');
+  if (pastedBar) pastedBar.style.width = '0%';
 
   // UI nullázás
   setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
@@ -2430,12 +2454,13 @@ function focusNewDoc() {
   setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
   setEl2('f-mouse', '–'); setEl2('f-entropy', '–');
   setEl2('wc-chars', 0); setEl2('wc-words', 0); setEl2('wc-keys', 0); setEl2('wc-speed', '–'); setEl2('wc-human', '–');
+  setEl2('f-typed-pct', '100%'); setEl2('f-pasted-pct', '0%');
+  setEl2('wc-typed-pct', '100%'); setEl2('wc-pasted-pct', '0%');
 
   const hiFill = document.getElementById('f-hi-fill');
   if (hiFill) { hiFill.style.width = '0%'; }
   const eFill = document.getElementById('f-entropy-fill');
   if (eFill) { eFill.style.width = '0%'; }
-
   const hiLabel = document.getElementById('f-human-label');
   if (hiLabel) hiLabel.textContent = 'Billentyűdinamika alapján';
 
@@ -2551,6 +2576,19 @@ function copyFocusBadge() {
   }
 }
 
+
+function resumeFromBackModal() {
+  document.getElementById('back-modal').remove();
+  if (fPauseStart) {
+    fTotalPausedMs += Date.now() - fPauseStart;
+    fPauseStart = null;
+  }
+  if (fSessionStart && !fTimerInterval) {
+    fTimerInterval = setInterval(updateTimerF, 1000);
+  }
+  showFocusToast('▶ Folytatás!');
+}
+  
 async function focusDownloadPdf() {
   if (!fCertDocId) return;
   const processData = {
