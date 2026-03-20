@@ -5231,7 +5231,7 @@ function initMouseTracking() {
         if (lastMouseTime === 0) { lastX = e.clientX; lastY = e.clientY; lastMouseTime = now; return; }
         
         const dt = now - lastMouseTime;
-        if (dt < 10) return; // túl sűrű mintavétel kihagyása
+        if (dt < 100) return; // csak 100ms-onként mérünk
         
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
