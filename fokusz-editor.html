@@ -757,46 +757,48 @@
       transition: all .15s;
     }
 
-    .history-btn:hover {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
+  .history-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
 
-    .history-btn:disabled {
-      opacity: .3;
-      cursor: not-allowed;
-    }
-      color: var(--muted);
-      font-size: .75rem;
-      text-decoration: none;
-      font-family: var(--font-mono);
-      display: flex;
-      align-items: center;
-      gap: .3rem;
-      transition: color .2s;
-    }
+.history-btn:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
 
-    .back-link:hover { color: var(--gold); }
+.back-link {
+  color: var(--muted);
+  font-size: .75rem;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  transition: color .2s;
+}
 
-    /* ── FOCUS TOGGLE BTN ── */
-    #flow-toggle {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: .9rem;
-      z-index: 60;
-      transition: all .2s;
-      color: var(--muted);
-    }
+.back-link:hover { color: var(--gold); }
+
+/* ── FOCUS TOGGLE BTN ── */
+#flow-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: .9rem;
+  z-index: 60;
+  transition: all .2s;
+  color: var(--muted);
+}
 
     #flow-toggle:hover {
       border-color: var(--gold);
