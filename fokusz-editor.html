@@ -1804,6 +1804,8 @@ function autoSaveF() {
     pastedChars: pastedCharsF,
     events: fEvents.slice(-200),
     pulseHistory: fPulseHistory.slice(),
+    totalPausedMs: fTotalPausedMs,
+    sessionElapsedMs: fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0,
   }
 }));
     if (dot) dot.className = 'saved';
@@ -1879,7 +1881,20 @@ function startAutosaveF() {
         typedCharsF = draft.stats.typedChars || 0;
         pastedCharsF = draft.stats.pastedChars || 0;
         fEvents = draft.stats.events || [];
-        fPulseHistory = draft.stats.pulseHistory || [];
+fPulseHistory = draft.stats.pulseHistory || [];
+fTotalPausedMs = draft.stats.totalPausedMs || 0;
+
+// Idő visszaállítása – mintha most indult volna el az eltelt idővel
+if (draft.stats.sessionElapsedMs > 0) {
+  fSessionStart = Date.now() - draft.stats.sessionElapsedMs - fTotalPausedMs;
+  fTimerInterval = setInterval(updateTimerF, 1000);
+  document.getElementById('paper').classList.add('breathing');
+  // Azonnal megjelenítjük az eltelt időt
+  const elapsed = Math.floor(draft.stats.sessionElapsedMs / 1000);
+  const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const s = (elapsed % 60).toString().padStart(2, '0');
+  setEl2('f-time', `${m}:${s}`);
+}
         
         const txt = document.getElementById('editor-area')?.innerText || '';
         setEl2('f-keys', fKeys);
