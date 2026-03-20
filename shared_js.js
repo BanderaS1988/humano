@@ -2498,15 +2498,14 @@ async function editorCalcHumanIndex() {
     E.smdScore = smdScore;
 
     const baselineWeight = baselineScore > 0 ? 0.20 : 0;
-const mouseWeight = E.mouseScore > 0 ? 0.15 : 0;
+const mouseWeight = (E.mouseScore > 0 && E.mouseEvents.length >= 50) ? 0.05 : 0;
 const rawTripleLock = Math.round(
-    (cfDnaScore * (0.30 - baselineWeight / 3)) +
-    (flowPulseScore * (0.30 - baselineWeight / 3)) +
+    (cfDnaScore * (0.35 - baselineWeight / 3)) +
+    (flowPulseScore * (0.35 - baselineWeight / 3)) +
     (smdScore * (0.25 - baselineWeight / 3)) +
     (baselineScore * baselineWeight) +
     (E.mouseScore * mouseWeight)
 );
-
     const weightedTripleLock = sampleSize < minSample
         ? Math.round(rawTripleLock * sampleWeight)
         : rawTripleLock;
