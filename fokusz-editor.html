@@ -1249,8 +1249,8 @@
 </div>
 
 <!-- BIOMETRIKUS CONSENT MODAL -->
-<div id="biometric-consent-modal" class="modal-overlay" style="display:none;z-index:9800">
-  <div class="modal-box" style="max-width:520px;background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem">
+<div id="biometric-consent-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9800;backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:2rem">
+  <div style="max-width:520px;width:100%;background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem">
     <div style="text-align:center;margin-bottom:1.25rem">
       <div style="font-size:2.5rem;margin-bottom:.5rem">🧬</div>
       <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold2)">Biometrikus adatkezelés</div>
@@ -1281,8 +1281,8 @@
 </div>
 
 <!-- KALIBRÁCIÓS EMLÉKEZTETŐ MODAL -->
-<div class="modal-overlay" id="cal-reminder-modal" style="display:none;z-index:9700;pointer-events:auto">
-  <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:480px;width:90%;text-align:center">
+<div id="cal-reminder-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9700;backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:2rem;pointer-events:auto">
+  <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:480px;width:100%;text-align:center">
     <div style="font-size:2.8rem;margin-bottom:.75rem">✍️</div>
     <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--gold2);margin-bottom:.6rem">Pontosabb eredmények – kalibrálj!</div>
     <p style="font-size:.86rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">
