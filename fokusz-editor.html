@@ -1521,10 +1521,17 @@ function applyTextColor(color) {
     showFocusToast('⚠️ Először jelölj ki szöveget!');
     return;
   }
-  document.execCommand('styleWithCSS', false, true);
   if (color === null) {
     document.execCommand('removeFormat', false, null);
-  } else {
+    return;
+  }
+  try {
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    span.style.color = color;
+    range.surroundContents(span);
+  } catch(e) {
+    document.execCommand('styleWithCSS', false, true);
     document.execCommand('foreColor', false, color);
   }
 }
