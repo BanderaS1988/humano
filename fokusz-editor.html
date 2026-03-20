@@ -2887,62 +2887,44 @@ function focusNewDoc() {
   fullResetF();
 }
 
-  fKeys = 0; fDels = 0; fPauses = 0; fFocusSwitches = 0;
-  fSessionStart = null; fLastKey = null; fTotalPausedMs = 0;
-  fPauseStart = null; // JAVÍTVA: explicit nullázás, különben régi időbélyeg marad
-  fEvents = []; fPulseHistory = [];
-  fCertDocId = null; fCertHash = null;
-  fHumanPct = 0; fHumanCategory = '–'; fHumanCV = 0;
-  fEntropyCV = 0; fEntropyPct = 0;
-  fCfDnaScore = 0; fFlowPulseScore = 0; fSmdScore = 0; fTripleLockScore = 0;
-  typedCharsF = 0; pastedCharsF = 0;
-  fMouseEvents = []; fMouseScore = 0; fMouseCV = 0;
-  window._fPasteAllowed = false;
-  window._fPendingPaste = null;
+// ── EGÉR TRACKING ──
+function initMouseTrackingF() {
+  const area = document.getElementById('editor-area');
+  if (!area) return;
+  let lastX = 0, lastY = 0, lastT = 0;
+  let speeds = [];
 
-  clearInterval(fTimerInterval); fTimerInterval = null;
-  clearTimeout(fInactivityTimer); fInactivityTimer = null; // inaktivitás timer is törlendő
-  clearInterval(fInactivityInterval); fInactivityInterval = null;
+  area.addEventListener('mousemove', e => {
+    const now = Date.now();
+    if (now - lastT < 100) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const speed = dist / (now - lastT);
+    speeds.push(speed);
+    if (speeds.length > 50) speeds.shift();
+    fMouseEvents.push({ ts: now, speed });
+    if (fMouseEvents.length > 500) fMouseEvents.shift();
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
 
-  // Ha inaktivitási modal nyitva volt, zárjuk be
-  const inactModal = document.getElementById('f-inactivity-modal');
-  if (inactModal) inactModal.remove();
+    if (speeds.length >= 20) {
+      const m = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+      const s = Math.sqrt(speeds.reduce((a, b) => a + Math.pow(b - m, 2), 0) / speeds.length);
+      fMouseCV = parseFloat((s / (m || 1)).toFixed(3));
+      fMouseScore = fMouseCV < 0.2 ? 20 : fMouseCV < 0.5 ? 50 : fMouseCV < 1.0 ? 80 : 95;
+    }
 
-  document.getElementById('paper').classList.remove('breathing');
-
-  const bar = document.getElementById('f-paste-ratio-bar');
-  if (bar) bar.style.display = 'none';
-  const wrap = document.getElementById('wc-paste-wrap');
-  if (wrap) wrap.style.display = 'none';
-  const typedBar = document.getElementById('f-typed-bar');
-  if (typedBar) typedBar.style.width = '100%';
-  const pastedBar = document.getElementById('f-pasted-bar');
-  if (pastedBar) pastedBar.style.width = '0%';
-
-  setEl2('f-keys', 0); setEl2('f-words', 0); setEl2('f-dels', 0); setEl2('f-pauses', 0);
-  setEl2('f-time', '00:00'); setEl2('f-human-index', '–%'); setEl2('f-triple-lock', '–');
-  setEl2('f-tl-confidence', '–'); setEl2('f-cfdna', '–'); setEl2('f-nls', '–'); setEl2('f-smd', '–');
-  setEl2('f-mouse', '–'); setEl2('f-entropy', '–');
-  setEl2('wc-chars', 0); setEl2('wc-words', 0); setEl2('wc-keys', 0); setEl2('wc-speed', '–'); setEl2('wc-human', '–');
-  setEl2('f-typed-pct', '100%'); setEl2('f-pasted-pct', '0%');
-  setEl2('wc-typed-pct', '100%'); setEl2('wc-pasted-pct', '0%');
-
-  const hiFill = document.getElementById('f-hi-fill');
-  if (hiFill) { hiFill.style.width = '0%'; }
-  const eFill = document.getElementById('f-entropy-fill');
-  if (eFill) { eFill.style.width = '0%'; }
-  const hiLabel = document.getElementById('f-human-label');
-  if (hiLabel) hiLabel.textContent = 'Billentyűdinamika alapján';
-
-  ['btn-save', 'btn-save-right'].forEach(id => {
-    const b = document.getElementById(id);
-    if (b) { b.disabled = true; b.textContent = id === 'btn-save' ? '🔒 Hitelesítés' : '🔒 Hitelesítés & Mentés'; b.style.opacity = '1'; }
+    const mEl = document.getElementById('f-mouse');
+    if (mEl) {
+      const mozgas = fMouseEvents.filter(e => !e.type).length;
+      const katt = fMouseEvents.filter(e => e.type === 'click').length;
+      mEl.textContent = fMouseEvents.length >= 50 ? `${mozgas} mozgás / ${katt} katt` : '⏳ gyűjtés...';
+    }
   });
 
-  updateStatsF(); drawPulseF();
-  showFocusToast('✦ Új dokumentum – írj bátran!');
+  area.addEventListener('click', e => {
+    fMouseEvents.push({ ts: Date.now(), type: 'click', x: e.clientX, y: e.clientY });
+  });
 }
-
 
 // ── EGÉR TRACKING ──
 function initMouseTrackingF() {
