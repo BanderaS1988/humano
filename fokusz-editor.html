@@ -1560,12 +1560,12 @@ function initFocusEditor() {
   area.addEventListener('paste', onFocusPaste);
 
   area.addEventListener('input', () => {
-    const txt = area.innerText?.trim() || '';
-    if (txt === '' && (fKeys > 0 || typedCharsF > 0 || pastedCharsF > 0)) {
-      if (!confirm('Mindent kitöröltél. Nullázzuk az összes mérést is?')) return;
-      fullResetF();
-    }
-  });
+  const txt = area.innerText?.trim() || '';
+  if (txt === '' && (fKeys > 0 || typedCharsF > 0 || pastedCharsF > 0)) {
+    fullResetF();
+    showFocusToast('🗑 Szöveg törölve – mérések nullázva.');
+  }
+});
 
   document.addEventListener('visibilitychange', () => {
     if (!fSessionStart) return;
