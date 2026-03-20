@@ -1329,12 +1329,26 @@ function updatePasteRatioF() {
   if (total === 0) return;
   const tPct = Math.round((typedCharsF / total) * 100);
   const pPct = 100 - tPct;
+
+  // Státuszsor
   const wrap = document.getElementById('wc-paste-wrap');
   const tEl = document.getElementById('wc-typed-pct');
   const pEl = document.getElementById('wc-pasted-pct');
   if (wrap) wrap.style.display = 'inline';
   if (tEl) tEl.textContent = tPct + '%';
   if (pEl) pEl.textContent = pPct + '%';
+
+  // Élő csík
+  const bar = document.getElementById('f-paste-ratio-bar');
+  const typedPct = document.getElementById('f-typed-pct');
+  const pastedPct = document.getElementById('f-pasted-pct');
+  const typedBar = document.getElementById('f-typed-bar');
+  const pastedBar = document.getElementById('f-pasted-bar');
+  if (bar) bar.style.display = 'block';
+  if (typedPct) typedPct.textContent = tPct + '%';
+  if (pastedPct) pastedPct.textContent = pPct + '%';
+  if (typedBar) typedBar.style.width = tPct + '%';
+  if (pastedBar) pastedBar.style.width = pPct + '%';
 }
 
   
@@ -2653,6 +2667,18 @@ window.addEventListener('resize', initPulseF);
         <span style="font-family:var(--font-mono);font-size:.65rem;color:var(--muted);white-space:nowrap" id="humTlTimeLbl">0:00 / 0:00</span>
       </div>
     </div>
+  </div>
+</div>
+
+    <!-- PASTE RATIO BAR -->
+<div id="f-paste-ratio-bar" style="display:none;position:fixed;bottom:36px;left:var(--panel-w);right:var(--panel-w);background:rgba(6,6,8,.9);border-top:1px solid var(--border);padding:.35rem 1.5rem;z-index:49">
+  <div style="display:flex;align-items:center;justify-content:space-between;font-size:.7rem;font-family:var(--font-mono);margin-bottom:.3rem">
+    <span>✍️ Kézzel gépelt: <strong id="f-typed-pct" style="color:var(--success)">100%</strong></span>
+    <span>📋 Beillesztett: <strong id="f-pasted-pct" style="color:var(--gold)">0%</strong></span>
+  </div>
+  <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;position:relative">
+    <div id="f-typed-bar" style="height:100%;background:linear-gradient(90deg,var(--success),#2d8a50);border-radius:3px;transition:width .4s ease;width:100%"></div>
+    <div id="f-pasted-bar" style="height:100%;background:linear-gradient(90deg,#a07830,var(--gold));border-radius:3px;transition:width .4s ease;width:0%;position:absolute;right:0;top:0"></div>
   </div>
 </div>
 
