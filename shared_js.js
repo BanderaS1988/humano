@@ -5294,7 +5294,9 @@ function updateMouseScore() {
     
     // UI frissítés ha van mouse-score elem
     const el = document.getElementById('mouse-score');
-    if (el) el.textContent = score + '/100';
+    if (el) el.textContent = E.mouseEvents.length >= 50 
+    ? score + '/100' 
+    : '⏳ gyűjtés...';
 }
 
 
