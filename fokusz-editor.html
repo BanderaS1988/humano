@@ -1780,62 +1780,66 @@ function insertTable(rows, cols) {
   showFocusToast(`📊 ${rows}×${cols} táblázat beszúrva`);
 }
 
+
 // ── AUTOSAVE ──
 function autoSaveF() {
   const dot = document.getElementById('autosave-dot');
   const txt = document.getElementById('autosave-text');
   if (dot) dot.className = 'saving';
   if (txt) txt.textContent = 'Mentés...';
-
   clearTimeout(window._fAutosaveDebounce);
   window._fAutosaveDebounce = setTimeout(() => {
     const content = document.getElementById('editor-area')?.innerHTML || '';
     const title = document.getElementById('doc-title-input')?.value || '';
-    localStorage.setItem('humano_focus_draft', JSON.stringify({ 
-  content, 
-  title, 
-  ts: Date.now(),
-  stats: {
-    keys: fKeys,
-    dels: fDels,
-    pauses: fPauses,
-    humanPct: fHumanPct,
-    typedChars: typedCharsF,
-    pastedChars: pastedCharsF,
-    events: fEvents.slice(-200),
-    pulseHistory: fPulseHistory.slice(),
-    totalPausedMs: fTotalPausedMs,
-    sessionElapsedMs: fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0,
-  }
-}));
+    localStorage.setItem('humano_focus_draft', JSON.stringify({
+      content,
+      title,
+      ts: Date.now(),
+      stats: {
+        keys: fKeys,
+        dels: fDels,
+        pauses: fPauses,
+        humanPct: fHumanPct,
+        typedChars: typedCharsF,
+        pastedChars: pastedCharsF,
+        events: fEvents.slice(-200),
+        pulseHistory: fPulseHistory.slice(),
+        totalPausedMs: fTotalPausedMs,
+        sessionElapsedMs: fSessionStart ? Math.max(0, Date.now() - fSessionStart - fTotalPausedMs) : 0,
+      }
+    }));
     if (dot) dot.className = 'saved';
     if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
     setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
   }, 5000);
 }
 
-  function handleBackButton() {
+function handleBackButton() {
   const content = document.getElementById('editor-area')?.innerHTML || '';
   const title = document.getElementById('doc-title-input')?.value || '';
-  
-  // Mindig mentjük
   if (content.trim()) {
-    localStorage.setItem('humano_focus_draft', JSON.stringify({ 
-  content, 
-  title, 
-  ts: Date.now(),
-  stats: {
-    keys: fKeys,
-    dels: fDels,
-    pauses: fPauses,
-    humanPct: fHumanPct,
-    typedChars: typedCharsF,
-    pastedChars: pastedCharsF,
-    events: fEvents.slice(-200),
-    pulseHistory: fPulseHistory.slice(),
+    const sessionElapsedMs = fSessionStart ? Date.now() - fSessionStart - fTotalPausedMs : 0;
+    localStorage.setItem('humano_focus_draft', JSON.stringify({
+      content,
+      title,
+      ts: Date.now(),
+      stats: {
+        keys: fKeys,
+        dels: fDels,
+        pauses: fPauses,
+        humanPct: fHumanPct,
+        typedChars: typedCharsF,
+        pastedChars: pastedCharsF,
+        events: fEvents.slice(-200),
+        pulseHistory: fPulseHistory.slice(),
+        totalPausedMs: fTotalPausedMs,
+        sessionElapsedMs: sessionElapsedMs,
+      }
+    }));
   }
-}));
-  }
+
+  // Modal megjelenítése
+  const modal = document.createElement('div');
   
   // Modal megjelenítése
 const modal = document.createElement('div');
