@@ -1270,6 +1270,7 @@ function onFocusKeyDown(e) {
   checkSaveF();
   autoSaveF();
   resetFlowTimer();
+  resetInactivityF();
 }
 
 // ── PASTE ──
@@ -1790,7 +1791,21 @@ function autoSaveF() {
   window._fAutosaveDebounce = setTimeout(() => {
     const content = document.getElementById('editor-area')?.innerHTML || '';
     const title = document.getElementById('doc-title-input')?.value || '';
-    localStorage.setItem('humano_focus_draft', JSON.stringify({ content, title, ts: Date.now() }));
+    localStorage.setItem('humano_focus_draft', JSON.stringify({ 
+  content, 
+  title, 
+  ts: Date.now(),
+  stats: {
+    keys: fKeys,
+    dels: fDels,
+    pauses: fPauses,
+    humanPct: fHumanPct,
+    typedChars: typedCharsF,
+    pastedChars: pastedCharsF,
+    events: fEvents.slice(-200),
+    pulseHistory: fPulseHistory.slice(),
+  }
+}));
     if (dot) dot.className = 'saved';
     if (txt) txt.textContent = 'Mentve ' + new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
     setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
@@ -1804,12 +1819,26 @@ function autoSaveF() {
   // Mindig mentjük
   if (content.trim()) {
     localStorage.setItem('humano_focus_draft', JSON.stringify({ 
-      content, title, ts: Date.now() 
-    }));
+  content, 
+  title, 
+  ts: Date.now(),
+  stats: {
+    keys: fKeys,
+    dels: fDels,
+    pauses: fPauses,
+    humanPct: fHumanPct,
+    typedChars: typedCharsF,
+    pastedChars: pastedCharsF,
+    events: fEvents.slice(-200),
+    pulseHistory: fPulseHistory.slice(),
+  }
+}));
   }
   
   // Modal megjelenítése
-  const modal = document.createElement('div');
+const modal = document.createElement('div');
+modal.id = 'back-modal';
+modal.style.cssText = 'position:fixed;inset:0;...';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
   modal.innerHTML = `
     <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:420px;width:90%;text-align:center">
@@ -1819,29 +1848,53 @@ function autoSaveF() {
         A piszkozatod automatikusan elmentve.<br>
         Legközelebb amikor megnyitod a Fókusz Editort,<br>
         <strong style="color:var(--gold)">pontosan onnan folytathatod ahol abbahagytad.</strong><br><br>
-        <span style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted2)">
+        <span style="font-size:.72rem;color:var(--muted2);font-family:var(--font-mono)">
           📝 ${title || 'Névtelen'} · ${Math.round(content.replace(/<[^>]+>/g,'').length / 5)} szó · ${new Date().toLocaleTimeString('hu-HU', {hour:'2-digit',minute:'2-digit'})}
+        </span><br><br>
+        <span style="font-size:.75rem;color:var(--muted)">
+          ⌨️ ${fKeys} leütés · ✍️ ${fDels} javítás · ⏸ ${fPauses} szünet · 🧠 ${fHumanPct}% Humán Index
         </span>
       </p>
       <div style="display:flex;gap:.75rem;justify-content:center">
         <button onclick="window.location.href='/'" style="background:linear-gradient(135deg,#a07830,#c9a84c);color:#0c0a04;border:none;border-radius:6px;padding:.6rem 1.25rem;font-weight:700;cursor:pointer;font-size:.85rem">← Vissza a főoldalra</button>
-        <button onclick="this.closest('div[style]').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.6rem 1.25rem;cursor:pointer;font-size:.85rem">Maradok</button>
+        <button onclick="document.getElementById('back-modal').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.6rem 1.25rem;cursor:pointer;font-size:.85rem">Maradok</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
 }
 
+  
 function startAutosaveF() {
-  // Piszkozat visszatöltése
   try {
     const draft = JSON.parse(localStorage.getItem('humano_focus_draft') || 'null');
     if (draft && draft.content) {
-      const ago = Math.round((Date.now() - draft.ts) / 60000);
-      if (ago < 60 && confirm(`Találtunk egy mentett piszkozatot (${ago} perce). Betöltöd?`)) {
-        document.getElementById('editor-area').innerHTML = draft.content;
-        document.getElementById('doc-title-input').value = draft.title || '';
-        showFocusToast('📄 Piszkozat betöltve');
+      document.getElementById('editor-area').innerHTML = draft.content;
+      document.getElementById('doc-title-input').value = draft.title || '';
+      
+      if (draft.stats) {
+        fKeys = draft.stats.keys || 0;
+        fDels = draft.stats.dels || 0;
+        fPauses = draft.stats.pauses || 0;
+        fHumanPct = draft.stats.humanPct || 0;
+        typedCharsF = draft.stats.typedChars || 0;
+        pastedCharsF = draft.stats.pastedChars || 0;
+        fEvents = draft.stats.events || [];
+        fPulseHistory = draft.stats.pulseHistory || [];
+        
+        const txt = document.getElementById('editor-area')?.innerText || '';
+        setEl2('f-keys', fKeys);
+        setEl2('f-dels', fDels);
+        setEl2('f-pauses', fPauses);
+        setEl2('f-words', txt.trim() ? txt.trim().split(/\s+/).length : 0);
+        setEl2('wc-keys', fKeys);
+        setEl2('wc-chars', txt.length);
+        if (fHumanPct) {
+          setEl2('f-human-index', fHumanPct + '%');
+          setEl2('wc-human', fHumanPct + '%');
+        }
+        drawPulseF();
       }
+      showFocusToast('📄 Piszkozat visszatöltve – folytathatod!');
     }
   } catch (e) {}
 }
@@ -2054,6 +2107,63 @@ function initMouseTrackingF() {
   area.addEventListener('click', e => {
     fMouseEvents.push({ ts: Date.now(), type: 'click', x: e.clientX, y: e.clientY });
   });
+}
+
+
+
+  // ── INAKTIVITÁS FIGYELŐ ──
+let fInactivityTimer = null;
+let fInactivityInterval = null;
+let fInactivityStart = null;
+
+function resetInactivityF() {
+  clearTimeout(fInactivityTimer);
+  const existing = document.getElementById('f-inactivity-modal');
+  if (existing) {
+    existing.remove();
+    if (fInactivityInterval) { clearInterval(fInactivityInterval); fInactivityInterval = null; }
+    if (fPauseStart) { fTotalPausedMs += Date.now() - fPauseStart; fPauseStart = null; }
+    if (!fTimerInterval && fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
+  }
+  if (!fSessionStart) return;
+  fInactivityTimer = setTimeout(() => {
+    fPauseStart = Date.now();
+    clearInterval(fTimerInterval); fTimerInterval = null;
+    let secs = 0;
+    const modal = document.createElement('div');
+    modal.id = 'f-inactivity-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9998;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+    modal.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--gold4);border-radius:12px;padding:2rem;max-width:380px;width:90%;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem">⏸</div>
+        <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:.5rem">Még ott vagy?</div>
+        <p style="font-size:.83rem;color:var(--muted);line-height:1.8;margin-bottom:1rem">
+          2 perce nem gépeltél – az idő megállt.<br>
+          Az inaktív időszak <strong style="color:var(--gold)">nem számít bele</strong> a munkamenetbe.
+        </p>
+        <div style="background:var(--surface);border-radius:6px;padding:.5rem;margin-bottom:1rem;font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">
+          Szünet: <strong id="f-inactivity-dur" style="color:var(--gold)">0:00</strong>
+        </div>
+        <button onclick="resumeFromInactivityF()" style="background:linear-gradient(135deg,#a07830,#c9a84c);color:#0c0a04;border:none;border-radius:6px;padding:.7rem 1.5rem;font-weight:700;cursor:pointer;font-size:.85rem;width:100%">▶ Folytatom az írást</button>
+      </div>`;
+    document.body.appendChild(modal);
+    fInactivityInterval = setInterval(() => {
+      secs++;
+      const m = Math.floor(secs/60).toString().padStart(2,'0');
+      const s = (secs%60).toString().padStart(2,'0');
+      const el = document.getElementById('f-inactivity-dur');
+      if (el) el.textContent = `${m}:${s}`;
+    }, 1000);
+  }, 2 * 60 * 1000);
+}
+
+function resumeFromInactivityF() {
+  const modal = document.getElementById('f-inactivity-modal');
+  if (modal) modal.remove();
+  if (fInactivityInterval) { clearInterval(fInactivityInterval); fInactivityInterval = null; }
+  if (fPauseStart) { fTotalPausedMs += Date.now() - fPauseStart; fPauseStart = null; }
+  if (!fTimerInterval && fSessionStart) fTimerInterval = setInterval(updateTimerF, 1000);
+  showFocusToast('▶ Folytatás – jó írást!');
 }
 
 // ── TOAST ──
