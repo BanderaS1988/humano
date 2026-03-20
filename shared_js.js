@@ -835,8 +835,10 @@ function openTripleLockInfo() {
             A szókomplexitás és gépelési sebesség korrelációja – hosszabb szavaknál lassul-e?</li>
             <li><strong style="color:var(--gold)">🫀 SMD – Biológiai ritmus</strong><br>
             Mikroingadozások a billentyűleütések között – az emberi kéz természetes tremora.</li>
+            <li><strong style="color:var(--gold)">🖱️ Egér dinamika – Kiegészítő mutató</strong><br>
+            Az egér mozgásának és kattintásainak rögzítése. Az emberi kéz természetes, egyenetlen mozgást végez – mutatja hány mozgás és kattintás történt írás közben.</li>
         </ul>
-        <p style="font-size:.82rem;color:var(--muted);margin-top:1rem">A három mutató együttes értéke adja a végső Kognitív Jelenlét pontszámot.</p>`
+        <p style="font-size:.82rem;color:var(--muted);margin-top:1rem">A három fő mutató együttes értéke adja a végső Kognitív Jelenlét pontszámot – az egér kiegészítő adatként szerepel.</p>`
     );
 }
 
