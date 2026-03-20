@@ -1291,7 +1291,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = '/#auth';
     return;
   }
-fCurrentUser = session.user;
+  fCurrentUser = session.user;
+
+  // ── BIOMETRIKUS BELEEGYEZÉS ELLENŐRZÉS ──
+  // Ugyanaz a logika mint az index.html-ben (ConsentManager a shared_js.js-ből)
+  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
+
+  if (!hasConsent) {
+    // Megmutatjuk a biometrikus modalt
+    const modal = document.getElementById('biometric-consent-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('open');
+    }
+    // Az editor inicializálása MEGVÁR – csak consent után fut le
+    // A handleConsentAcceptF() végzi el az inicializálást
+    return;
+  }
+
+  // Ha már van consent, egyből inicializálunk
+  initFocusEditorFull();
+});
+
+  async function handleConsentAcceptF() {
+  const btn = document.getElementById('consent-accept-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Rögzítés...';
+  }
+
+  try {
+    await ConsentManager.record('keystroke_dynamics');
+
+    const modal = document.getElementById('biometric-consent-modal');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+    }
+
+    // Most inicializálunk
+    initFocusEditorFull();
+
+    // 1.5 másodperc múlva megmutatjuk a kalibrációs emlékeztetőt
+    setTimeout(async () => {
+      await checkCalibrationReminderF();
+    }, 1500);
+
+  } catch (err) {
+    showFocusToast('❌ Hiba: ' + err.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '✦ Elfogadom';
+    }
+  }
+}
+
+  function handleConsentDeclineF() {
+  const modal = document.getElementById('biometric-consent-modal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  // Visszairányítás a főoldalra, nem használhatja az editort
+  window.location.href = '/';
+}
+
+function initFocusEditorFull() {
   initFocusEditor();
   initTableGrid();
   initPulseF();
@@ -1313,7 +1378,7 @@ fCurrentUser = session.user;
     timelapseAccumMs = timelapseEvents[timelapseFrameIdx]?.ts_ms ?? 0;
     timelapseRenderFrame(timelapseFrameIdx);
   });
-document.getElementById('tl-modal')?.addEventListener('click', e => {
+  document.getElementById('tl-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('tl-modal')) {
       const tm = document.getElementById('tl-modal');
       tm.classList.remove('open');
@@ -1324,12 +1389,82 @@ document.getElementById('tl-modal')?.addEventListener('click', e => {
   document.getElementById('send-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('send-modal')) {
       const sm = document.getElementById('send-modal');
-sm.classList.remove('open');
-sm.style.display = 'none';
+      sm.classList.remove('open');
+      sm.style.display = 'none';
     }
   });
-});
 
+  // Ha már volt consent, 1 mp múlva ellenőrizzük a kalibrációt
+  setTimeout(async () => {
+    await checkCalibrationReminderF();
+  }, 1000);
+}
+
+
+// ── KALIBRÁCIÓS EMLÉKEZTETŐ – fókusz editor ──
+async function checkCalibrationReminderF() {
+  // Ha a felhasználó korábban kikapcsolta örökre
+  if (localStorage.getItem('humano_cal_skip_forever') === '1') return;
+
+  // Ha nemrég kihagyta (2 perc)
+  const lastSkip = localStorage.getItem('humano_cal_last_skip');
+  if (lastSkip && (Date.now() - parseInt(lastSkip)) < 2 * 60 * 1000) return;
+
+  if (!fCurrentUser) return;
+
+  // Biometrikus modal ne legyen nyitva
+  const consentModal = document.getElementById('biometric-consent-modal');
+  if (consentModal && (consentModal.classList.contains('open') || consentModal.style.display === 'flex')) return;
+
+  try {
+    // Megnézzük van-e már kalibrációs profil
+    const { data, error } = await dbF
+      .from('typing_profiles')
+      .select('id')
+      .eq('user_id', fCurrentUser.id)
+      .limit(1);
+
+    if (error) return;
+    if (data && data.length > 0) return; // Már van profil, nem mutatjuk
+
+    // Megmutatjuk az emlékeztetőt
+    const modal = document.getElementById('cal-reminder-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+
+  } catch (e) {
+    console.warn('checkCalibrationReminderF hiba:', e);
+  }
+}
+
+
+// ── KALIBRÁCIÓS EMLÉKEZTETŐ GOMBOK – fókusz editor ──
+function goToCalibrationF() {
+  const modal = document.getElementById('cal-reminder-modal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  // Átirányítás a kalibrációs oldalra (főoldalon)
+  window.location.href = '/#calibration';
+}
+
+function skipCalibrationReminderF() {
+  const checkbox = document.getElementById('cal-dont-show-again');
+  if (checkbox && checkbox.checked) {
+    localStorage.setItem('humano_cal_skip_forever', '1');
+    showFocusToast('✅ Kalibrációs emlékeztető kikapcsolva');
+  } else {
+    localStorage.setItem('humano_cal_last_skip', Date.now().toString());
+    showFocusToast('👌 Kihagyva – legközelebb emlékeztetünk');
+  }
+  const modal = document.getElementById('cal-reminder-modal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+}
 
 function updatePasteRatioF() {
   const total = typedCharsF + pastedCharsF;
