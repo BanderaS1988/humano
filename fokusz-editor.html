@@ -2027,11 +2027,9 @@ function autoSaveF() {
         humanPct: fHumanPct,
         typedChars: typedCharsF,
         pastedChars: pastedCharsF,
+        pasteAllowed: window._fPasteAllowed || false,
         events: fEvents.slice(-200),
         pulseHistory: fPulseHistory.slice(),
-        typedChars: typedCharsF,
-        pastedChars: pastedCharsF,
-        pasteAllowed: window._fPasteAllowed || false,
         totalPausedMs: fTotalPausedMs,
         sessionElapsedMs: fSessionStart ? Math.max(0, Date.now() - fSessionStart - fTotalPausedMs) : 0,
       }
@@ -2041,7 +2039,7 @@ function autoSaveF() {
     setTimeout(() => { if (dot) dot.className = ''; if (txt) txt.textContent = '–'; }, 3000);
   }, 5000);
 }
-
+  
 function handleBackButton() {
   const content = document.getElementById('editor-area')?.innerHTML || '';
   const title = document.getElementById('doc-title-input')?.value || '';
