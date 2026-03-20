@@ -3,6 +3,7 @@
     { "source": "/teacher", "destination": "/teacher.html" },
     { "source": "/student", "destination": "/student.html" },
     { "source": "/join", "destination": "/student.html" },
+    { "source": "/fokusz-editor", "destination": "/fokusz-editor.html" },
     { "source": "/story/:path*", "destination": "/story_page.html" },
     { "source": "/read/:path*", "destination": "/read.html" },
     { "source": "/verify/:path*", "destination": "/index.html" },
