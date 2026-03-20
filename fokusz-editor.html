@@ -1351,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── BIOMETRIKUS BELEEGYEZÉS ELLENŐRZÉS ──
   // Ugyanaz a logika mint az index.html-ben (ConsentManager a shared_js.js-ből)
-  const hasConsent = await ConsentManager.hasActive('keystroke_dynamics');
+const hasConsent = await hasConsentF();
 
   if (!hasConsent) {
     // Megmutatjuk a biometrikus modalt
@@ -1369,39 +1369,59 @@ document.addEventListener('DOMContentLoaded', async () => {
   initFocusEditorFull();
 });
 
-  async function handleConsentAcceptF() {
+
+async function hasConsentF() {
+  if (!fCurrentUser) return false;
+  const { data, error } = await dbF
+    .from('biometric_consents')
+    .select('id')
+    .eq('user_id', fCurrentUser.id)
+    .eq('consent_type', 'keystroke_dynamics')
+    .is('revoked_at', null)
+    .limit(1);
+  return !error && data && data.length > 0;
+}
+
+async function recordConsentF() {
+  if (!fCurrentUser) throw new Error('Nincs bejelentkezett felhasználó');
+  const { error } = await dbF
+    .from('biometric_consents')
+    .insert({
+      user_id: fCurrentUser.id,
+      consent_type: 'keystroke_dynamics',
+      consent_version: '1.0',
+      granted_at: new Date().toISOString(),
+      revoked_at: null,
+    });
+  if (error && error.code !== '23505') throw new Error(error.message);
+}
+
+// ── CONSENT ELFOGADÁS ──
+async function handleConsentAcceptF() {
   const btn = document.getElementById('consent-accept-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Rögzítés...';
-  }
-
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Rögzítés...'; }
   try {
-    await ConsentManager.record('keystroke_dynamics');
-
+    await recordConsentF();
     const modal = document.getElementById('biometric-consent-modal');
-    if (modal) {
-      modal.classList.remove('open');
-      modal.style.display = 'none';
-    }
-
-    // Most inicializálunk
+    if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
     initFocusEditorFull();
-
-    // 1.5 másodperc múlva megmutatjuk a kalibrációs emlékeztetőt
-    setTimeout(async () => {
-      await checkCalibrationReminderF();
-    }, 1500);
-
+    setTimeout(async () => { await checkCalibrationReminderF(); }, 1500);
   } catch (err) {
     showFocusToast('❌ Hiba: ' + err.message);
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '✦ Elfogadom';
-    }
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Elfogadom'; }
   }
 }
 
+// ── CONSENT VISSZAUTASÍTÁS ──
+function handleConsentDeclineF() {
+  const modal = document.getElementById('biometric-consent-modal');
+  if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
+  window.location.href = '/';
+}
+
+
+
+  
   function handleConsentDeclineF() {
   const modal = document.getElementById('biometric-consent-modal');
   if (modal) {
